@@ -1,0 +1,107 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.silverduck.jace</groupId>
+    <artifactId>build</artifactId>
+    <version>1.0</version>
+    <packaging>pom</packaging>
+    <name>Jace Build</name>
+
+    <profiles>
+        <!-- Environment specific profiles (for Production / Test).
+         NOT IN USE at the moment.
+        !-->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <environmentDir>${basedir}/envs/prod/</environmentDir>
+                <production>true</production>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>test</id>
+            <properties>
+                <environmentDir>${basedir}/envs/test/</environmentDir>
+                <production>false</production>
+            </properties>
+        </profile>
+    </profiles>
+
+    <modules>
+        <module>../common</module>
+        <module>../domain</module>
+        <module>../dao</module>
+        <module>../services</module>
+        <module>../ear</module>
+        <module>../web</module>
+    </modules>
+
+    <dependencies>
+        <!-- External dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.5</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-api</artifactId>
+            <version>7.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.1</version>
+        </dependency>
+
+
+
+        <!-- Hibernate -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>4.3.5.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-entitymanager</artifactId>
+            <version>4.3.5.Final</version>
+        </dependency>
+        <!-- JSR-303 support -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>5.1.1.Final</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- JGit for git integration !-->
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>3.3.2.201404171909-r</version>
+        </dependency>
+
+        <!-- Derby DB !-->
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <version>10.10.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbyclient</artifactId>
+            <version>10.10.2.0</version>
+        </dependency>
+
+
+    </dependencies>
+
+
+</project>

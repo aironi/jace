@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+  <session-factory>
+      <property name="hibernate.connection.driver_class">org.apache.derby.jdbc.ClientDriver</property>
+      <property name="hibernate.connection.url">jdbc:derby://localhost:1527/jace;create=true</property>
+      <property name="hibernate.connection.username">admin</property>
+      <property name="hibernate.connection.password">admin</property>
+
+      <!-- SQL dialect -->
+      <property name="hibernate.dialect">org.hibernate.dialect.DerbyTenSevenDialect</property>
+
+      <!-- Drop and re-create the database schema on startup -->
+      <property name="hibernate.hbm2ddl.auto">create-drop</property>
+
+      <!-- Entity Mappings !-->
+      <mapping class="org.silverduck.jace.domain.project.Project"/>
+
+  </session-factory>
+
+</hibernate-configuration>

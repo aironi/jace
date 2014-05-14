@@ -1,0 +1,40 @@
+/* Import the reindeer theme. */
+/* This only allows us to use the mixins defined in it and does not add any styles by itself. */
+@import "../runo/runo.scss";
+
+/* This contains all of your theme. */
+/* If somebody wants to extend the theme she will include this mixin. */
+@mixin mytheme {
+  /* Include all the styles from the reindeer theme */
+  @include runo;
+
+  /* Insert your theme rules here */
+  $white: white;
+
+  .v-verticallayout {
+    @extend .v-verticallayout;
+    background: $white;
+  }
+
+  .v-horizontallayout {
+    @extend .v-horizontallayout;
+    background: $white;
+  }
+
+  .light-green-background {
+    background: #a0eea0; // light-green
+  }
+
+  .orange-border-button {
+    border: 1px solid orangered;
+    width: 400px; // Fix the 3px whitespace away...
+  }
+
+  .orange-border-icon {
+    border: 1px solid orangered;
+  }
+
+  .v-formlayout-captioncell {
+    vertical-align: top;
+  }
+}

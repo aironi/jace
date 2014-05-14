@@ -1,0 +1,94 @@
+<project>
+    <parent>
+        <groupId>org.silverduck.jace</groupId>
+        <artifactId>build</artifactId>
+        <version>1.0</version>
+        <relativePath>../build/pom.xml</relativePath>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.silverduck.jace</groupId>
+    <artifactId>jace-ear</artifactId>
+    <packaging>ear</packaging>
+    <version>1.0</version>
+    <name>Jace EAR</name>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0</version>
+            <type>jar</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>domain</artifactId>
+            <version>1.0</version>
+            <type>jar</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>dao</artifactId>
+            <version>1.0</version>
+            <type>ejb</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>services</artifactId>
+            <version>1.0</version>
+            <type>ejb</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>web</artifactId>
+            <version>1.0</version>
+            <type>war</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-ear-plugin</artifactId>
+                <version>2.9</version>
+
+                <configuration>
+                    <defaultLibBundleDir>/</defaultLibBundleDir>
+                    <version>6</version>
+                    <modules>
+                        <jarModule>
+                            <groupId>org.silverduck.jace</groupId>
+                            <artifactId>common</artifactId>
+                        </jarModule>
+                        <jarModule>
+                            <groupId>org.silverduck.jace</groupId>
+                            <artifactId>domain</artifactId>
+                        </jarModule>
+                        <ejbModule>
+                            <groupId>org.silverduck.jace</groupId>
+                            <artifactId>dao</artifactId>
+                        </ejbModule>
+                        <ejbModule>
+                            <groupId>org.silverduck.jace</groupId>
+                            <artifactId>services</artifactId>
+                        </ejbModule>
+                        <webModule>
+                            <groupId>org.silverduck.jace</groupId>
+                            <artifactId>web</artifactId>
+                            <contextRoot>/</contextRoot>
+                        </webModule>
+                    </modules>
+                    <displayName>J-Ace</displayName>
+                    <generateApplicationXml>true</generateApplicationXml>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

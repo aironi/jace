@@ -1,0 +1,38 @@
+<project>
+    <parent>
+        <groupId>org.silverduck.jace</groupId>
+        <artifactId>build</artifactId>
+        <version>1.0</version>
+        <relativePath>../build/pom.xml</relativePath>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.silverduck.jace</groupId>
+    <artifactId>dao</artifactId>
+    <packaging>ejb</packaging>
+    <version>1.0</version>
+    <name>Jace Data Access</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- Internal Dependencies -->
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>domain</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ejb</groupId>
+            <artifactId>javax.ejb-api</artifactId>
+            <version>3.2</version>
+        </dependency>
+
+
+
+        
+    </dependencies>
+
+</project>

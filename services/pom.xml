@@ -1,0 +1,46 @@
+<project>
+    <parent>
+        <groupId>org.silverduck.jace</groupId>
+        <artifactId>build</artifactId>
+        <version>1.0</version>
+        <relativePath>../build/pom.xml</relativePath>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.silverduck.jace</groupId>
+    <artifactId>services</artifactId>
+    <packaging>ejb</packaging>
+    <version>1.0</version>
+    <name>Jace Services</name>
+
+
+    <repositories>
+        <repository>
+            <id>jgit-repository</id>
+            <url>https://repo.eclipse.org/content/groups/releases/</url>
+        </repository>
+    </repositories>
+
+
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <eclipselink.version>2.5.0</eclipselink.version>
+    </properties>
+
+    <dependencies>
+        <!-- Internal Dependencies -->
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>domain</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>dao</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+    </dependencies>
+
+</project>
