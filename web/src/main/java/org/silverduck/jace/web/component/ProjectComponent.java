@@ -8,6 +8,7 @@ import com.vaadin.data.util.BeanItem;
 import com.vaadin.server.UserError;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
@@ -44,7 +45,7 @@ public class ProjectComponent extends CustomComponent {
     private TextField name;
 
     @PropertyId("pluginConfiguration.pluginType")
-    private ListSelect repositoryType;
+    private ComboBox repositoryType;
 
     private Button testCloneUrlButton;
 
@@ -55,8 +56,9 @@ public class ProjectComponent extends CustomComponent {
         name = new TextField(AppResources.getLocalizedString("label.projectForm.name", locale));
         name.setImmediate(true);
 
-        repositoryType = new ListSelect(AppResources.getLocalizedString("label.projectForm.repositoryType", locale),
+        repositoryType = new ComboBox(AppResources.getLocalizedString("label.projectForm.repositoryType", locale),
             Arrays.asList(PluginType.values()));
+
         cloneUrl = new TextField(AppResources.getLocalizedString("label.projectForm.cloneUrl", locale));
         cloneUrl.setImmediate(true);
         localDirectory = new TextField(AppResources.getLocalizedString("label.projectForm.localDirectory", locale));
@@ -74,7 +76,8 @@ public class ProjectComponent extends CustomComponent {
         formLayout.setSizeFull();
         formLayout.addComponent(name);
 
-        formLayout.addComponent(new VerticalLayout(cloneUrl, testCloneUrlButton));
+        formLayout.addComponent(cloneUrl);
+        formLayout.addComponent(testCloneUrlButton);
         formLayout.addComponent(repositoryType);
         formLayout.addComponent(cloneUrl);
         formLayout.addComponent(localDirectory);
