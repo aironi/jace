@@ -1,5 +1,7 @@
 package org.silverduck.jace.services.project.impl;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.dao.project.ProjectDao;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.services.project.ProjectService;
@@ -21,6 +23,8 @@ import java.util.List;
 @Stateless(name = "ProjectPollingServiceEJB")
 public class ProjectServiceImpl implements ProjectService {
 
+    Log LOG = LogFactory.getLog(ProjectServiceImpl.class);
+
     @EJB
     private GitService gitService;
 
@@ -38,7 +42,27 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void addProject(Project project) {
+        switch (project.getPluginConfiguration().getPluginType()) {
+        case GIT:
+            LOG.info("addProject(): Cloning git repository...");
+            gitService.cloneRepo(project.getPluginConfiguration().getCloneUrl(), project.getPluginConfiguration()
+                .getLocalDirectory());
+            break;
+        default:
+            throw new RuntimeException("Unsupported plugin type encountered when adding project '" + project.getName()
+                + "'");
+        }
         projectDao.add(project);
+    }
+
+    @Override
+    public List<Project> findAllProjects() {
+        return projectDao.findAllProjects();
+    }
+
+    @Override
+    public Project findProjectById(Long projectId) {
+        return projectDao.findProjectById(projectId);
     }
 
     /**
@@ -75,6 +99,11 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void removeProject(Project project) {
         projectDao.remove(project);
+    }
+
+    @Override
+    public void removeProjectById(Long finalItemId) {
+        removeProject(findProjectById(finalItemId));
     }
 
     @Override

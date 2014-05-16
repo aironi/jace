@@ -1,5 +1,6 @@
 package org.silverduck.jace.dao.project;
 
+import org.silverduck.jace.dao.AbstractDao;
 import org.silverduck.jace.domain.project.Project;
 
 import javax.persistence.EntityManager;
@@ -7,15 +8,12 @@ import javax.persistence.PersistenceContext;
 import java.util.List;
 
 /**
- * Created by ihietala on 14.5.2014.
+ * @author Iiro Hietala 14.5.2014.
  */
-public interface ProjectDao {
-
-    void add(Project project);
+public interface ProjectDao extends AbstractDao<Project> {
 
     List<Project> findAllProjects();
 
-    void remove(Project project);
+    Project findProjectById(Long projectId);
 
-    Project update(Project project);
 }

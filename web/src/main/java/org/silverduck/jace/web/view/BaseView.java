@@ -7,7 +7,7 @@ import com.vaadin.ui.VerticalLayout;
 import org.silverduck.jace.web.component.ManagementToolbar;
 
 /**
- * Created by ihietala on 13.5.2014.
+ * @author Iiro Hietala 13.5.2014.
  */
 public abstract class BaseView extends GridLayout implements View {
 

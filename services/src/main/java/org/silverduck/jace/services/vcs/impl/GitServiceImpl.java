@@ -1,11 +1,14 @@
 package org.silverduck.jace.services.vcs.impl;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.domain.vcs.Plugin;
 import org.silverduck.jace.services.vcs.GitService;
 
@@ -15,14 +18,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Implements Plugin interface for git version control system. Uses JGit.
+ * 
+ * TODO: Consider using JCA since at the moment we're doing File access from EJB which is restricted by spec.
  * 
  * @author Iiro Hietala
  */
 @Stateless(name = "GitServiceEJB")
 public class GitServiceImpl implements Plugin, GitService {
+
+    private static final Log LOG = LogFactory.getLog(GitServiceImpl.class);
 
     /**
      * Checkout a branch to local directory
@@ -39,14 +47,14 @@ public class GitServiceImpl implements Plugin, GitService {
         try {
             repository = builder.setGitDir(new File(localDirectory)).build();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
+            throw new JaceRuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
         }
 
         Git git = new Git(repository);
         try {
             git.checkout().setName(branch).call();
         } catch (GitAPIException e) {
-            throw new RuntimeException("Failed to checkout branch '" + branch + "' to local directory ' "
+            throw new JaceRuntimeException("Failed to checkout branch '" + branch + "' to local directory ' "
                 + localDirectory + "'", e);
         }
     }
@@ -61,19 +69,11 @@ public class GitServiceImpl implements Plugin, GitService {
      */
     @Override
     public void cloneRepo(String cloneUrl, String localDirectory) {
-        FileRepositoryBuilder builder = new FileRepositoryBuilder();
-        Repository repository;
         try {
-            repository = builder.setGitDir(new File(localDirectory)).build();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
-        }
-
-        Git git = new Git(repository);
-        try {
-            git.cloneRepository().setURI(cloneUrl).call();
+            Git.cloneRepository().setURI(cloneUrl).setDirectory(new File(localDirectory)).call();
+            LOG.info("cloneRepo(): Clone OK: " + cloneUrl);
         } catch (GitAPIException e) {
-            throw new RuntimeException("Failed to clone a remote git repository from URI '" + cloneUrl
+            throw new JaceRuntimeException("Failed to clone a remote git repository from URI '" + cloneUrl
                 + "' into directory ' " + localDirectory + "'", e);
         }
     }
@@ -92,7 +92,7 @@ public class GitServiceImpl implements Plugin, GitService {
         try {
             repository = builder.setGitDir(new File(localDirectory)).build();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
+            throw new JaceRuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
         }
 
         List<Ref> branchList;
@@ -100,7 +100,7 @@ public class GitServiceImpl implements Plugin, GitService {
         try {
             branchList = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
         } catch (GitAPIException e) {
-            throw new RuntimeException("Failed to fetch a branch list for git repo ' " + localDirectory + "'", e);
+            throw new JaceRuntimeException("Failed to fetch a branch list for git repo ' " + localDirectory + "'", e);
         }
 
         List<String> branches = new ArrayList<String>();
@@ -119,14 +119,14 @@ public class GitServiceImpl implements Plugin, GitService {
         try {
             repository = builder.setGitDir(new File(localDirectory)).build();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
+            throw new JaceRuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
         }
 
         Git git = new Git(repository);
         try {
             git.pull().setRebase(true).call();
         } catch (GitAPIException e) {
-            throw new RuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
+            throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
         }
     }
 }

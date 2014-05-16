@@ -1,11 +1,11 @@
-package org.silverduck.jace.dao.project.impl;
+package org.silverduck.jace.dao;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PrePersist;
 
 /**
- * Created by ihietala on 14.5.2014.
+ * @author Iiro Hietala 14.5.2014.
  */
 public abstract class AbstractDaoImpl<T> {
 

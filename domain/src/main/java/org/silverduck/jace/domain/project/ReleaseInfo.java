@@ -6,7 +6,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 
 /**
- * Created by ihietala on 13.5.2014.
+ * @author Iiro Hietala 13.5.2014.
  */
 @Embeddable
 public class ReleaseInfo {

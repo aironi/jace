@@ -9,6 +9,7 @@ import com.vaadin.ui.*;
 import com.vaadin.ui.themes.BaseTheme;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.web.JaceUI;
+import org.silverduck.jace.web.view.AnalysisView;
 import org.silverduck.jace.web.view.ManageProjectsView;
 
 /**
@@ -17,6 +18,8 @@ import org.silverduck.jace.web.view.ManageProjectsView;
 public class ManagementToolbar extends CustomComponent {
 
     private Button analysisLink;
+
+    private Button analysisView;
 
     private Image jaceLogo;
 
@@ -32,8 +35,23 @@ public class ManagementToolbar extends CustomComponent {
 
         createJaceLogo(hl);
 
+        createAnalysisLink(hl);
         createManageProjectsLink(hl);
         setCompositionRoot(vl);
+    }
+
+    private void createAnalysisLink(HorizontalLayout layout) {
+        analysisView = new Button(AppResources.getLocalizedString("label.analysisView", getUI().getCurrent()
+            .getLocale()));
+        analysisView.addClickListener(new Button.ClickListener() {
+            @Override
+            public void buttonClick(Button.ClickEvent event) {
+                JaceUI.navigateTo(AnalysisView.VIEW);
+            }
+        });
+        analysisView.addStyleName(BaseTheme.BUTTON_LINK);
+        layout.addComponent(analysisView);
+        layout.setComponentAlignment(analysisView, Alignment.TOP_RIGHT);
     }
 
     private void createJaceLogo(HorizontalLayout layout) {

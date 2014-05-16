@@ -4,7 +4,7 @@ import javax.ejb.Local;
 import java.util.List;
 
 /**
- * Created by ihietala on 14.5.2014.
+ * @author Iiro Hietala 14.5.2014.
  */
 @Local
 public interface GitService {

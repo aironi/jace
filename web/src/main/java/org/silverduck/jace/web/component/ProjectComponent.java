@@ -13,14 +13,20 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpConnection;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.project.VersionFileType;
 import org.silverduck.jace.domain.vcs.PluginType;
+import org.silverduck.jace.web.vaadin.WorkingBeanFieldGroup;
 import sun.net.www.protocol.https.HttpsURLConnectionImpl;
 
 import java.io.IOException;
@@ -29,40 +35,70 @@ import java.util.Arrays;
 import java.util.Locale;
 
 /**
- * Created by ihietala on 14.5.2014.
+ * @author Iiro Hietala 14.5.2014.
  */
-public class ProjectComponent extends CustomComponent {
+public class ProjectComponent extends BaseComponent<Project> {
 
-    @PropertyId("pluginConfiguration.cloneUrl")
     private TextField cloneUrl;
 
-    private BeanFieldGroup<Project> fieldGroup;
-
-    @PropertyId("pluginConfiguration.localDirectory")
-    private TextField localDirectory;
+    // @PropertyId("pluginConfiguration.localDirectory")
+    // private TextField localDirectory;
 
     @PropertyId("name")
     private TextField name;
 
-    @PropertyId("pluginConfiguration.pluginType")
+    private TextField pathToVersionFile;
+
     private ComboBox repositoryType;
 
     private Button testCloneUrlButton;
 
-    public ProjectComponent() {
+    private ComboBox versionFileType;
 
+    private TextField versionPattern;
+
+    public ProjectComponent() {
+        Locale locale = getUI().getCurrent().getLocale();
+
+        TabSheet tabSheet = new TabSheet();
+
+        tabSheet.addTab(createBasicDataLayout(),
+            AppResources.getLocalizedString("label.projectForm.basicDataTab", locale));
+        tabSheet.addTab(createReleaseInfoLayout(),
+            AppResources.getLocalizedString("label.projectForm.releaseInfoTab", locale));
+        setCompositionRoot(tabSheet);
+    }
+
+    @Override
+    protected void bindFields(Project project) {
+        super.setFieldGroup(new WorkingBeanFieldGroup(Project.class));
+        super.getFieldGroup().setItemDataSource(new BeanItem<Project>(project));
+        super.getFieldGroup().setBuffered(true);
+        super.getFieldGroup().bind(name, "name");
+        super.getFieldGroup().bind(cloneUrl, "pluginConfiguration.cloneUrl");
+        super.getFieldGroup().bind(repositoryType, "pluginConfiguration.pluginType");
+        super.getFieldGroup().bind(versionFileType, "releaseInfo.versionFileType");
+        super.getFieldGroup().bind(pathToVersionFile, "releaseInfo.pathToVersionFile");
+        super.getFieldGroup().bind(versionPattern, "releaseInfo.pattern");
+        // fieldGroup.bind(localDirectory, "pluginConfiguration.localDirectory");
+    }
+
+    private Component createBasicDataLayout() {
         Locale locale = getUI().getCurrent().getLocale();
 
         name = new TextField(AppResources.getLocalizedString("label.projectForm.name", locale));
         name.setImmediate(true);
 
-        repositoryType = new ComboBox(AppResources.getLocalizedString("label.projectForm.repositoryType", locale),
-            Arrays.asList(PluginType.values()));
+        repositoryType = new ComboBox(AppResources.getLocalizedString("label.projectForm.repositoryType", locale));
+        for (PluginType pluginType : PluginType.values()) {
+            repositoryType.addItem(pluginType);
+            repositoryType.setItemCaption(pluginType,
+                AppResources.getLocalizedString(pluginType.getResourceKey(), getUI().getCurrent().getLocale()));
+        }
+        repositoryType.setImmediate(true);
 
         cloneUrl = new TextField(AppResources.getLocalizedString("label.projectForm.cloneUrl", locale));
         cloneUrl.setImmediate(true);
-        localDirectory = new TextField(AppResources.getLocalizedString("label.projectForm.localDirectory", locale));
-        localDirectory.setImmediate(true);
         testCloneUrlButton = new Button(AppResources.getLocalizedString("label.projectForm.testCloneUrlButton", locale));
         testCloneUrlButton.addClickListener(new Button.ClickListener() {
             @Override
@@ -71,52 +107,47 @@ public class ProjectComponent extends CustomComponent {
             }
         });
 
-        FormLayout formLayout = new FormLayout();
-        formLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
-        formLayout.setSizeFull();
-        formLayout.addComponent(name);
+        // localDirectory = new TextField(AppResources.getLocalizedString("label.projectForm.localDirectory", locale));
+        // localDirectory.setImmediate(true);
 
-        formLayout.addComponent(cloneUrl);
-        formLayout.addComponent(testCloneUrlButton);
-        formLayout.addComponent(repositoryType);
-        formLayout.addComponent(cloneUrl);
-        formLayout.addComponent(localDirectory);
+        FormLayout basicDataForm = new FormLayout();
+        basicDataForm.setDefaultComponentAlignment(Alignment.TOP_LEFT);
+        basicDataForm.setSizeFull();
 
-        setCompositionRoot(formLayout);
+        basicDataForm.addComponent(name);
+        basicDataForm.addComponent(repositoryType);
+        basicDataForm.addComponent(cloneUrl);
+        basicDataForm.addComponent(testCloneUrlButton);
+        // formLayout.addComponent(localDirectory);
+
+        return new VerticalLayout(basicDataForm);
     }
 
-    private void bindFields(Project project) {
-        fieldGroup = new BeanFieldGroup(Project.class);
-        fieldGroup.setItemDataSource(new BeanItem<Project>(project));
-        fieldGroup.setBuffered(true);
-        fieldGroup.bindMemberFields(this);
-    }
+    private Component createReleaseInfoLayout() {
+        Locale locale = getUI().getCurrent().getLocale();
+        FormLayout releaseInfoForm = new FormLayout();
 
-    /**
-     * Commits the changes in the component and returns the Project object.
-     * 
-     * @return Project object if bound. Otherwise null.
-     */
-    public Project commit() {
-        if (fieldGroup.getItemDataSource() != null) {
-            try {
-                fieldGroup.commit();
-            } catch (FieldGroup.CommitException e) {
-                Notification.show("Error", AppResources.getLocalizedString("errorMessages.commitFailed", getLocale()),
-                    Notification.Type.ERROR_MESSAGE);
-            }
-            return fieldGroup.getItemDataSource().getBean();
+        versionFileType = new ComboBox(AppResources.getLocalizedString("label.projectForm.versionFileType", locale));
+        for (VersionFileType type : VersionFileType.values()) {
+            versionFileType.addItem(type);
+            versionFileType.setItemCaption(type,
+                AppResources.getLocalizedString(type.getResourceKey(), getUI().getCurrent().getLocale()));
         }
-        return null;
-    }
+        versionFileType.setImmediate(true);
 
-    /**
-     * Discard given changes in Form to the bound Applicant
-     */
-    public void discard() {
-        if (fieldGroup.getItemDataSource() != null) {
-            fieldGroup.discard();
-        }
+        pathToVersionFile = new TextField(
+            AppResources.getLocalizedString("label.projectForm.pathToVersionFile", locale));
+        pathToVersionFile.setImmediate(true);
+
+        versionPattern = new TextField(AppResources.getLocalizedString("label.projectForm.versionPattern", locale));
+        versionPattern.setImmediate(true);
+
+        releaseInfoForm.setDefaultComponentAlignment(Alignment.TOP_LEFT);
+        releaseInfoForm.addComponent(versionFileType);
+        releaseInfoForm.addComponent(pathToVersionFile);
+        releaseInfoForm.addComponent(versionPattern);
+
+        return new VerticalLayout(releaseInfoForm);
     }
 
     /**
@@ -125,25 +156,22 @@ public class ProjectComponent extends CustomComponent {
      * @param project
      *            Project to Edit
      */
-    public void edit(final Project project) {
-        bindFields(project);
-        setReadOnly(false);
-    }
-
-    /**
-     * @return True, if the given data in the Form valid. Otherwise false.
-     */
-    public boolean isValid() {
-        return fieldGroup.isValid();
+    public void edit(final Project project, boolean isNew) {
+        super.edit(project);
+        if (!isNew) {
+            // Once created, these may no longer be changed.
+            name.setReadOnly(true);
+            repositoryType.setReadOnly(true);
+            cloneUrl.setReadOnly(true);
+        }
     }
 
     @Override
     public void setReadOnly(boolean readOnly) {
-        super.setReadOnly(readOnly);
-
+        repositoryType.setReadOnly(readOnly);
         name.setReadOnly(readOnly);
         cloneUrl.setReadOnly(readOnly);
-        localDirectory.setReadOnly(readOnly);
+        // localDirectory.setReadOnly(readOnly);
     }
 
     private void testCloneUrl() {
@@ -155,18 +183,5 @@ public class ProjectComponent extends CustomComponent {
         } catch (Exception e) {
             cloneUrl.setComponentError(new UserError("Connection Failed: '" + e.getMessage() + "'"));
         }
-    }
-
-    /**
-     * View an project
-     * 
-     * @param project
-     *            Project to View
-     */
-    public void view(final Project project) {
-        if (project != null) {
-            bindFields(project);
-        }
-        setReadOnly(true);
     }
 }

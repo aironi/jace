@@ -5,9 +5,13 @@
 <hibernate-configuration>
   <session-factory>
       <property name="hibernate.connection.driver_class">org.apache.derby.jdbc.ClientDriver</property>
-      <property name="hibernate.connection.url">jdbc:derby://localhost:1527/jace;create=true</property>
-      <property name="hibernate.connection.username">admin</property>
-      <property name="hibernate.connection.password">admin</property>
+      <property name="hibernate.connection.url">jdbc:derby://localhost:1527/jaceDb;create=true;user=APP;password=APP;</property>
+     <!--
+      <property name="hibernate.connection.driver_class">org.apache.derby.jdbc.EmbeddedDriver</property>
+      <property name="hibernate.connection.url">jdbc:derby:jaceDb;create=true;</property>
+      !-->
+      <property name="hibernate.connection.username">APP</property>
+      <property name="hibernate.connection.password">APP</property>
 
       <!-- SQL dialect -->
       <property name="hibernate.dialect">org.hibernate.dialect.DerbyTenSevenDialect</property>
@@ -17,6 +21,7 @@
 
       <!-- Entity Mappings !-->
       <mapping class="org.silverduck.jace.domain.project.Project"/>
+      <mapping class="org.silverduck.jace.domain.analysis.AnalysisSetting"/>
 
   </session-factory>
 
