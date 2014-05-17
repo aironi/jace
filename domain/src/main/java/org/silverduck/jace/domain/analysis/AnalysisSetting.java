@@ -6,6 +6,8 @@ import org.silverduck.jace.domain.project.Project;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.ForeignKey;
 import javax.persistence.JoinColumn;
@@ -39,8 +41,12 @@ public class AnalysisSetting extends AbstractDomainObject {
     @Column(name = "Enabled")
     private Boolean enabled;
 
+    @Column(name = "Granularity")
+    @Enumerated(EnumType.STRING)
+    private Granularity granularity;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ProjectRID", foreignKey = @ForeignKey(name = "FK_Analysis_Project"))
+    @JoinColumn(name = "ProjectRID")
     private Project project;
 
     public String getBranch() {
@@ -49,6 +55,10 @@ public class AnalysisSetting extends AbstractDomainObject {
 
     public Boolean getEnabled() {
         return enabled;
+    }
+
+    public Granularity getGranularity() {
+        return granularity;
     }
 
     public Project getProject() {
@@ -61,6 +71,10 @@ public class AnalysisSetting extends AbstractDomainObject {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public void setGranularity(Granularity granularity) {
+        this.granularity = granularity;
     }
 
     public void setProject(Project project) {

@@ -6,9 +6,11 @@ import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.vcs.PluginConfiguration;
 import org.silverduck.jace.domain.vcs.PluginType;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -28,18 +30,27 @@ public class Project extends AbstractDomainObject {
 
     public static Project newProject() {
         Project p = new Project();
-        p.setName("");
+        p.setName("Jace");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
-        p.getPluginConfiguration().setCloneUrl("");
+        p.getPluginConfiguration().setCloneUrl("https://github.com/aironi/jace.git");
         p.getPluginConfiguration().setLocalDirectory("");
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
-        p.getReleaseInfo().setPathToVersionFile("");
-        p.getReleaseInfo().setPattern("");
+        p.getReleaseInfo().setPathToVersionFile("/build/pom.xml");
+        p.getReleaseInfo().setPattern("/project/version");
+        /*
+         * p.setName(""); p.getPluginConfiguration().setPluginType(PluginType.GIT);
+         * p.getPluginConfiguration().setCloneUrl(""); p.getPluginConfiguration().setLocalDirectory("");
+         * p.getReleaseInfo().setVersionFileType(VersionFileType.XML); p.getReleaseInfo().setPathToVersionFile("");
+         * p.getReleaseInfo().setPattern("");
+         */
         return p;
     }
 
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<AnalysisSetting> analysisSetting;
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<ProjectBranch> branches;
 
     @Column(name = "Name")
     @NotNull
@@ -52,6 +63,9 @@ public class Project extends AbstractDomainObject {
     @Embedded
     private ReleaseInfo releaseInfo = new ReleaseInfo();
 
+    public Project() {
+    }
+
     public void addAnalysisSetting(AnalysisSetting setting) {
         if (!analysisSetting.contains(setting)) {
             setting.setProject(this);
@@ -60,8 +74,18 @@ public class Project extends AbstractDomainObject {
         }
     }
 
+    public void addBranch(ProjectBranch branch) {
+        if (!branches.contains(branch)) {
+            branches.add(branch);
+        }
+    }
+
     public List<AnalysisSetting> getAnalysisSetting() {
         return Collections.unmodifiableList(analysisSetting);
+    }
+
+    public List<ProjectBranch> getBranches() {
+        return Collections.unmodifiableList(branches);
     }
 
     public String getName() {
@@ -83,6 +107,12 @@ public class Project extends AbstractDomainObject {
         }
     }
 
+    public void removeBranch(ProjectBranch branch) {
+        if (branches.contains(branch)) {
+            branches.remove(branch);
+        }
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -94,5 +124,4 @@ public class Project extends AbstractDomainObject {
     public void setReleaseInfo(ReleaseInfo releaseInfo) {
         this.releaseInfo = releaseInfo;
     }
-
 }
