@@ -2,8 +2,11 @@ package org.silverduck.jace.services.project.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import org.apache.commons.io.FileUtils;
 import org.silverduck.jace.dao.project.ProjectDao;
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.project.ProjectBranch;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.vcs.GitService;
 
@@ -13,6 +16,8 @@ import javax.ejb.Schedule;
 import javax.ejb.Stateless;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -47,6 +52,9 @@ public class ProjectServiceImpl implements ProjectService {
             LOG.info("addProject(): Cloning git repository...");
             gitService.cloneRepo(project.getPluginConfiguration().getCloneUrl(), project.getPluginConfiguration()
                 .getLocalDirectory());
+            for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
+                project.addBranch(new ProjectBranch(project, branch));
+            }
             break;
         default:
             throw new RuntimeException("Unsupported plugin type encountered when adding project '" + project.getName()
@@ -98,6 +106,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void removeProject(Project project) {
+        try {
+            FileUtils.deleteDirectory(new File(project.getPluginConfiguration().getLocalDirectory()));
+        } catch (IOException e) {
+            LOG.warn("Couldn't clean up local directory '" + project.getPluginConfiguration().getLocalDirectory()
+                + "' when removing project '" + project.getName() + "'. Reason: " + e.getMessage());
+        }
         projectDao.remove(project);
     }
 

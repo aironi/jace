@@ -98,7 +98,8 @@ public class GitServiceImpl implements Plugin, GitService {
         List<Ref> branchList;
         Git git = new Git(repository);
         try {
-            branchList = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
+            branchList = git.branchList().call();
+            LOG.fatal("Got branch list: " + branchList);
         } catch (GitAPIException e) {
             throw new JaceRuntimeException("Failed to fetch a branch list for git repo ' " + localDirectory + "'", e);
         }
@@ -109,7 +110,6 @@ public class GitServiceImpl implements Plugin, GitService {
         }
         Collections.sort(branches);
         return Collections.unmodifiableList(branches);
-
     }
 
     @Override
