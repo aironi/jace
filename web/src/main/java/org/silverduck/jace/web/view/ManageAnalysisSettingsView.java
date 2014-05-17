@@ -14,19 +14,23 @@ import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.project.ProjectBranch;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.web.component.AnalysisSettingsComponent;
 
 import javax.ejb.EJB;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
  * @author Iiro Hietala 16.5.2014. @
  */
-@CDIView(AnalysisView.VIEW)
-public class AnalysisView extends BaseView {
-    public static final String VIEW = "AnalysisView";
+@CDIView(ManageAnalysisSettingsView.VIEW)
+public class ManageAnalysisSettingsView extends BaseView {
+    public static final String VIEW = "ManageAnalysisSettingsView";
 
     @EJB
     private AnalysisService analysisService;
@@ -39,7 +43,7 @@ public class AnalysisView extends BaseView {
     @EJB
     private ProjectService projectService;
 
-    public AnalysisView() {
+    public ManageAnalysisSettingsView() {
         super();
         VerticalLayout vl = new VerticalLayout();
         HorizontalLayout hl = new HorizontalLayout();
@@ -57,7 +61,7 @@ public class AnalysisView extends BaseView {
     }
 
     private void addAnalysisSettingTable(VerticalLayout vl) {
-        Locale locale = getUI().getCurrent().getLocale();
+        final Locale locale = getUI().getCurrent().getLocale();
         analysisTable = new Table(AppResources.getLocalizedString("label.projectsTable", locale),
             analysisSettingsJPAContainer);
 
@@ -69,6 +73,36 @@ public class AnalysisView extends BaseView {
             AppResources.getLocalizedString("label.analysisForm.enabled", locale));
 
         analysisTable.setImmediate(true);
+        Table.ColumnGenerator columnGenerator = new Table.ColumnGenerator() {
+            @Override
+            public Object generateCell(Table source, Object itemId, Object columnId) {
+                final Object finalItemId = itemId;
+                if ("Edit".equals(columnId)) {
+                    Button editButton = new Button(AppResources.getLocalizedString("label.edit", locale));
+                    editButton.addClickListener(new Button.ClickListener() {
+                        @Override
+                        public void buttonClick(Button.ClickEvent event) {
+                            showAnalysisSettingPopup((Long) finalItemId);
+                        }
+                    });
+                    return editButton;
+                } else if ("Remove".equals(columnId)) {
+                    Button removeButton = new Button(AppResources.getLocalizedString("label.remove", locale));
+                    removeButton.addClickListener(new Button.ClickListener() {
+                        @Override
+                        public void buttonClick(Button.ClickEvent event) {
+                            analysisService.removeAnalysisSettingById(((Long) finalItemId));
+                        }
+                    });
+                    return removeButton;
+                }
+                return null;
+            }
+        };
+
+        analysisTable.addGeneratedColumn("Edit", columnGenerator);
+        analysisTable.addGeneratedColumn("Remove", columnGenerator);
+
         vl.addComponent(analysisTable);
 
     }

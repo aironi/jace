@@ -1,15 +1,11 @@
 package org.silverduck.jace.web.component;
 
-import com.vaadin.data.fieldgroup.BeanFieldGroup;
-import com.vaadin.data.fieldgroup.FieldGroup;
-import com.vaadin.data.fieldgroup.PropertyId;
-import com.vaadin.data.util.BeanItem;
 import com.vaadin.server.ThemeResource;
 import com.vaadin.ui.*;
 import com.vaadin.ui.themes.BaseTheme;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.web.JaceUI;
-import org.silverduck.jace.web.view.AnalysisView;
+import org.silverduck.jace.web.view.ManageAnalysisSettingsView;
 import org.silverduck.jace.web.view.ManageProjectsView;
 
 /**
@@ -46,7 +42,7 @@ public class ManagementToolbar extends CustomComponent {
         analysisView.addClickListener(new Button.ClickListener() {
             @Override
             public void buttonClick(Button.ClickEvent event) {
-                JaceUI.navigateTo(AnalysisView.VIEW);
+                JaceUI.navigateTo(ManageAnalysisSettingsView.VIEW);
             }
         });
         analysisView.addStyleName(BaseTheme.BUTTON_LINK);
