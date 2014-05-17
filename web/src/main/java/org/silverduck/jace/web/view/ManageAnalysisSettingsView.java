@@ -95,6 +95,26 @@ public class ManageAnalysisSettingsView extends BaseView {
                         }
                     });
                     return removeButton;
+                } else if ("Trigger".equals(columnId)) {
+                    Button triggerButton = new Button(AppResources.getLocalizedString("label.dev.triggerAnalysis",
+                        locale));
+                    triggerButton.addClickListener(new Button.ClickListener() {
+                        @Override
+                        public void buttonClick(Button.ClickEvent event) {
+                            analysisService.triggerAnalysis(((Long) finalItemId));
+                        }
+                    });
+                    return triggerButton;
+                } else if ("InitialTrigger".equals(columnId)) {
+                    Button triggerButton = new Button(AppResources.getLocalizedString("label.dev.triggerInitialAnalysis",
+                        locale));
+                    triggerButton.addClickListener(new Button.ClickListener() {
+                        @Override
+                        public void buttonClick(Button.ClickEvent event) {
+                            analysisService.initialAnalysis(((Long) finalItemId));
+                        }
+                    });
+                    return triggerButton;
                 }
                 return null;
             }
@@ -102,6 +122,8 @@ public class ManageAnalysisSettingsView extends BaseView {
 
         analysisTable.addGeneratedColumn("Edit", columnGenerator);
         analysisTable.addGeneratedColumn("Remove", columnGenerator);
+        analysisTable.addGeneratedColumn("Trigger", columnGenerator);
+        analysisTable.addGeneratedColumn("InitialTrigger", columnGenerator);
 
         vl.addComponent(analysisTable);
 

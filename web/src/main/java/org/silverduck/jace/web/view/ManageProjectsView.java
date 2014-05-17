@@ -56,12 +56,11 @@ public class ManageProjectsView extends BaseView {
 
         hl.setSizeFull();
 
-        super.getContentLayout().addComponent(vl);
-
         addProjectsTable(vl);
         addNewButton(hl);
 
         vl.addComponent(hl);
+        super.getContentLayout().addComponent(vl);
     }
 
     private void addNewButton(HorizontalLayout hl) {
@@ -180,7 +179,6 @@ public class ManageProjectsView extends BaseView {
 
                     // FIXME: Implement JCA compliant solution. For now the files go into config/<projectName>
 
-                    project.getPluginConfiguration().setLocalDirectory(project.getName());
                     if (project.getId() == null) {
                         projectService.addProject(project);
                     } else {

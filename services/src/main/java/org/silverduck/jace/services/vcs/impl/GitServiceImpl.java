@@ -57,6 +57,7 @@ public class GitServiceImpl implements Plugin, GitService {
             throw new JaceRuntimeException("Failed to checkout branch '" + branch + "' to local directory ' "
                 + localDirectory + "'", e);
         }
+        repository.close();
     }
 
     /**
@@ -90,7 +91,10 @@ public class GitServiceImpl implements Plugin, GitService {
         FileRepositoryBuilder builder = new FileRepositoryBuilder();
         Repository repository;
         try {
-            repository = builder.setGitDir(new File(localDirectory)).build();
+            repository = builder.setGitDir(new File(localDirectory + "/.git")).readEnvironment().findGitDir().build();
+            LOG.fatal("Full branch (localdir=" + localDirectory + "): " + repository.getFullBranch());
+            LOG.fatal("Repo info: " + repository.toString());
+            LOG.fatal("All refs: " + repository.getAllRefs());
         } catch (IOException e) {
             throw new JaceRuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
         }
@@ -103,6 +107,8 @@ public class GitServiceImpl implements Plugin, GitService {
         } catch (GitAPIException e) {
             throw new JaceRuntimeException("Failed to fetch a branch list for git repo ' " + localDirectory + "'", e);
         }
+
+        repository.close();
 
         List<String> branches = new ArrayList<String>();
         for (Ref branch : branchList) {
@@ -128,5 +134,6 @@ public class GitServiceImpl implements Plugin, GitService {
         } catch (GitAPIException e) {
             throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
         }
+        repository.close();
     }
 }

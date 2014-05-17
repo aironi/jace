@@ -16,6 +16,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,9 +51,10 @@ public class Project extends AbstractDomainObject {
     private List<AnalysisSetting> analysisSetting;
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<ProjectBranch> branches;
+    private List<ProjectBranch> branches = new ArrayList<ProjectBranch>();
 
-    @Column(name = "Name")
+    // unique = true, since the project name is used as the clone dir under working dir.
+    @Column(name = "Name", unique = true)
     @NotNull
     @Length(min = 1, max = 255)
     private String name;

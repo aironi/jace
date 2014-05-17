@@ -58,6 +58,7 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Apache Libraries !-->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -76,6 +77,12 @@
             <version>2.4</version>
         </dependency>
 
+        <!-- Eclipse Cor for code parsing !-->
+        <dependency>
+            <groupId>org.eclipse.jdt</groupId>
+            <artifactId>core</artifactId>
+            <version>3.3.0-v_771</version>
+        </dependency>
 
 
         <!-- Hibernate -->

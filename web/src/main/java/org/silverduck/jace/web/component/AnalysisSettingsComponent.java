@@ -42,6 +42,9 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
 
     private static final Log LOG = LogFactory.getLog(AnalysisSettingsComponent.class);
 
+    // Used only to get edit working with comboboxes
+    private AnalysisSetting analysisSetting;
+
     private ComboBox branchField;
 
     private CheckBox enabledField;
@@ -59,7 +62,7 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
 
     @Override
     protected void bindFields(AnalysisSetting analysisSetting) {
-
+        this.analysisSetting = analysisSetting;
         super.setFieldGroup(new WorkingBeanFieldGroup(AnalysisSetting.class));
         super.getFieldGroup().setItemDataSource(new BeanItem<AnalysisSetting>(analysisSetting));
         super.getFieldGroup().setBuffered(true);
@@ -82,11 +85,17 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
             public void valueChange(Property.ValueChangeEvent event) {
                 Project project = (Project) event.getProperty().getValue();
                 if (project != null) {
-                    BeanComboBoxHelper.updateComboBoxItems(branchField, ProjectBranch.class, "branch",
-                        project.getBranches());
+                    branchField.removeAllItems();
+                    for (ProjectBranch projectBranch : project.getBranches()) {
+                        branchField.addItem(projectBranch.getBranch());
+                    }
                 }
             }
         });
+
+        if (analysisSetting != null && analysisSetting.getProject() != null) {
+            projectField.setValue(analysisSetting.getProject().getId());
+        }
 
         granularityField = new ComboBox(AppResources.getLocalizedString("label.analysisForm.granularity", locale));
         for (Granularity granularity : Granularity.values()) {

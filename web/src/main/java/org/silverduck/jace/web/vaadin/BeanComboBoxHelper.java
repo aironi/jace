@@ -42,7 +42,9 @@ public class BeanComboBoxHelper {
         String nameProperty, List<? extends AbstractDomainObject> items) {
 
         BeanItemContainer bic = new BeanItemContainer(beanClass);
-        bic.addAll(items);
+        if (items != null) {
+            bic.addAll(items);
+        }
         ComboBox comboBox = new ComboBox(AppResources.getLocalizedString(localizationKey, locale), bic);
         comboBox.setItemCaptionMode(AbstractSelect.ItemCaptionMode.PROPERTY);
         comboBox.setItemCaptionPropertyId(nameProperty);

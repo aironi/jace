@@ -16,19 +16,33 @@ public interface AnalysisService {
 
     void analyseProject(@Observes PullingCompleteEvent event);
 
-    void removeAnalysisSettingById(Long id);
-
-    void updateAnalysisSetting(AnalysisSetting setting);
-
     List<AnalysisSetting> findAllAnalysisSettings();
 
     AnalysisSetting findAnalysisSettingById(Long id);
 
     /**
      * Performs initial analysis of the file tree and initializes SLOs
-     *
+     * 
      * @param setting
      */
     @Asynchronous
     void initialAnalysis(AnalysisSetting setting);
+
+    /**
+     * Triggers initial analysis for a given analysis ID (DEVELOPMENT FEATURE)
+     * 
+     * @param analysisSettingId
+     */
+    void initialAnalysis(Long analysisSettingId);
+
+    void removeAnalysisSettingById(Long id);
+
+    /**
+     * Triggers an analysis for a given analysis ID (DEVELOPMENT FEATURE)
+     * 
+     * @param analysisSettingId
+     */
+    void triggerAnalysis(Long analysisSettingId);
+
+    void updateAnalysisSetting(AnalysisSetting setting);
 }

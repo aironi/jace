@@ -19,6 +19,10 @@ import javax.persistence.Table;
 @Table(name = "SLO")
 public class SLO extends AbstractDomainObject {
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "AnalysisRID")
+    private Analysis analysis;
+
     @Column(name = "Path")
     private String path;
 
@@ -26,9 +30,15 @@ public class SLO extends AbstractDomainObject {
     @Enumerated(EnumType.STRING)
     private SLOType sloType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "AnalysisRID")
-    private Analysis analysis;
+    public SLO() {
+        super();
+    }
+
+    public SLO(String path, SLOType type) {
+        this();
+        this.path = path;
+        this.sloType = type;
+    }
 
     public String getPath() {
         return path;
