@@ -9,10 +9,10 @@ import com.vaadin.ui.*;
  * The root view of the application.
  */
 @CDIView
-public class RootView extends BaseView implements View {
+public class AnalysisView extends BaseView implements View {
     public static final String VIEW = "";
 
-    public RootView() {
+    public AnalysisView() {
         setSizeFull();
         setDefaultComponentAlignment(Alignment.TOP_CENTER);
 

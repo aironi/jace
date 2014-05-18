@@ -20,7 +20,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Pulls projects from configured repositories
@@ -45,9 +44,13 @@ public class ProjectServiceImpl implements ProjectService {
     private ProjectService projectPollingService;
 
     @Inject
+    Event<AddingProjectCompleteEvent> addingProjectCompleteEvent;
+
+    @Inject
     Event<PullingCompleteEvent> pullingCompleteEvent;
 
     @Override
+    @Asynchronous
     public void addProject(Project project) {
         String targetDir = JaceProperties.getProperty("workingDirectory") + '/' + project.getName();
         project.getPluginConfiguration().setLocalDirectory(targetDir);
@@ -66,6 +69,8 @@ public class ProjectServiceImpl implements ProjectService {
                 + "'");
         }
         projectDao.add(project);
+        AddingProjectCompleteEvent event = new AddingProjectCompleteEvent(project);
+        addingProjectCompleteEvent.fire(event);
     }
 
     @Override

@@ -1,16 +1,12 @@
 package org.silverduck.jace.dao.analysis;
 
 import org.silverduck.jace.dao.AbstractDao;
-import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.analysis.Analysis;
 
-import java.util.List;
 
 /**
- * @author Iiro Hietala 17.5.2014.
+ * Created by ihietala on 18.5.2014.
  */
+public interface AnalysisDao extends AbstractDao<Analysis> {
 
-public interface AnalysisDao extends AbstractDao<AnalysisSetting> {
-    List<AnalysisSetting> findAllAnalysisSettings();
-
-    AnalysisSetting findAnalysisSettingById(Long analysisSettingId);
 }

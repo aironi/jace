@@ -21,14 +21,19 @@ import com.vaadin.ui.TableFieldFactory;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.vcs.PluginType;
 import org.silverduck.jace.services.project.ProjectService;
+import org.silverduck.jace.services.project.impl.AddingProjectCompleteEvent;
 import org.silverduck.jace.web.component.ProjectComponent;
 
 import javax.ejb.EJB;
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.swing.*;
 import java.util.Locale;
@@ -38,6 +43,9 @@ import java.util.Locale;
  */
 @CDIView(ManageProjectsView.VIEW)
 public class ManageProjectsView extends BaseView {
+
+    private static final Log LOG = LogFactory.getLog(ManageProjectsView.class);
+
     public static final String VIEW = "ManageProjectsView";
 
     @EJB
@@ -79,6 +87,7 @@ public class ManageProjectsView extends BaseView {
 
     private void addProjectsTable(VerticalLayout layout) {
         final Locale locale = getUI().getCurrent().getLocale();
+        projectsContainer.setFireContainerItemSetChangeEvents(true);
         projectsContainer.addNestedContainerProperty("pluginConfiguration.pluginType");
         projectsContainer.addNestedContainerProperty("pluginConfiguration.cloneUrl");
         projectsContainer.addNestedContainerProperty("releaseInfo.versionFileType");
@@ -186,7 +195,7 @@ public class ManageProjectsView extends BaseView {
                     }
 
                     projectPopUp.close();
-                    projectsTable.refreshRowCache();
+
                 } else {
                     Notification.show(AppResources.getLocalizedString("form.validationErrorsNotification", locale),
                         Notification.Type.TRAY_NOTIFICATION);
@@ -223,6 +232,12 @@ public class ManageProjectsView extends BaseView {
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
+
+    }
+
+    public void observeProjectAdd(@Observes @Any AddingProjectCompleteEvent event) {
+        LOG.fatal("observeProjectAdd called!");
+        projectsContainer.refresh();
 
     }
 

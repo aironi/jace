@@ -4,20 +4,18 @@ import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.analysis.Analysis;
 
 import javax.persistence.Column;
-import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.MappedSuperclass;
 
 /**
  * Software Life-cycle Object Represents a file, a method, a resource, or any
  */
-@Entity
-@Table(name = "SLO")
-public class SLO extends AbstractDomainObject {
+@MappedSuperclass
+public abstract class SLO extends AbstractDomainObject {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "AnalysisRID")
@@ -55,4 +53,5 @@ public class SLO extends AbstractDomainObject {
     public void setSloType(SLOType sloType) {
         this.sloType = sloType;
     }
+
 }

@@ -3,16 +3,14 @@ package org.silverduck.jace.domain.slo;
 import org.silverduck.jace.common.localization.LocalizedEnum;
 
 /**
- * SLO Type TODO: Think about granularity, should the METHOD be elsewhere?
+ * SLO Type
  */
 public enum SLOType implements LocalizedEnum {
     SOURCE("SLOType.source"),
 
-    FILE("SLOType.file"),
+    OTHER_FILE("SLOType.file"),
 
-    REOSURCE("SLOType.resource"),
-
-    METHOD("SLOType.method");
+    RESOURCE("SLOType.resource");
 
     private final String resourceKey;
 
