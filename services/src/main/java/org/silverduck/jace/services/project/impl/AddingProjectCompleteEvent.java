@@ -3,12 +3,12 @@ package org.silverduck.jace.services.project.impl;
 import org.silverduck.jace.domain.project.Project;
 
 /**
- * @author Iiro Hietala 13.5.2014.
+ * Created by ihietala on 18.5.2014.
  */
-public class PullingCompleteEvent {
+public class AddingProjectCompleteEvent {
     private Project project;
 
-    public PullingCompleteEvent(Project project) {
+    public AddingProjectCompleteEvent(Project project) {
         this.project = project;
     }
 
