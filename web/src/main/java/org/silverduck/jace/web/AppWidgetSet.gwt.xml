@@ -9,7 +9,7 @@
 
     <!-- Inherit DefaultWidgetSet -->
     <inherits name="com.vaadin.DefaultWidgetSet"/>
-
+    "
     <!--
      Uncomment the following to compile the widgetset for one browser only.
 
@@ -33,4 +33,6 @@
     <add-linker name="xsiframe"/>
     <set-configuration-property name="devModeRedirectEnabled" value="true" />
 
+
+    
 </module>

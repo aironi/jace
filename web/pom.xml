@@ -86,6 +86,7 @@
             </exclusions>
         </dependency>
 
+
         <!-- CDI Model View Presenter add-on. Not in use. If project grows larger, consider it. -->
         <!--
         <dependency>
@@ -186,6 +187,7 @@
                 <artifactId>vaadin-maven-plugin</artifactId>
                 <version>${vaadin.plugin.version}</version>
                 <configuration>
+                    <gwtSdkFirstInClasspath>true</gwtSdkFirstInClasspath>
                     <extraJvmArgs>-Xmx512M -Xss1024k</extraJvmArgs>
                     <!-- <runTarget>mobilemail</runTarget> -->
                     <!-- We are doing "inplace" but into subdir VAADIN/widgetsets. This

@@ -4,19 +4,33 @@ import com.vaadin.annotations.Theme;
 import com.vaadin.cdi.CDIUI;
 import com.vaadin.cdi.CDIViewProvider;
 import com.vaadin.navigator.Navigator;
+import com.vaadin.server.Constants;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServlet;
+import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.UI;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+import javax.servlet.annotation.WebInitParam;
+import javax.servlet.annotation.WebServlet;
 
 @Theme("mytheme")
 @SuppressWarnings("serial")
 @CDIUI
 public class JaceUI extends UI {
+
+    // Have to set asyncSupported here, otherwise asnyc won't work with Vaadin
+    @WebServlet(asyncSupported = true, urlPatterns = { "/", "/*", "/VAADIN/*" }, initParams = {
+            @WebInitParam(name = VaadinSession.UI_PARAMETER, value = "org.silverduck.jace.web.JaceUI"),
+            @WebInitParam(name = Constants.SERVLET_PARAMETER_UI_PROVIDER, value = "com.vaadin.cdi.CDIUIProvider"),
+            @WebInitParam(name = Constants.SERVLET_PARAMETER_PRODUCTION_MODE, value = "true"),
+            @WebInitParam(name = Constants.SERVLET_PARAMETER_PUSH_MODE, value = "true") })
+    public static class JaceUIApplicationServlet extends VaadinServlet {
+    }
 
     /**
      * Helper method to navigate between Views.
@@ -58,12 +72,6 @@ public class JaceUI extends UI {
         Navigator navigator = new Navigator(this, horizontalLayout);
         navigator.addProvider(viewProvider);
         setContent(horizontalLayout);
-    }
-
-    @PostConstruct
-    public void initJPAContainer() {
-        // applicantsContainer = new JPAContainer<Applicant>(Applicant.class);
-        // applicantsContainer.setEntityProvider(applicantsRepository);
     }
 
 }
