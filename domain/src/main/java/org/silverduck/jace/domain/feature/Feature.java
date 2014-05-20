@@ -1,9 +1,12 @@
 package org.silverduck.jace.domain.feature;
 
+import org.eclipse.persistence.jpa.config.Cascade;
 import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.slo.JavaSourceSLO;
+import org.silverduck.jace.domain.slo.OtherFileSLO;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -22,11 +25,14 @@ import java.util.List;
 @Table(name = "Feature")
 public class Feature extends AbstractDomainObject {
 
-    @OneToMany(mappedBy = "feature", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "feature", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<JavaSourceSLO> javaSourceSlos = new ArrayList<JavaSourceSLO>();
 
     @Column(name = "name")
     private String name;
+
+    @OneToMany(mappedBy = "feature", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<OtherFileSLO> otherFileSlos = new ArrayList<OtherFileSLO>();
 
     @ManyToOne
     @JoinColumn(name = "ProjectRID")
@@ -39,12 +45,23 @@ public class Feature extends AbstractDomainObject {
         }
     }
 
+    public void addOtherFileSlo(OtherFileSLO otherFileSLO) {
+        if (!otherFileSlos.contains(otherFileSLO)) {
+            otherFileSlos.add(otherFileSLO);
+            otherFileSLO.setFeature(this);
+        }
+    }
+
     public List<JavaSourceSLO> getJavaSourceSlos() {
         return Collections.unmodifiableList(javaSourceSlos);
     }
 
     public String getName() {
         return name;
+    }
+
+    public List<OtherFileSLO> getOtherFileSlos() {
+        return Collections.unmodifiableList(otherFileSlos);
     }
 
     public Project getProject() {
@@ -55,6 +72,13 @@ public class Feature extends AbstractDomainObject {
         if (this.javaSourceSlos.contains(slo)) {
             javaSourceSlos.remove(slo);
             slo.setFeature(null);
+        }
+    }
+
+    public void removeOtherFileSlo(OtherFileSLO otherFileSLO) {
+        if (otherFileSlos.contains(otherFileSLO)) {
+            otherFileSlos.remove(otherFileSLO);
+            otherFileSLO.setFeature(null);
         }
     }
 

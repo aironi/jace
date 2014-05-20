@@ -47,6 +47,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     private ProjectService projectService;
 
     @Override
+    @Asynchronous
     public Future<Boolean> addAnalysisSetting(AnalysisSetting setting) {
         analysisSettingDao.add(setting);
         analysisService.initialAnalysis(setting.getId());
@@ -113,6 +114,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
+    @Asynchronous
     public Future<Boolean> updateAnalysisSetting(AnalysisSetting setting) {
         analysisSettingDao.update(setting);
         return new AsyncResult<Boolean>(Boolean.TRUE);

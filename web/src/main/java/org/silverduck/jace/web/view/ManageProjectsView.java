@@ -187,7 +187,7 @@ public class ManageProjectsView extends BaseView {
         submitButton.addClickListener(new Button.ClickListener() {
             public void buttonClick(Button.ClickEvent event) {
                 if (projectComponent.isValid()) {
-                    Project project = projectComponent.commit();
+                    final Project project = projectComponent.commit();
 
                     // FIXME: Implement JCA compliant solution. For now the files go into config/<projectName>
                     final Future<Boolean> result;
@@ -197,12 +197,20 @@ public class ManageProjectsView extends BaseView {
                         result = projectService.updateProject(project);
                     }
 
-                    getUI().access(new Runnable() {
+                    new Thread() {
                         @Override
                         public void run() {
                             try {
                                 if (Boolean.TRUE.equals(result.get())) {
-                                    projectsContainer.refresh();
+                                    getUI().access(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            projectsContainer.refresh();
+                                            Notification.show(AppResources.getLocalizedString(
+                                                "notification.projectAdded", getUI().getCurrent().getLocale(), project
+                                                .getName()), Notification.Type.TRAY_NOTIFICATION);
+                                        }
+                                    });
                                 }
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
@@ -210,7 +218,8 @@ public class ManageProjectsView extends BaseView {
                                 Notification.show("Error occurred when adding project: " + e.getMessage());
                             }
                         }
-                    });
+                    }.start();
+
                     projectPopUp.close();
 
                 } else {

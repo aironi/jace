@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
- * @author Iiro Hietala 16.5.2014. @
+ * @author Iiro Hietala 16.5.2014.
  */
 @CDIView(ManageAnalysisSettingsView.VIEW)
 public class ManageAnalysisSettingsView extends BaseView {
@@ -141,11 +141,6 @@ public class ManageAnalysisSettingsView extends BaseView {
         hl.addComponent(newButton);
     }
 
-    @Override
-    public void enter(ViewChangeListener.ViewChangeEvent event) {
-
-    }
-
     private void createAnalysisSettingPopup(Long analysisSettingsId) {
         final Window analysisPopup = new Window();
         final Locale locale = getUI().getCurrent().getLocale();
@@ -162,7 +157,6 @@ public class ManageAnalysisSettingsView extends BaseView {
                 Notification.show("Creation of analysis settings failed. Error message: " + cause,
                     Notification.Type.ERROR_MESSAGE);
 
-                // Do the default error handling (optional)
                 doDefault(event);
             }
         });
@@ -189,7 +183,7 @@ public class ManageAnalysisSettingsView extends BaseView {
         submitButton.addClickListener(new Button.ClickListener() {
             public void buttonClick(Button.ClickEvent event) {
                 if (analysisSettingsComponent.isValid()) {
-                    AnalysisSetting settings = analysisSettingsComponent.commit();
+                    final AnalysisSetting settings = analysisSettingsComponent.commit();
                     // FIXME: Implement JCA compliant solution. For now the files go into config/<projectName>
 
                     final Future<Boolean> result;
@@ -199,12 +193,20 @@ public class ManageAnalysisSettingsView extends BaseView {
                         result = analysisService.updateAnalysisSetting(settings);
                     }
 
-                    getUI().access(new Runnable() {
+                    new Thread() {
                         @Override
                         public void run() {
                             try {
                                 if (Boolean.TRUE.equals(result.get())) {
-                                    analysisSettingsJPAContainer.refresh();
+                                    getUI().access(new Runnable() {
+                                                       @Override
+                                                       public void run() {
+                                                           analysisSettingsJPAContainer.refresh();
+                                                           Notification.show(AppResources.getLocalizedString(
+                                                                           "notification.analysisSettingAdded", getUI().getCurrent().getLocale(), settings.getProject().getName(), settings.getBranch()),
+                                                                   Notification.Type.TRAY_NOTIFICATION);
+                                                       }
+                                                   });
                                 }
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
@@ -212,7 +214,7 @@ public class ManageAnalysisSettingsView extends BaseView {
                                 Notification.show("Error occurred when adding Analysis Setting: " + e.getMessage());
                             }
                         }
-                    });
+                    }.start();
                     analysisPopup.close();
                 } else {
                     Notification.show(AppResources.getLocalizedString("form.validationErrorsNotification", locale),
@@ -246,5 +248,10 @@ public class ManageAnalysisSettingsView extends BaseView {
 
         analysisSettingsComponent.edit(analysisSettings);
         getUI().addWindow(analysisPopup);
+    }
+
+    @Override
+    public void enter(ViewChangeListener.ViewChangeEvent event) {
+
     }
 }
