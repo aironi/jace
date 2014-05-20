@@ -1,11 +1,16 @@
 package org.silverduck.jace.domain.slo;
 
+import org.silverduck.jace.domain.analysis.Analysis;
+import org.silverduck.jace.domain.feature.Feature;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.ArrayList;
@@ -35,8 +40,8 @@ public class JavaSourceSLO extends SLO {
         super();
     }
 
-    public JavaSourceSLO(String relativePath, SLOType source) {
-        super(relativePath, source);
+    public JavaSourceSLO(String relativePath) {
+        super(relativePath, SLOType.SOURCE);
     }
 
     public void addMethod(JavaMethod method) {

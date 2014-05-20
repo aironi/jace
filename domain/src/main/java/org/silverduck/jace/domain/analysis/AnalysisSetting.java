@@ -4,6 +4,7 @@ import org.hibernate.validator.constraints.Length;
 import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.project.Project;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,11 +28,12 @@ public class AnalysisSetting extends AbstractDomainObject {
     public static AnalysisSetting newAnalysisSetting() {
         AnalysisSetting setting = new AnalysisSetting();
         setting.setBranch("");
-        setting.setEnabled(Boolean.TRUE);
+        setting.setAutomaticFeatureMapping(true);
+        setting.setEnabled(true);
         return setting;
     }
 
-    @Column(name="AutomaticFeatureMapping")
+    @Column(name = "AutomaticFeatureMapping")
     private Boolean automaticFeatureMapping;
 
     @Length(min = 1, max = 500)
@@ -45,9 +47,13 @@ public class AnalysisSetting extends AbstractDomainObject {
     @Enumerated(EnumType.STRING)
     private Granularity granularity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = { CascadeType.MERGE, CascadeType.REFRESH })
     @JoinColumn(name = "ProjectRID")
     private Project project;
+
+    public Boolean getAutomaticFeatureMapping() {
+        return automaticFeatureMapping;
+    }
 
     public String getBranch() {
         return branch;
@@ -65,6 +71,10 @@ public class AnalysisSetting extends AbstractDomainObject {
         return project;
     }
 
+    public void setAutomaticFeatureMapping(Boolean automaticFeatureMapping) {
+        this.automaticFeatureMapping = automaticFeatureMapping;
+    }
+
     public void setBranch(String branch) {
         this.branch = branch;
     }
@@ -79,13 +89,5 @@ public class AnalysisSetting extends AbstractDomainObject {
 
     public void setProject(Project project) {
         this.project = project;
-    }
-
-    public Boolean getAutomaticFeatureMapping() {
-        return automaticFeatureMapping;
-    }
-
-    public void setAutomaticFeatureMapping(Boolean automaticFeatureMapping) {
-        this.automaticFeatureMapping = automaticFeatureMapping;
     }
 }

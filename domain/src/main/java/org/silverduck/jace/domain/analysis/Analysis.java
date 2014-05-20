@@ -1,7 +1,9 @@
 package org.silverduck.jace.domain.analysis;
 
 import org.silverduck.jace.domain.AbstractDomainObject;
+import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.slo.JavaSourceSLO;
+import org.silverduck.jace.domain.slo.OtherFileSLO;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -25,7 +27,7 @@ import java.util.Set;
 @Table(name = "Analysis")
 public class Analysis extends AbstractDomainObject {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne()
     @JoinColumn(name = "AnalysisSettingRID")
     private AnalysisSetting analysisSetting;
 
@@ -38,14 +40,29 @@ public class Analysis extends AbstractDomainObject {
     private Boolean initialAnalysis;
 
     @OneToMany(mappedBy = "analysis", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Set<JavaSourceSLO> slos = new HashSet<JavaSourceSLO>();
+    private Set<JavaSourceSLO> javaSourceSlos = new HashSet<JavaSourceSLO>();
+
+    @OneToMany(mappedBy = "analysis", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<OtherFileSLO> otherFileSlos = new HashSet<OtherFileSLO>();
+
+    @ManyToOne(cascade = { CascadeType.MERGE, CascadeType.REFRESH })
+    @JoinColumn(name = "ProjectRID", updatable = true)
+    private Project project;
 
     public Analysis() {
     }
 
-    public void addSLO(JavaSourceSLO slo) {
-        if (!slos.contains(slo)) {
-            slos.add(slo);
+    public void addJavaSourceSlo(JavaSourceSLO slo) {
+        if (!javaSourceSlos.contains(slo)) {
+            javaSourceSlos.add(slo);
+            slo.setAnalysis(this);
+        }
+    }
+
+    public void addOtherFileSLO(OtherFileSLO slo) {
+        if (!otherFileSlos.contains(slo)) {
+            this.otherFileSlos.add(slo);
+            slo.setAnalysis(this);
         }
     }
 
@@ -53,17 +70,33 @@ public class Analysis extends AbstractDomainObject {
         return initialAnalysis;
     }
 
-    public Set<JavaSourceSLO> getSlos() {
-        return Collections.unmodifiableSet(slos);
+    public Set<JavaSourceSLO> getJavaSourceSlos() {
+        return Collections.unmodifiableSet(javaSourceSlos);
     }
 
-    public void removeSLO(JavaSourceSLO slo) {
-        if (slos.contains(slo)) {
-            slos.remove(slo);
+    public Project getProject() {
+        return project;
+    }
+
+    public void removeJavaSourceSlo(JavaSourceSLO slo) {
+        if (javaSourceSlos.contains(slo)) {
+            javaSourceSlos.remove(slo);
+            slo.setAnalysis(null);
+        }
+    }
+
+    public void removeOtherFileSLO(OtherFileSLO slo) {
+        if (otherFileSlos.contains(slo)) {
+            this.otherFileSlos.remove(slo);
+            slo.setAnalysis(null);
         }
     }
 
     public void setInitialAnalysis(Boolean initialAnalysis) {
         this.initialAnalysis = initialAnalysis;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 }

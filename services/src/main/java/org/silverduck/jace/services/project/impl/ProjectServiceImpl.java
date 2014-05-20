@@ -125,6 +125,11 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    public void refresh(Project project) {
+        projectDao.refresh(project);
+    }
+
+    @Override
     public void removeProject(Project project) {
         try {
 

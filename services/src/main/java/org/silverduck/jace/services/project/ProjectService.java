@@ -55,6 +55,14 @@ public interface ProjectService {
     void pullProjects();
 
     /**
+     * Refresh Project
+     * 
+     * @param project
+     *            Project to Refresh
+     */
+    void refresh(Project project);
+
+    /**
      * Remove a project.
      * 
      * @param project

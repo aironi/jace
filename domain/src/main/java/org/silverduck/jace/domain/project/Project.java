@@ -2,6 +2,7 @@ package org.silverduck.jace.domain.project;
 
 import org.hibernate.validator.constraints.Length;
 import org.silverduck.jace.domain.AbstractDomainObject;
+import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.feature.Feature;
 import org.silverduck.jace.domain.vcs.PluginConfiguration;
@@ -49,6 +50,9 @@ public class Project extends AbstractDomainObject {
     }
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Analysis> analyses = new ArrayList<Analysis>();
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<AnalysisSetting> analysisSetting = new ArrayList<AnalysisSetting>();
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -72,6 +76,13 @@ public class Project extends AbstractDomainObject {
     public Project() {
     }
 
+    public void addAnalysis(Analysis analysis) {
+        if (!analyses.contains(analysis)) {
+            this.analyses.add(analysis);
+            analysis.setProject(this);
+        }
+    }
+
     public void addAnalysisSetting(AnalysisSetting setting) {
         if (!analysisSetting.contains(setting)) {
             setting.setProject(this);
@@ -91,6 +102,10 @@ public class Project extends AbstractDomainObject {
             features.add(feature);
             feature.setProject(this);
         }
+    }
+
+    public List<Analysis> getAnalyses() {
+        return Collections.unmodifiableList(analyses);
     }
 
     public List<AnalysisSetting> getAnalysisSetting() {
@@ -121,6 +136,13 @@ public class Project extends AbstractDomainObject {
         List<ProjectBranch> removedBranches = new ArrayList<ProjectBranch>(branches);
         for (ProjectBranch b : removedBranches) {
             removeBranch(b);
+        }
+    }
+
+    public void removeAnalysis(Analysis analysis) {
+        if (analyses.contains(analysis)) {
+            this.analyses.remove(analysis);
+            analysis.setProject(null);
         }
     }
 
@@ -157,4 +179,5 @@ public class Project extends AbstractDomainObject {
     public void setReleaseInfo(ReleaseInfo releaseInfo) {
         this.releaseInfo = releaseInfo;
     }
+
 }

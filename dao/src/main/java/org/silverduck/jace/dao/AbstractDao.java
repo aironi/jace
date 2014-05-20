@@ -8,6 +8,8 @@ import org.silverduck.jace.domain.project.Project;
 public interface AbstractDao<T> {
     void add(T t);
 
+    void refresh(T t);
+
     void remove(T t);
 
     T update(T t);

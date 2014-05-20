@@ -7,6 +7,8 @@ import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.dao.analysis.AnalysisSettingDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.feature.Feature;
+import org.silverduck.jace.domain.slo.JavaSourceSLO;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.project.impl.PullingCompleteEvent;
@@ -19,7 +21,9 @@ import javax.enterprise.event.Observes;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
@@ -45,7 +49,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     public Future<Boolean> addAnalysisSetting(AnalysisSetting setting) {
         analysisSettingDao.add(setting);
-        analysisService.initialAnalysis(setting);
+        analysisService.initialAnalysis(setting.getId());
         return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 
@@ -71,11 +75,14 @@ public class AnalysisServiceImpl implements AnalysisService {
      * @param setting
      */
     @Asynchronous
-    public Future<Boolean> initialAnalysis(AnalysisSetting setting) {
+    public Future<Boolean> initialAnalysis(Long analysisSettingId) {
+        AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
         String localDirectory = setting.getProject().getPluginConfiguration().getLocalDirectory();
 
         try {
             Analysis analysis = new Analysis();
+
+            analysis.setProject(setting.getProject());
             // This is a "root"-analysis
             analysis.setInitialAnalysis(true);
             // Change branch to the one defined in the setting
@@ -85,17 +92,13 @@ public class AnalysisServiceImpl implements AnalysisService {
             // Walk all files in the tree and analyse them
             Files.walkFileTree(Paths.get(localDirectory), new InitialAnalysisFileVisitor(setting, analysis));
 
+
             // If all OK, add the analysis to DB
             analysisDao.add(analysis);
         } catch (IOException e) {
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
         return new AsyncResult<Boolean>(Boolean.TRUE);
-    }
-
-    @Override
-    public void initialAnalysis(Long analysisSettingId) {
-        analysisService.initialAnalysis(analysisSettingDao.findAnalysisSettingById(analysisSettingId));
     }
 
     @Override

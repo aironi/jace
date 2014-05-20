@@ -111,6 +111,7 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
 
         automaticFeatureMappingField = new CheckBox(AppResources.getLocalizedString(
             "label.analysisForm.automaticFeatureMapping", locale));
+        automaticFeatureMappingField.setReadOnly(true); // Manual Mapping not yet supported, always on
         enabledField = new CheckBox(AppResources.getLocalizedString("label.analysisForm.enabled", locale));
 
         FormLayout basicDataForm = new FormLayout();

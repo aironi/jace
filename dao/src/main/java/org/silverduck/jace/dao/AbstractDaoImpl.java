@@ -30,6 +30,18 @@ public abstract class AbstractDaoImpl<T> {
     }
 
     /**
+     * Refresh a entity from database
+     * 
+     * @param entity
+     *            Entity to refresh
+     * @return
+     */
+    public void refresh(T entity) {
+        em.refresh(entity);
+    }
+
+
+    /**
      * Remove a persisted entity from database
      * 
      * @param entity
@@ -49,6 +61,5 @@ public abstract class AbstractDaoImpl<T> {
     public T update(T entity) {
         return em.merge(entity);
     }
-
 
 }

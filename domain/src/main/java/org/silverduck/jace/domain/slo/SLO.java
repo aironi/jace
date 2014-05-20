@@ -2,6 +2,7 @@ package org.silverduck.jace.domain.slo;
 
 import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.analysis.Analysis;
+import org.silverduck.jace.domain.feature.Feature;
 
 import javax.persistence.Column;
 import javax.persistence.EnumType;
@@ -17,9 +18,13 @@ import javax.persistence.MappedSuperclass;
 @MappedSuperclass
 public abstract class SLO extends AbstractDomainObject {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "AnalysisRID")
     private Analysis analysis;
+
+    @ManyToOne
+    @JoinColumn(name = "FeatureRID")
+    private Feature feature;
 
     @Column(name = "Path")
     private String path;
@@ -38,12 +43,28 @@ public abstract class SLO extends AbstractDomainObject {
         this.sloType = type;
     }
 
+    public Analysis getAnalysis() {
+        return analysis;
+    }
+
+    public Feature getFeature() {
+        return feature;
+    }
+
     public String getPath() {
         return path;
     }
 
     public SLOType getSloType() {
         return sloType;
+    }
+
+    public void setAnalysis(Analysis analysis) {
+        this.analysis = analysis;
+    }
+
+    public void setFeature(Feature feature) {
+        this.feature = feature;
     }
 
     public void setPath(String path) {
@@ -53,5 +74,4 @@ public abstract class SLO extends AbstractDomainObject {
     public void setSloType(SLOType sloType) {
         this.sloType = sloType;
     }
-
 }
