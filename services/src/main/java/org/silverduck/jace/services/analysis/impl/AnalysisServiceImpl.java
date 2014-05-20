@@ -8,6 +8,7 @@ import org.silverduck.jace.dao.analysis.AnalysisSettingDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.services.analysis.AnalysisService;
+import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.project.impl.PullingCompleteEvent;
 
 import javax.ejb.AsyncResult;
@@ -38,6 +39,9 @@ public class AnalysisServiceImpl implements AnalysisService {
     @EJB
     private AnalysisSettingDao analysisSettingDao;
 
+    @EJB
+    private ProjectService projectService;
+
     @Override
     public Future<Boolean> addAnalysisSetting(AnalysisSetting setting) {
         analysisSettingDao.add(setting);
@@ -67,18 +71,26 @@ public class AnalysisServiceImpl implements AnalysisService {
      * @param setting
      */
     @Asynchronous
-    public void initialAnalysis(AnalysisSetting setting) {
+    public Future<Boolean> initialAnalysis(AnalysisSetting setting) {
         String localDirectory = setting.getProject().getPluginConfiguration().getLocalDirectory();
-        LOG.fatal("localdir: " + localDirectory);
+
         try {
             Analysis analysis = new Analysis();
+            // This is a "root"-analysis
             analysis.setInitialAnalysis(true);
+            // Change branch to the one defined in the setting
+            projectService.changeBranch(setting.getProject().getPluginConfiguration().getLocalDirectory(),
+                setting.getBranch());
+
+            // Walk all files in the tree and analyse them
             Files.walkFileTree(Paths.get(localDirectory), new InitialAnalysisFileVisitor(setting, analysis));
+
+            // If all OK, add the analysis to DB
             analysisDao.add(analysis);
         } catch (IOException e) {
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
-
+        return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 
     @Override

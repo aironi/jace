@@ -2,6 +2,7 @@ package org.silverduck.jace.services.vcs.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -46,16 +47,19 @@ public class GitServiceImpl implements Plugin, GitService {
         Repository repository;
         try {
             repository = builder.setGitDir(new File(localDirectory)).build();
+
+            if (!branch.equals(repository.getFullBranch())) {
+                // Change branch if it differs from current branch
+                Git git = new Git(repository);
+                try {
+                    git.checkout().setName(branch).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).call();
+                } catch (GitAPIException e) {
+                    throw new JaceRuntimeException("Failed to checkout branch '" + branch + "' to local directory ' "
+                        + localDirectory + "'", e);
+                }
+            }
         } catch (IOException e) {
             throw new JaceRuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
-        }
-
-        Git git = new Git(repository);
-        try {
-            git.checkout().setName(branch).call();
-        } catch (GitAPIException e) {
-            throw new JaceRuntimeException("Failed to checkout branch '" + branch + "' to local directory ' "
-                + localDirectory + "'", e);
         }
         repository.close();
     }
@@ -92,9 +96,9 @@ public class GitServiceImpl implements Plugin, GitService {
         Repository repository;
         try {
             repository = builder.setGitDir(new File(localDirectory + "/.git")).readEnvironment().findGitDir().build();
-            LOG.fatal("Full branch (localdir=" + localDirectory + "): " + repository.getFullBranch());
-            LOG.fatal("Repo info: " + repository.toString());
-            LOG.fatal("All refs: " + repository.getAllRefs());
+            LOG.debug("Full branch (localdir=" + localDirectory + "): " + repository.getFullBranch());
+            LOG.debug("Repo info: " + repository.toString());
+            LOG.debug("All refs: " + repository.getAllRefs());
         } catch (IOException e) {
             throw new JaceRuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
         }
@@ -102,8 +106,8 @@ public class GitServiceImpl implements Plugin, GitService {
         List<Ref> branchList;
         Git git = new Git(repository);
         try {
-            branchList = git.branchList().call();
-            LOG.fatal("Got branch list: " + branchList);
+            branchList = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
+            LOG.debug("Got branch list: " + branchList);
         } catch (GitAPIException e) {
             throw new JaceRuntimeException("Failed to fetch a branch list for git repo ' " + localDirectory + "'", e);
         }

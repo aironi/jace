@@ -66,7 +66,15 @@ public class ProjectComponent extends BaseComponent<Project> {
             AppResources.getLocalizedString("label.projectForm.basicDataTab", locale));
         tabSheet.addTab(createReleaseInfoLayout(),
             AppResources.getLocalizedString("label.projectForm.releaseInfoTab", locale));
+        tabSheet.addTab(createFeatureMappingLayout(),
+                AppResources.getLocalizedString("label.projectForm.featureMappingTab", locale));
+
         setCompositionRoot(tabSheet);
+
+    }
+
+    private Component createFeatureMappingLayout() {
+        return null;
     }
 
     @Override

@@ -78,6 +78,12 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    public void changeBranch(String localDirectory, String branch) {
+        gitService.checkout(localDirectory, branch);
+        gitService.pull(localDirectory);
+    }
+
+    @Override
     public List<Project> findAllProjects() {
         return projectDao.findAllProjects();
     }
@@ -131,8 +137,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void removeProjectById(Long finalItemId) {
-        removeProject(findProjectById(finalItemId));
+    public void removeProjectById(Long projectId) {
+        removeProject(findProjectById(projectId));
     }
 
     @Override

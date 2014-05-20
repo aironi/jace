@@ -29,4 +29,27 @@ public class FeatureMapping extends AbstractDomainObject {
     @JoinColumn(name = "FeatureRID")
     private Feature targetFeature;
 
+    public MappingType getMappingType() {
+        return mappingType;
+    }
+
+    public String getSourcePattern() {
+        return sourcePattern;
+    }
+
+    public Feature getTargetFeature() {
+        return targetFeature;
+    }
+
+    public void setMappingType(MappingType mappingType) {
+        this.mappingType = mappingType;
+    }
+
+    public void setSourcePattern(String sourcePattern) {
+        this.sourcePattern = sourcePattern;
+    }
+
+    public void setTargetFeature(Feature targetFeature) {
+        this.targetFeature = targetFeature;
+    }
 }

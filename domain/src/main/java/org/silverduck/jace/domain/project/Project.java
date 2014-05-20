@@ -3,6 +3,7 @@ package org.silverduck.jace.domain.project;
 import org.hibernate.validator.constraints.Length;
 import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.feature.Feature;
 import org.silverduck.jace.domain.vcs.PluginConfiguration;
 import org.silverduck.jace.domain.vcs.PluginType;
 
@@ -48,10 +49,13 @@ public class Project extends AbstractDomainObject {
     }
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<AnalysisSetting> analysisSetting;
+    private List<AnalysisSetting> analysisSetting = new ArrayList<AnalysisSetting>();
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ProjectBranch> branches = new ArrayList<ProjectBranch>();
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Feature> features = new ArrayList<Feature>();
 
     // unique = true, since the project name is used as the clone dir under working dir.
     @Column(name = "Name", unique = true)
@@ -71,7 +75,6 @@ public class Project extends AbstractDomainObject {
     public void addAnalysisSetting(AnalysisSetting setting) {
         if (!analysisSetting.contains(setting)) {
             setting.setProject(this);
-            ;
             analysisSetting.add(setting);
         }
     }
@@ -79,6 +82,14 @@ public class Project extends AbstractDomainObject {
     public void addBranch(ProjectBranch branch) {
         if (!branches.contains(branch)) {
             branches.add(branch);
+            branch.setProject(this);
+        }
+    }
+
+    public void addFeature(Feature feature) {
+        if (!features.contains(feature)) {
+            features.add(feature);
+            feature.setProject(this);
         }
     }
 
@@ -88,6 +99,10 @@ public class Project extends AbstractDomainObject {
 
     public List<ProjectBranch> getBranches() {
         return Collections.unmodifiableList(branches);
+    }
+
+    public List<Feature> getFeatures() {
+        return Collections.unmodifiableList(features);
     }
 
     public String getName() {
@@ -112,6 +127,15 @@ public class Project extends AbstractDomainObject {
     public void removeBranch(ProjectBranch branch) {
         if (branches.contains(branch)) {
             branches.remove(branch);
+            branch.setProject(null);
+        }
+    }
+
+    public void removeFeature(Feature feature) {
+        if (features.contains(feature)) {
+            features.remove(feature);
+            feature.setProject(null);
+
         }
     }
 

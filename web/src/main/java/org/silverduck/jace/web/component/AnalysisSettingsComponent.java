@@ -45,6 +45,8 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
     // Used only to get edit working with comboboxes
     private AnalysisSetting analysisSetting;
 
+    private CheckBox automaticFeatureMappingField;
+
     private ComboBox branchField;
 
     private CheckBox enabledField;
@@ -70,6 +72,7 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
         super.getFieldGroup().bind(branchField, "branch");
         super.getFieldGroup().bind(granularityField, "granularity");
         super.getFieldGroup().bind(enabledField, "enabled");
+        super.getFieldGroup().bind(automaticFeatureMappingField, "automaticFeatureMapping");
     }
 
     private Component createAnalysisSettingsLayout() {
@@ -106,6 +109,8 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
         }
         granularityField.setImmediate(true);
 
+        automaticFeatureMappingField = new CheckBox(AppResources.getLocalizedString(
+            "label.analysisForm.automaticFeatureMapping", locale));
         enabledField = new CheckBox(AppResources.getLocalizedString("label.analysisForm.enabled", locale));
 
         FormLayout basicDataForm = new FormLayout();
@@ -115,6 +120,7 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
         basicDataForm.addComponent(projectField);
         basicDataForm.addComponent(branchField);
         basicDataForm.addComponent(granularityField);
+        basicDataForm.addComponent(automaticFeatureMappingField);
         basicDataForm.addComponent(enabledField);
 
         return new VerticalLayout(basicDataForm);
@@ -124,6 +130,8 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
     public void setReadOnly(boolean readOnly) {
         projectField.setReadOnly(readOnly);
         branchField.setReadOnly(readOnly);
+        granularityField.setReadOnly(readOnly);
+        automaticFeatureMappingField.setReadOnly(readOnly);
         enabledField.setReadOnly(readOnly);
     }
 

@@ -31,6 +31,9 @@ public class AnalysisSetting extends AbstractDomainObject {
         return setting;
     }
 
+    @Column(name="AutomaticFeatureMapping")
+    private Boolean automaticFeatureMapping;
+
     @Length(min = 1, max = 500)
     @Column(name = "Branch")
     private String branch;
@@ -76,5 +79,13 @@ public class AnalysisSetting extends AbstractDomainObject {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public Boolean getAutomaticFeatureMapping() {
+        return automaticFeatureMapping;
+    }
+
+    public void setAutomaticFeatureMapping(Boolean automaticFeatureMapping) {
+        this.automaticFeatureMapping = automaticFeatureMapping;
     }
 }

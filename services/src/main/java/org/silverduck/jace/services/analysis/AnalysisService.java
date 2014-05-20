@@ -22,11 +22,11 @@ public interface AnalysisService {
 
     /**
      * Performs initial analysis of the file tree and initializes SLOs
-     * 
+     *
      * @param setting
      */
     @Asynchronous
-    void initialAnalysis(AnalysisSetting setting);
+    java.util.concurrent.Future<Boolean> initialAnalysis(AnalysisSetting setting);
 
     /**
      * Triggers initial analysis for a given analysis ID (DEVELOPMENT FEATURE)

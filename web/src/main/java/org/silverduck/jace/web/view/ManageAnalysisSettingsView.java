@@ -14,15 +14,11 @@ import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
-import org.silverduck.jace.domain.project.Project;
-import org.silverduck.jace.domain.project.ProjectBranch;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.web.component.AnalysisSettingsComponent;
 
 import javax.ejb.EJB;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -84,7 +80,7 @@ public class ManageAnalysisSettingsView extends BaseView {
                     editButton.addClickListener(new Button.ClickListener() {
                         @Override
                         public void buttonClick(Button.ClickEvent event) {
-                            showAnalysisSettingPopup((Long) finalItemId);
+                            createAnalysisSettingPopup((Long) finalItemId);
                         }
                     });
                     return editButton;
@@ -139,7 +135,7 @@ public class ManageAnalysisSettingsView extends BaseView {
         newButton.addClickListener(new Button.ClickListener() {
             @Override
             public void buttonClick(Button.ClickEvent event) {
-                showAnalysisSettingPopup(null);
+                createAnalysisSettingPopup(null);
             }
         });
         hl.addComponent(newButton);
@@ -150,7 +146,7 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     }
 
-    private void showAnalysisSettingPopup(Long analysisSettingsId) {
+    private void createAnalysisSettingPopup(Long analysisSettingsId) {
         final Window analysisPopup = new Window();
         final Locale locale = getUI().getCurrent().getLocale();
         // Configure the error handler for the UI
