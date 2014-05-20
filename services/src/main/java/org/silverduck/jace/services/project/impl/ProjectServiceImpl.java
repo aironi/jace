@@ -144,6 +144,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Asynchronous
     public Future<Boolean> updateProject(Project project) {
+        project.removeAllBranches();
+        for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
+            project.addBranch(new ProjectBranch(project, branch));
+        }
         projectDao.update(project);
         return new AsyncResult<Boolean>(Boolean.TRUE);
     }

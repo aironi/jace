@@ -117,6 +117,13 @@ public class Project extends AbstractDomainObject {
         return releaseInfo;
     }
 
+    public void removeAllBranches() {
+        List<ProjectBranch> removedBranches = new ArrayList<ProjectBranch>(branches);
+        for (ProjectBranch b : removedBranches) {
+            removeBranch(b);
+        }
+    }
+
     public void removeAnalysisSetting(AnalysisSetting setting) {
         if (analysisSetting.contains(setting)) {
             analysisSetting.remove(setting);
