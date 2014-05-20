@@ -1,5 +1,6 @@
 package org.silverduck.jace.web;
 
+import com.vaadin.annotations.Push;
 import com.vaadin.annotations.Theme;
 import com.vaadin.cdi.CDIUI;
 import com.vaadin.cdi.CDIViewProvider;
@@ -13,6 +14,7 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.UI;
 
 import javax.annotation.PostConstruct;
+import javax.enterprise.context.SessionScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.servlet.annotation.WebInitParam;
@@ -20,6 +22,7 @@ import javax.servlet.annotation.WebServlet;
 
 @Theme("mytheme")
 @SuppressWarnings("serial")
+@Push
 @CDIUI
 public class JaceUI extends UI {
 
@@ -27,8 +30,8 @@ public class JaceUI extends UI {
     @WebServlet(asyncSupported = true, urlPatterns = { "/", "/*", "/VAADIN/*" }, initParams = {
             @WebInitParam(name = VaadinSession.UI_PARAMETER, value = "org.silverduck.jace.web.JaceUI"),
             @WebInitParam(name = Constants.SERVLET_PARAMETER_UI_PROVIDER, value = "com.vaadin.cdi.CDIUIProvider"),
-            @WebInitParam(name = Constants.SERVLET_PARAMETER_PRODUCTION_MODE, value = "true"),
-            @WebInitParam(name = Constants.SERVLET_PARAMETER_PUSH_MODE, value = "true") })
+            @WebInitParam(name = Constants.SERVLET_PARAMETER_PRODUCTION_MODE, value = "false"),
+            @WebInitParam(name = Constants.SERVLET_PARAMETER_PUSH_MODE, value = "automatic") })
     public static class JaceUIApplicationServlet extends VaadinServlet {
     }
 

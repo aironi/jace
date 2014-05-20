@@ -10,6 +10,7 @@ import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.impl.PullingCompleteEvent;
 
+import javax.ejb.AsyncResult;
 import javax.ejb.Asynchronous;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * @author Iiro Hietala 13.5.2014.
@@ -37,9 +39,10 @@ public class AnalysisServiceImpl implements AnalysisService {
     private AnalysisSettingDao analysisSettingDao;
 
     @Override
-    public void addAnalysisSetting(AnalysisSetting setting) {
+    public Future<Boolean> addAnalysisSetting(AnalysisSetting setting) {
         analysisSettingDao.add(setting);
         analysisService.initialAnalysis(setting);
+        return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 
     @Override
@@ -95,7 +98,8 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
-    public void updateAnalysisSetting(AnalysisSetting setting) {
+    public Future<Boolean> updateAnalysisSetting(AnalysisSetting setting) {
         analysisSettingDao.update(setting);
+        return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 }

@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface AnalysisService {
 
-    void addAnalysisSetting(AnalysisSetting setting);
+    java.util.concurrent.Future<Boolean> addAnalysisSetting(AnalysisSetting setting);
 
     void analyseProject(@Observes PullingCompleteEvent event);
 
@@ -44,5 +44,5 @@ public interface AnalysisService {
      */
     void triggerAnalysis(Long analysisSettingId);
 
-    void updateAnalysisSetting(AnalysisSetting setting);
+    java.util.concurrent.Future<Boolean> updateAnalysisSetting(AnalysisSetting setting);
 }

@@ -24,6 +24,8 @@ import javax.ejb.EJB;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * @author Iiro Hietala 16.5.2014. @
@@ -92,6 +94,7 @@ public class ManageAnalysisSettingsView extends BaseView {
                         @Override
                         public void buttonClick(Button.ClickEvent event) {
                             analysisService.removeAnalysisSettingById(((Long) finalItemId));
+                            analysisSettingsJPAContainer.refresh();
                         }
                     });
                     return removeButton;
@@ -106,8 +109,8 @@ public class ManageAnalysisSettingsView extends BaseView {
                     });
                     return triggerButton;
                 } else if ("InitialTrigger".equals(columnId)) {
-                    Button triggerButton = new Button(AppResources.getLocalizedString("label.dev.triggerInitialAnalysis",
-                        locale));
+                    Button triggerButton = new Button(AppResources.getLocalizedString(
+                        "label.dev.triggerInitialAnalysis", locale));
                     triggerButton.addClickListener(new Button.ClickListener() {
                         @Override
                         public void buttonClick(Button.ClickEvent event) {
@@ -193,12 +196,27 @@ public class ManageAnalysisSettingsView extends BaseView {
                     AnalysisSetting settings = analysisSettingsComponent.commit();
                     // FIXME: Implement JCA compliant solution. For now the files go into config/<projectName>
 
+                    final Future<Boolean> result;
                     if (settings.getId() == null) {
-                        analysisService.addAnalysisSetting(settings);
+                        result = analysisService.addAnalysisSetting(settings);
                     } else {
-                        analysisService.updateAnalysisSetting(settings);
+                        result = analysisService.updateAnalysisSetting(settings);
                     }
 
+                    getUI().access(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                if (Boolean.TRUE.equals(result.get())) {
+                                    analysisSettingsJPAContainer.refresh();
+                                }
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            } catch (ExecutionException e) {
+                                Notification.show("Error occurred when adding Analysis Setting: " + e.getMessage());
+                            }
+                        }
+                    });
                     analysisPopup.close();
                 } else {
                     Notification.show(AppResources.getLocalizedString("form.validationErrorsNotification", locale),

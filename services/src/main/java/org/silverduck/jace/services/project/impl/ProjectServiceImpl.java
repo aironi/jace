@@ -11,6 +11,7 @@ import org.silverduck.jace.domain.project.ProjectBranch;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.vcs.GitService;
 
+import javax.ejb.AsyncResult;
 import javax.ejb.Asynchronous;
 import javax.ejb.EJB;
 import javax.ejb.Schedule;
@@ -20,6 +21,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Pulls projects from configured repositories
@@ -30,6 +32,9 @@ import java.util.List;
 public class ProjectServiceImpl implements ProjectService {
 
     Log LOG = LogFactory.getLog(ProjectServiceImpl.class);
+
+    @Inject
+    Event<AddingProjectCompleteEvent> addingProjectCompleteEvent;
 
     @EJB
     private GitService gitService;
@@ -44,14 +49,11 @@ public class ProjectServiceImpl implements ProjectService {
     private ProjectService projectPollingService;
 
     @Inject
-    Event<AddingProjectCompleteEvent> addingProjectCompleteEvent;
-
-    @Inject
     Event<PullingCompleteEvent> pullingCompleteEvent;
 
     @Override
     @Asynchronous
-    public void addProject(Project project) {
+    public Future<Boolean> addProject(Project project) {
         String targetDir = JaceProperties.getProperty("workingDirectory") + '/' + project.getName();
         project.getPluginConfiguration().setLocalDirectory(targetDir);
 
@@ -71,6 +73,8 @@ public class ProjectServiceImpl implements ProjectService {
         projectDao.add(project);
         AddingProjectCompleteEvent event = new AddingProjectCompleteEvent(project);
         addingProjectCompleteEvent.fire(event);
+        return new AsyncResult<Boolean>(Boolean.TRUE);
+
     }
 
     @Override
@@ -132,8 +136,10 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void updateProject(Project project) {
+    @Asynchronous
+    public Future<Boolean> updateProject(Project project) {
         projectDao.update(project);
+        return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 
 }

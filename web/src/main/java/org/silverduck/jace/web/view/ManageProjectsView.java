@@ -37,6 +37,8 @@ import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.swing.*;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * @author Iiro Hietala 13.5.2014.
@@ -127,6 +129,7 @@ public class ManageProjectsView extends BaseView {
                         @Override
                         public void buttonClick(Button.ClickEvent event) {
                             projectService.removeProjectById((Long) finalItemId);
+                            projectsContainer.refresh();
                         }
                     });
                     return removeButton;
@@ -187,13 +190,27 @@ public class ManageProjectsView extends BaseView {
                     Project project = projectComponent.commit();
 
                     // FIXME: Implement JCA compliant solution. For now the files go into config/<projectName>
-
+                    final Future<Boolean> result;
                     if (project.getId() == null) {
-                        projectService.addProject(project);
+                        result = projectService.addProject(project);
                     } else {
-                        projectService.updateProject(project);
+                        result = projectService.updateProject(project);
                     }
 
+                    getUI().access(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                if (Boolean.TRUE.equals(result.get())) {
+                                    projectsContainer.refresh();
+                                }
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            } catch (ExecutionException e) {
+                                Notification.show("Error occurred when adding project: " + e.getMessage());
+                            }
+                        }
+                    });
                     projectPopUp.close();
 
                 } else {
@@ -238,7 +255,6 @@ public class ManageProjectsView extends BaseView {
     public void observeProjectAdd(@Observes @Any AddingProjectCompleteEvent event) {
         LOG.fatal("observeProjectAdd called!");
         projectsContainer.refresh();
-
     }
 
     private void showNewProjectPopup() {

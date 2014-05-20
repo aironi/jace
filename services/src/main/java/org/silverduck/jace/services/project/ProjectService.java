@@ -11,7 +11,7 @@ import java.util.List;
  */
 public interface ProjectService {
 
-    void addProject(Project project);
+    java.util.concurrent.Future<Boolean> addProject(Project project);
 
     List<Project> findAllProjects();
 
@@ -25,5 +25,5 @@ public interface ProjectService {
 
     void removeProjectById(Long finalItemId);
 
-    void updateProject(Project project);
+    java.util.concurrent.Future<Boolean> updateProject(Project project);
 }
