@@ -33,6 +33,7 @@ import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.project.impl.AddingProjectCompleteEvent;
 import org.silverduck.jace.web.component.ProjectComponent;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
@@ -63,6 +64,11 @@ public class ManageProjectsView extends BaseView {
 
     public ManageProjectsView() {
         super();
+
+    }
+
+    @PostConstruct
+    private void init() {
         VerticalLayout vl = new VerticalLayout();
         HorizontalLayout hl = new HorizontalLayout();
 

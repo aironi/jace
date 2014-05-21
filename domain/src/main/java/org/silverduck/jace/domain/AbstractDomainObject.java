@@ -2,6 +2,7 @@ package org.silverduck.jace.domain;
 
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PrePersist;
@@ -22,7 +23,7 @@ public abstract class AbstractDomainObject implements Serializable {
     private Date created;
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Column(name = "Updated")

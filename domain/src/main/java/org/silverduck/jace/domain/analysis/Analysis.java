@@ -13,8 +13,11 @@ import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import java.beans.Transient;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,6 +28,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "Analysis")
+@NamedQueries({ @NamedQuery(name = "findAllAnalyses", query = "SELECT a FROM Analysis a") })
 public class Analysis extends AbstractDomainObject {
 
     @ManyToOne()
@@ -68,6 +72,7 @@ public class Analysis extends AbstractDomainObject {
             slo.setAnalysis(this);
         }
     }
+
 
     public Boolean getInitialAnalysis() {
         return initialAnalysis;

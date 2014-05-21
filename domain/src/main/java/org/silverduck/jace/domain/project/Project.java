@@ -179,5 +179,4 @@ public class Project extends AbstractDomainObject {
     public void setReleaseInfo(ReleaseInfo releaseInfo) {
         this.releaseInfo = releaseInfo;
     }
-
 }

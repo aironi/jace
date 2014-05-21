@@ -73,7 +73,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     /**
      * Performs initial analysis of the file tree and initializes SLOs
      * 
-     * @param setting
+     * @param analysisSettingId
      */
     @Asynchronous
     public Future<Boolean> initialAnalysis(Long analysisSettingId) {
@@ -93,13 +93,17 @@ public class AnalysisServiceImpl implements AnalysisService {
             // Walk all files in the tree and analyse them
             Files.walkFileTree(Paths.get(localDirectory), new InitialAnalysisFileVisitor(setting, analysis));
 
-
             // If all OK, add the analysis to DB
             analysisDao.add(analysis);
         } catch (IOException e) {
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
         return new AsyncResult<Boolean>(Boolean.TRUE);
+    }
+
+    @Override
+    public List<Analysis> listAllAnalyses() {
+        return analysisDao.listAll();
     }
 
     @Override

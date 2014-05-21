@@ -20,6 +20,7 @@ import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.web.component.AnalysisSettingsComponent;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -45,24 +46,12 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     public ManageAnalysisSettingsView() {
         super();
-        VerticalLayout vl = new VerticalLayout();
-        HorizontalLayout hl = new HorizontalLayout();
 
-        vl.setSizeFull();
-
-        hl.setSizeFull();
-
-        super.getContentLayout().addComponent(vl);
-
-        addAnalysisSettingTable(vl);
-        addNewButton(hl);
-
-        vl.addComponent(hl);
     }
 
     private void addAnalysisSettingTable(VerticalLayout vl) {
         final Locale locale = UI.getCurrent().getLocale();
-        analysisTable = new Table(AppResources.getLocalizedString("label.projectsTable", locale),
+        analysisTable = new Table(AppResources.getLocalizedString("label.analysisSettingsTable", locale),
             analysisSettingsJPAContainer);
 
         analysisSettingsJPAContainer.addNestedContainerProperty("project.name");
@@ -257,5 +246,22 @@ public class ManageAnalysisSettingsView extends BaseView {
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
 
+    }
+
+    @PostConstruct
+    private void init() {
+        VerticalLayout vl = new VerticalLayout();
+        HorizontalLayout hl = new HorizontalLayout();
+
+        vl.setSizeFull();
+
+        hl.setSizeFull();
+
+        super.getContentLayout().addComponent(vl);
+
+        addAnalysisSettingTable(vl);
+        addNewButton(hl);
+
+        vl.addComponent(hl);
     }
 }
