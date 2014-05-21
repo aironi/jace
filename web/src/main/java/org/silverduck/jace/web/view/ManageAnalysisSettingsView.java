@@ -10,8 +10,10 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Table;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.services.analysis.AnalysisService;
@@ -59,7 +61,7 @@ public class ManageAnalysisSettingsView extends BaseView {
     }
 
     private void addAnalysisSettingTable(VerticalLayout vl) {
-        final Locale locale = getUI().getCurrent().getLocale();
+        final Locale locale = UI.getCurrent().getLocale();
         analysisTable = new Table(AppResources.getLocalizedString("label.projectsTable", locale),
             analysisSettingsJPAContainer);
 
@@ -129,7 +131,7 @@ public class ManageAnalysisSettingsView extends BaseView {
     }
 
     private void addNewButton(HorizontalLayout hl) {
-        Locale locale = getUI().getCurrent().getLocale();
+        Locale locale = UI.getCurrent().getLocale();
         Button newButton = new Button(AppResources.getLocalizedString("label.newAnalysis", locale));
 
         newButton.addClickListener(new Button.ClickListener() {
@@ -143,7 +145,7 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     private void createAnalysisSettingPopup(Long analysisSettingsId) {
         final Window analysisPopup = new Window();
-        final Locale locale = getUI().getCurrent().getLocale();
+        final Locale locale = UI.getCurrent().getLocale();
         // Configure the error handler for the UI
         analysisPopup.setErrorHandler(new DefaultErrorHandler() {
             @Override
@@ -199,19 +201,21 @@ public class ManageAnalysisSettingsView extends BaseView {
                             try {
                                 if (Boolean.TRUE.equals(result.get())) {
                                     getUI().access(new Runnable() {
-                                                       @Override
-                                                       public void run() {
-                                                           analysisSettingsJPAContainer.refresh();
-                                                           Notification.show(AppResources.getLocalizedString(
-                                                                           "notification.analysisSettingAdded", getUI().getCurrent().getLocale(), settings.getProject().getName(), settings.getBranch()),
-                                                                   Notification.Type.TRAY_NOTIFICATION);
-                                                       }
-                                                   });
+                                        @Override
+                                        public void run() {
+                                            analysisSettingsJPAContainer.refresh();
+                                            Notification.show(AppResources.getLocalizedString(
+                                                "notification.analysisSettingAdded", UI.getCurrent().getLocale(),
+                                                settings.getProject().getName(), settings.getBranch()),
+                                                Notification.Type.TRAY_NOTIFICATION);
+                                        }
+                                    });
                                 }
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             } catch (ExecutionException e) {
-                                Notification.show("Error occurred when adding Analysis Setting: " + e.getMessage());
+                                Notification.show("Error occurred when adding Analysis Setting.\nCause: "
+                                    + ExceptionHelper.toHumanReadable(e));
                             }
                         }
                     }.start();

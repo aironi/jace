@@ -24,7 +24,7 @@ public class ManagementToolbar extends CustomComponent {
     public ManagementToolbar() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
-        vl.setStyleName("light-green-background");
+
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
         vl.addComponent(hl);
@@ -33,12 +33,11 @@ public class ManagementToolbar extends CustomComponent {
 
         createAnalysisLink(hl);
         createManageProjectsLink(hl);
-        setCompositionRoot(vl);
+        setCompositionRoot(hl);
     }
 
     private void createAnalysisLink(HorizontalLayout layout) {
-        analysisView = new Button(AppResources.getLocalizedString("label.analysisView", getUI().getCurrent()
-            .getLocale()));
+        analysisView = new Button(AppResources.getLocalizedString("label.analysisView", UI.getCurrent().getLocale()));
         analysisView.addClickListener(new Button.ClickListener() {
             @Override
             public void buttonClick(Button.ClickEvent event) {
@@ -51,7 +50,7 @@ public class ManagementToolbar extends CustomComponent {
     }
 
     private void createJaceLogo(HorizontalLayout layout) {
-        jaceLogo = new Image(AppResources.getLocalizedString("label.jaceDescription", getUI().getCurrent().getLocale()));
+        jaceLogo = new Image(AppResources.getLocalizedString("label.jaceDescription", UI.getCurrent().getLocale()));
         jaceLogo.setIcon(new ThemeResource("jace.png"));
         jaceLogo.setWidth(150, Unit.PIXELS);
 
@@ -61,8 +60,8 @@ public class ManagementToolbar extends CustomComponent {
     }
 
     private void createManageProjectsLink(HorizontalLayout layout) {
-        manageProjects = new Button(AppResources.getLocalizedString("label.manageProjects", getUI().getCurrent()
-            .getLocale()));
+        manageProjects = new Button(
+            AppResources.getLocalizedString("label.manageProjects", UI.getCurrent().getLocale()));
         manageProjects.addClickListener(new Button.ClickListener() {
             @Override
             public void buttonClick(Button.ClickEvent event) {

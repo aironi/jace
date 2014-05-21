@@ -12,19 +12,31 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.silverduck.jace.common.exception.JaceRuntimeException;
+import org.silverduck.jace.common.xml.XmlUtils;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.feature.Feature;
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.project.ReleaseInfo;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.JavaParameter;
 import org.silverduck.jace.domain.slo.JavaSourceSLO;
 import org.silverduck.jace.domain.slo.JavaType;
 import org.silverduck.jace.domain.slo.OtherFileSLO;
 import org.silverduck.jace.domain.slo.SLO;
+import org.xml.sax.InputSource;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Path;
@@ -35,6 +47,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -198,6 +211,47 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         getAnalysis().addJavaSourceSlo(slo);
     }
 
+    private void processReleaseFile(Path file) {
+        ReleaseInfo releaseInfo = getSetting().getProject().getReleaseInfo();
+        String release = null;
+        FileInputStream is = null;
+
+        try {
+            is = new FileInputStream(file.toAbsolutePath().toFile());
+            switch (releaseInfo.getVersionFileType()) {
+            case PROPERTIES:
+                Properties p = new Properties();
+                try {
+
+                    p.load(is);
+                    is.close();
+                } catch (IOException e) {
+                    LOG.warn("processReleaseFile(): Couldn't open properties file to determine release version", e);
+                }
+                release = p.getProperty(releaseInfo.getPattern());
+                break;
+            case XML:
+                try {
+                    String xml = FileUtils.readFileToString(file.toAbsolutePath().toFile());
+                    String xmlNoNs = XmlUtils.removeNameSpaces(xml);
+                    XPath xPath = XPathFactory.newInstance().newXPath();
+                    InputSource input = new InputSource(new StringReader(xmlNoNs));
+                    release = xPath.evaluate(releaseInfo.getPattern(), input);
+                } catch (XPathExpressionException e) {
+                    LOG.warn("processReleaseFile(): Couldn't evaluate XPath to determine release version", e);
+                } catch (IOException e) {
+                    LOG.warn("processReleaseFile(): Couldn't evaluate XPath to determine release version", e);
+                }
+
+                break;
+            }
+        } catch (FileNotFoundException e) {
+            LOG.warn("processReleaseFile(): File not found.", e);
+        }
+
+        analysis.setReleaseVersion(release);
+    }
+
     @Override
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
         LOG.debug("visitFile: " + file.getFileName());
@@ -206,8 +260,11 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         String fileName = file.getFileName().toString();
 
         Path localDir = Paths.get(project.getPluginConfiguration().getLocalDirectory());
-        String relativePath = file.toString().replace(localDir.toString(), "");
+        String relativePath = file.toString().replace(localDir.toString(), "").replace("\\", "/");
 
+        if (project.getReleaseInfo().getPathToVersionFile().equals(relativePath)) {
+            processReleaseFile(file);
+        }
         if (fileName.endsWith(".java")) {
             processJavaFile(file, relativePath);
         } else {

@@ -18,10 +18,12 @@ import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpConnection;
+import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.VersionFileType;
@@ -58,7 +60,7 @@ public class ProjectComponent extends BaseComponent<Project> {
     private TextField versionPattern;
 
     public ProjectComponent() {
-        Locale locale = getUI().getCurrent().getLocale();
+        Locale locale = UI.getCurrent().getLocale();
 
         TabSheet tabSheet = new TabSheet();
 
@@ -67,14 +69,10 @@ public class ProjectComponent extends BaseComponent<Project> {
         tabSheet.addTab(createReleaseInfoLayout(),
             AppResources.getLocalizedString("label.projectForm.releaseInfoTab", locale));
         tabSheet.addTab(createFeatureMappingLayout(),
-                AppResources.getLocalizedString("label.projectForm.featureMappingTab", locale));
+            AppResources.getLocalizedString("label.projectForm.featureMappingTab", locale));
 
         setCompositionRoot(tabSheet);
 
-    }
-
-    private Component createFeatureMappingLayout() {
-        return null;
     }
 
     @Override
@@ -92,7 +90,7 @@ public class ProjectComponent extends BaseComponent<Project> {
     }
 
     private Component createBasicDataLayout() {
-        Locale locale = getUI().getCurrent().getLocale();
+        Locale locale = UI.getCurrent().getLocale();
 
         name = new TextField(AppResources.getLocalizedString("label.projectForm.name", locale));
         name.setImmediate(true);
@@ -101,7 +99,7 @@ public class ProjectComponent extends BaseComponent<Project> {
         for (PluginType pluginType : PluginType.values()) {
             repositoryType.addItem(pluginType);
             repositoryType.setItemCaption(pluginType,
-                AppResources.getLocalizedString(pluginType.getResourceKey(), getUI().getCurrent().getLocale()));
+                AppResources.getLocalizedString(pluginType.getResourceKey(), UI.getCurrent().getLocale()));
         }
         repositoryType.setImmediate(true);
 
@@ -131,15 +129,19 @@ public class ProjectComponent extends BaseComponent<Project> {
         return new VerticalLayout(basicDataForm);
     }
 
+    private Component createFeatureMappingLayout() {
+        return null;
+    }
+
     private Component createReleaseInfoLayout() {
-        Locale locale = getUI().getCurrent().getLocale();
+        Locale locale = UI.getCurrent().getLocale();
         FormLayout releaseInfoForm = new FormLayout();
 
         versionFileType = new ComboBox(AppResources.getLocalizedString("label.projectForm.versionFileType", locale));
         for (VersionFileType type : VersionFileType.values()) {
             versionFileType.addItem(type);
             versionFileType.setItemCaption(type,
-                AppResources.getLocalizedString(type.getResourceKey(), getUI().getCurrent().getLocale()));
+                AppResources.getLocalizedString(type.getResourceKey(), UI.getCurrent().getLocale()));
         }
         versionFileType.setImmediate(true);
 
@@ -189,7 +191,8 @@ public class ProjectComponent extends BaseComponent<Project> {
             connection.disconnect();
             Notification.show(AppResources.getLocalizedString("notification.connectionSuccessful", getLocale()));
         } catch (Exception e) {
-            cloneUrl.setComponentError(new UserError("Connection Failed: '" + e.getMessage() + "'"));
+            cloneUrl
+                .setComponentError(new UserError("Connection Failed.\nCause: " + ExceptionHelper.toHumanReadable(e)));
         }
     }
 }

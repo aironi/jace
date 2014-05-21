@@ -19,10 +19,12 @@ import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.TableFieldFactory;
 import com.vaadin.ui.TextField;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.project.Project;
@@ -36,6 +38,8 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -74,7 +78,7 @@ public class ManageProjectsView extends BaseView {
     }
 
     private void addNewButton(HorizontalLayout hl) {
-        Locale locale = getUI().getCurrent().getLocale();
+        Locale locale = UI.getCurrent().getLocale();
         Button newButton = new Button(AppResources.getLocalizedString("label.newProject", locale));
 
         newButton.addClickListener(new Button.ClickListener() {
@@ -88,7 +92,7 @@ public class ManageProjectsView extends BaseView {
     }
 
     private void addProjectsTable(VerticalLayout layout) {
-        final Locale locale = getUI().getCurrent().getLocale();
+        final Locale locale = UI.getCurrent().getLocale();
         projectsContainer.setFireContainerItemSetChangeEvents(true);
         projectsContainer.addNestedContainerProperty("pluginConfiguration.pluginType");
         projectsContainer.addNestedContainerProperty("pluginConfiguration.cloneUrl");
@@ -147,7 +151,7 @@ public class ManageProjectsView extends BaseView {
 
     private void createProjectPopup(Long projectId) {
         final Window projectPopUp = new Window();
-        final Locale locale = getUI().getCurrent().getLocale();
+        final Locale locale = UI.getCurrent().getLocale();
         // Configure the error handler for the UI
         projectPopUp.setErrorHandler(new DefaultErrorHandler() {
             @Override
@@ -202,20 +206,21 @@ public class ManageProjectsView extends BaseView {
                         public void run() {
                             try {
                                 if (Boolean.TRUE.equals(result.get())) {
-                                    getUI().access(new Runnable() {
+                                    UI.getCurrent().access(new Runnable() {
                                         @Override
                                         public void run() {
                                             projectsContainer.refresh();
                                             Notification.show(AppResources.getLocalizedString(
-                                                "notification.projectAdded", getUI().getCurrent().getLocale(), project
-                                                .getName()), Notification.Type.TRAY_NOTIFICATION);
+                                                "notification.projectAdded", UI.getCurrent().getLocale(),
+                                                project.getName()), Notification.Type.TRAY_NOTIFICATION);
                                         }
                                     });
                                 }
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             } catch (ExecutionException e) {
-                                Notification.show("Error occurred when adding project: " + e.getMessage());
+                                Notification.show("Error", "An error occurred when adding project.\nCause: "
+                                    + ExceptionHelper.toHumanReadable(e), Notification.Type.ERROR_MESSAGE);
                             }
                         }
                     }.start();

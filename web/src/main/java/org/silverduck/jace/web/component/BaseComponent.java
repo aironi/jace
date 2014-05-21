@@ -4,6 +4,7 @@ import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.UI;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.project.Project;
@@ -30,7 +31,7 @@ public abstract class BaseComponent<T> extends CustomComponent {
                 T bean = fieldGroup.getItemDataSource().getBean();
             } catch (FieldGroup.CommitException e) {
                 Notification.show("Error",
-                    AppResources.getLocalizedString("errorMessages.commitFailed", getUI().getCurrent().getLocale()),
+                    AppResources.getLocalizedString("errorMessages.commitFailed", UI.getCurrent().getLocale()),
                     Notification.Type.ERROR_MESSAGE);
             }
             return fieldGroup.getItemDataSource().getBean();

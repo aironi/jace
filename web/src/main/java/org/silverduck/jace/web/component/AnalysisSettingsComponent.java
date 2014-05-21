@@ -14,6 +14,7 @@ import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.TextField;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,7 +77,7 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
     }
 
     private Component createAnalysisSettingsLayout() {
-        Locale locale = getUI().getCurrent().getLocale();
+        Locale locale = UI.getCurrent().getLocale();
 
         branchField = new ComboBox(AppResources.getLocalizedString("label.analysisForm.branch", locale));
         branchField.setImmediate(true);

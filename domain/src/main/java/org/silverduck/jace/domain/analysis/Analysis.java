@@ -49,6 +49,9 @@ public class Analysis extends AbstractDomainObject {
     @JoinColumn(name = "ProjectRID", updatable = true)
     private Project project;
 
+    @Column(name = "ReleaseVersion")
+    private String releaseVersion;
+
     public Analysis() {
     }
 
@@ -78,6 +81,10 @@ public class Analysis extends AbstractDomainObject {
         return project;
     }
 
+    public String getReleaseVersion() {
+        return releaseVersion;
+    }
+
     public void removeJavaSourceSlo(JavaSourceSLO slo) {
         if (javaSourceSlos.contains(slo)) {
             javaSourceSlos.remove(slo);
@@ -98,5 +105,9 @@ public class Analysis extends AbstractDomainObject {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public void setReleaseVersion(String releaseVersion) {
+        this.releaseVersion = releaseVersion;
     }
 }

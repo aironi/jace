@@ -4,6 +4,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.commons.io.FileUtils;
+import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.properties.JaceProperties;
 import org.silverduck.jace.dao.project.ProjectDao;
 import org.silverduck.jace.domain.project.Project;
@@ -70,9 +71,18 @@ public class ProjectServiceImpl implements ProjectService {
             throw new RuntimeException("Unsupported plugin type encountered when adding project '" + project.getName()
                 + "'");
         }
+
         projectDao.add(project);
-        AddingProjectCompleteEvent event = new AddingProjectCompleteEvent(project);
-        addingProjectCompleteEvent.fire(event);
+        // The event-sysetm does NOT work with Vadin 7.1.5
+        // Error:
+        // Caused by: java.lang.IllegalStateException: CDI listener identified, but there is no active UI available.
+        // at com.vaadin.cdi.internal.UIScopedContext.get(UIScopedContext.java:100)
+
+        // http://dev.vaadin.com/ticket/12393
+        //
+
+        // AddingProjectCompleteEvent event = new AddingProjectCompleteEvent(project);
+        // addingProjectCompleteEvent.fire(event);
         return new AsyncResult<Boolean>(Boolean.TRUE);
 
     }
@@ -136,7 +146,7 @@ public class ProjectServiceImpl implements ProjectService {
             FileUtils.deleteDirectory(new File(project.getPluginConfiguration().getLocalDirectory()));
         } catch (IOException e) {
             LOG.warn("Couldn't clean up local directory '" + project.getPluginConfiguration().getLocalDirectory()
-                + "' when removing project '" + project.getName() + "'. Reason: " + e.getMessage());
+                + "' when removing project '" + project.getName() + "'.\nCause: " + ExceptionHelper.toHumanReadable(e));
         }
         projectDao.remove(project);
     }
