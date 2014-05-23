@@ -9,6 +9,7 @@ import org.silverduck.jace.common.properties.JaceProperties;
 import org.silverduck.jace.dao.project.ProjectDao;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.ProjectBranch;
+import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.vcs.GitService;
 
@@ -21,6 +22,7 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -73,7 +75,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         projectDao.add(project);
-        // The event-sysetm does NOT work with Vadin 7.1.5
+        // The event-system does NOT work with Vadin 7.1.5
         // Error:
         // Caused by: java.lang.IllegalStateException: CDI listener identified, but there is no active UI available.
         // at com.vaadin.cdi.internal.UIScopedContext.get(UIScopedContext.java:100)
@@ -90,7 +92,6 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void changeBranch(String localDirectory, String branch) {
         gitService.checkout(localDirectory, branch);
-        gitService.pull(localDirectory);
     }
 
     @Override
@@ -108,18 +109,26 @@ public class ProjectServiceImpl implements ProjectService {
      * 
      * @param project
      */
-    @Asynchronous
-    public void pullProject(Project project) {
+    public List<Diff> pullProject(Project project) {
+        List<Diff> diffs = new ArrayList<Diff>();
         switch (project.getPluginConfiguration().getPluginType()) {
         case GIT:
-            gitService.pull(project.getPluginConfiguration().getCloneUrl());
-            PullingCompleteEvent event = new PullingCompleteEvent(project);
-            pullingCompleteEvent.fire(event);
+            diffs = gitService.pull(project.getPluginConfiguration().getLocalDirectory());
+
+            project.removeAllBranches();
+            for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
+                project.addBranch(new ProjectBranch(project, branch));
+            }
+            updateProject(project);
+            // Vaadin doesn't support this yet... http://dev.vaadin.com/ticket/12393
+            // PullingCompleteEvent event = new PullingCompleteEvent(project);
+            // pullingCompleteEvent.fire(event);
             break;
         default:
             throw new RuntimeException("Non-supported plugin was configured for a project '" + project.getName()
                 + "' with id '" + project.getId() + "'");
         }
+        return diffs;
     }
 
     /**
@@ -159,10 +168,6 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Asynchronous
     public Future<Boolean> updateProject(Project project) {
-        project.removeAllBranches();
-        for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
-            project.addBranch(new ProjectBranch(project, branch));
-        }
         projectDao.update(project);
         return new AsyncResult<Boolean>(Boolean.TRUE);
     }

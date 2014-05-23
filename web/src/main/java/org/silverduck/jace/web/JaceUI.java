@@ -58,7 +58,6 @@ public class JaceUI extends UI {
             }
         }
         Page.getCurrent().setUriFragment(sb.toString());
-
     }
 
     @Inject

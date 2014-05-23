@@ -1,6 +1,7 @@
 package org.silverduck.jace.services.project;
 
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.vcs.Diff;
 
 import javax.ejb.Schedule;
 import java.util.Collection;
@@ -47,7 +48,7 @@ public interface ProjectService {
      * @param project
      *            Project to pull
      */
-    void pullProject(Project project);
+    List<Diff> pullProject(Project project);
 
     /**
      * Pull all proejcts from repositories

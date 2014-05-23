@@ -2,6 +2,7 @@ package org.silverduck.jace.services.analysis;
 
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.services.project.impl.PullingCompleteEvent;
 
 import javax.ejb.Asynchronous;
@@ -15,7 +16,7 @@ public interface AnalysisService {
 
     java.util.concurrent.Future<Boolean> addAnalysisSetting(AnalysisSetting setting);
 
-    void analyseProject(@Observes PullingCompleteEvent event);
+    void analyseProject(Long analysisSettingId);
 
     List<AnalysisSetting> findAllAnalysisSettings();
 
@@ -35,6 +36,8 @@ public interface AnalysisService {
      * @return
      */
     List<Analysis> listAllAnalyses();
+
+    void performAnalysis(Long analysisSettingId);
 
     void removeAnalysisSettingById(Long id);
 

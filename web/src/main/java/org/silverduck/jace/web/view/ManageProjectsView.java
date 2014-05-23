@@ -67,22 +67,6 @@ public class ManageProjectsView extends BaseView {
 
     }
 
-    @PostConstruct
-    private void init() {
-        VerticalLayout vl = new VerticalLayout();
-        HorizontalLayout hl = new HorizontalLayout();
-
-        vl.setSizeFull();
-
-        hl.setSizeFull();
-
-        addProjectsTable(vl);
-        addNewButton(hl);
-
-        vl.addComponent(hl);
-        super.getContentLayout().addComponent(vl);
-    }
-
     private void addNewButton(HorizontalLayout hl) {
         Locale locale = UI.getCurrent().getLocale();
         Button newButton = new Button(AppResources.getLocalizedString("label.newProject", locale));
@@ -102,6 +86,7 @@ public class ManageProjectsView extends BaseView {
         projectsContainer.setFireContainerItemSetChangeEvents(true);
         projectsContainer.addNestedContainerProperty("pluginConfiguration.pluginType");
         projectsContainer.addNestedContainerProperty("pluginConfiguration.cloneUrl");
+        projectsContainer.addNestedContainerProperty("pluginConfiguration.commitIdPattern");
         projectsContainer.addNestedContainerProperty("releaseInfo.versionFileType");
         projectsContainer.addNestedContainerProperty("releaseInfo.pathToVersionFile");
         projectsContainer.addNestedContainerProperty("releaseInfo.pattern");
@@ -109,11 +94,13 @@ public class ManageProjectsView extends BaseView {
         projectsTable = new Table(AppResources.getLocalizedString("label.projectsTable", locale), projectsContainer);
 
         projectsTable.setVisibleColumns("name", "pluginConfiguration.pluginType", "pluginConfiguration.cloneUrl",
-            "releaseInfo.versionFileType", "releaseInfo.pathToVersionFile", "releaseInfo.pattern");
+            "pluginConfiguration.commitIdPattern", "releaseInfo.versionFileType", "releaseInfo.pathToVersionFile",
+            "releaseInfo.pattern");
 
         projectsTable.setColumnHeaders(AppResources.getLocalizedString("label.projectForm.name", locale),
             AppResources.getLocalizedString("label.projectForm.repositoryType", locale),
             AppResources.getLocalizedString("label.projectForm.cloneUrl", locale),
+            AppResources.getLocalizedString("label.projectForm.commitIdPattern", locale),
             AppResources.getLocalizedString("label.projectForm.versionFileType", locale),
             AppResources.getLocalizedString("label.projectForm.pathToVersionFile", locale),
             AppResources.getLocalizedString("label.projectForm.versionPattern", locale));
@@ -201,12 +188,15 @@ public class ManageProjectsView extends BaseView {
 
                     // FIXME: Implement JCA compliant solution. For now the files go into config/<projectName>
                     final Future<Boolean> result;
+                    boolean wasNew = false;
                     if (project.getId() == null) {
+                        wasNew = true;
                         result = projectService.addProject(project);
                     } else {
                         result = projectService.updateProject(project);
                     }
 
+                    final boolean finalWasNew = wasNew;
                     new Thread() {
                         @Override
                         public void run() {
@@ -216,9 +206,11 @@ public class ManageProjectsView extends BaseView {
                                         @Override
                                         public void run() {
                                             projectsContainer.refresh();
-                                            Notification.show(AppResources.getLocalizedString(
-                                                "notification.projectAdded", UI.getCurrent().getLocale(),
-                                                project.getName()), Notification.Type.TRAY_NOTIFICATION);
+                                            if (finalWasNew) {
+                                                Notification.show(AppResources.getLocalizedString(
+                                                    "notification.projectAdded", UI.getCurrent().getLocale(),
+                                                    project.getName()), Notification.Type.TRAY_NOTIFICATION);
+                                            }
                                         }
                                     });
                                 }
@@ -270,6 +262,22 @@ public class ManageProjectsView extends BaseView {
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
 
+    }
+
+    @PostConstruct
+    private void init() {
+        VerticalLayout vl = new VerticalLayout();
+        HorizontalLayout hl = new HorizontalLayout();
+
+        vl.setSizeFull();
+
+        hl.setSizeFull();
+
+        addProjectsTable(vl);
+        addNewButton(hl);
+
+        vl.addComponent(hl);
+        super.getContentLayout().addComponent(vl);
     }
 
     public void observeProjectAdd(@Observes @Any AddingProjectCompleteEvent event) {

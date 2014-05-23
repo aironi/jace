@@ -1,5 +1,8 @@
 package org.silverduck.jace.services.vcs;
 
+import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.vcs.Plugin;
+
 import javax.ejb.Local;
 import java.util.List;
 
@@ -7,12 +10,6 @@ import java.util.List;
  * @author Iiro Hietala 14.5.2014.
  */
 @Local
-public interface GitService {
-    void checkout(String localDirectory, String branch);
-
-    void cloneRepo(String cloneUrl, String localDirectory);
-
-    List<String> listBranches(String localDirectory);
-
-    void pull(String localDirectory);
+public interface GitService extends Plugin {
+    // Nothing git-specific yet. Good.
 }

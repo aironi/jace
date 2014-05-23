@@ -39,7 +39,7 @@ public class Analysis extends AbstractDomainObject {
     @Enumerated(EnumType.STRING)
     private AnalysisStatus analysisStatus;
 
-    // Initial Anaysis, i.e. the root of all analyses.
+    // Initial Anaysis, i.e. the root of all analyses. TODO: Rename to baseAnalysis
     @Column(name = "InitialAnalysis")
     private Boolean initialAnalysis;
 
@@ -72,7 +72,6 @@ public class Analysis extends AbstractDomainObject {
             slo.setAnalysis(this);
         }
     }
-
 
     public Boolean getInitialAnalysis() {
         return initialAnalysis;
@@ -114,5 +113,13 @@ public class Analysis extends AbstractDomainObject {
 
     public void setReleaseVersion(String releaseVersion) {
         this.releaseVersion = releaseVersion;
+    }
+
+    public AnalysisStatus getAnalysisStatus() {
+        return analysisStatus;
+    }
+
+    public void setAnalysisStatus(AnalysisStatus analysisStatus) {
+        this.analysisStatus = analysisStatus;
     }
 }

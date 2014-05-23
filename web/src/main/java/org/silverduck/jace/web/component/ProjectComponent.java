@@ -43,8 +43,7 @@ public class ProjectComponent extends BaseComponent<Project> {
 
     private TextField cloneUrl;
 
-    // @PropertyId("pluginConfiguration.localDirectory")
-    // private TextField localDirectory;
+    private TextField commitIdPattern;
 
     @PropertyId("name")
     private TextField name;
@@ -83,6 +82,7 @@ public class ProjectComponent extends BaseComponent<Project> {
         super.getFieldGroup().bind(name, "name");
         super.getFieldGroup().bind(cloneUrl, "pluginConfiguration.cloneUrl");
         super.getFieldGroup().bind(repositoryType, "pluginConfiguration.pluginType");
+        super.getFieldGroup().bind(commitIdPattern, "pluginConfiguration.commitIdPattern");
         super.getFieldGroup().bind(versionFileType, "releaseInfo.versionFileType");
         super.getFieldGroup().bind(pathToVersionFile, "releaseInfo.pathToVersionFile");
         super.getFieldGroup().bind(versionPattern, "releaseInfo.pattern");
@@ -105,6 +105,10 @@ public class ProjectComponent extends BaseComponent<Project> {
 
         cloneUrl = new TextField(AppResources.getLocalizedString("label.projectForm.cloneUrl", locale));
         cloneUrl.setImmediate(true);
+
+        commitIdPattern = new TextField(AppResources.getLocalizedString("label.projectForm.commitIdPattern", locale));
+        commitIdPattern.setImmediate(true);
+
         testCloneUrlButton = new Button(AppResources.getLocalizedString("label.projectForm.testCloneUrlButton", locale));
         testCloneUrlButton.addClickListener(new Button.ClickListener() {
             @Override
@@ -112,9 +116,6 @@ public class ProjectComponent extends BaseComponent<Project> {
                 testCloneUrl();
             }
         });
-
-        // localDirectory = new TextField(AppResources.getLocalizedString("label.projectForm.localDirectory", locale));
-        // localDirectory.setImmediate(true);
 
         FormLayout basicDataForm = new FormLayout();
         basicDataForm.setDefaultComponentAlignment(Alignment.TOP_LEFT);
@@ -124,7 +125,7 @@ public class ProjectComponent extends BaseComponent<Project> {
         basicDataForm.addComponent(repositoryType);
         basicDataForm.addComponent(cloneUrl);
         basicDataForm.addComponent(testCloneUrlButton);
-        // formLayout.addComponent(localDirectory);
+        basicDataForm.addComponent(commitIdPattern);
 
         return new VerticalLayout(basicDataForm);
     }
@@ -181,6 +182,7 @@ public class ProjectComponent extends BaseComponent<Project> {
         repositoryType.setReadOnly(readOnly);
         name.setReadOnly(readOnly);
         cloneUrl.setReadOnly(readOnly);
+        commitIdPattern.setReadOnly(readOnly);
         // localDirectory.setReadOnly(readOnly);
     }
 

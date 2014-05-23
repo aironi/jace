@@ -113,6 +113,7 @@ public class AnalysisView extends BaseView implements View {
                     if (idValue != null) {
                         Long id = (Long) idValue;
 
+                        Notification.show("User clicked item with id " + id);
                         // TODO: implement
                         // Analysis analysis = analysisTree.findAnalysisById(id);
                         // popuplateDetails(analysis);

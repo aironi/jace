@@ -4,6 +4,7 @@ import org.silverduck.jace.dao.AbstractDao;
 import org.silverduck.jace.dao.AbstractDaoImpl;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.domain.analysis.Analysis;
+import org.silverduck.jace.domain.slo.JavaSourceSLO;
 
 import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
@@ -17,6 +18,12 @@ import java.util.List;
 @Stateless(name = "AnalysisDaoEJB")
 @TransactionManagement(TransactionManagementType.CONTAINER)
 public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements AnalysisDao {
+
+    @Override
+    public JavaSourceSLO findJavaSourceSLO(String path) {
+        Query query = getEntityManager().createNamedQuery("findByPath", JavaSourceSLO.class);
+        return (JavaSourceSLO) query.getSingleResult();
+    }
 
     @Override
     public List<Analysis> listAll() {

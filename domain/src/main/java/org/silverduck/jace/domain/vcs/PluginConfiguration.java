@@ -22,6 +22,9 @@ public class PluginConfiguration {
     @Column(name = "CloneUrl")
     private String cloneUrl;
 
+    @Column(name = "CommitIdPattern")
+    private String commitIdPattern;
+
     @Column(name = "LocalDirectory")
     private String localDirectory;
 
@@ -34,6 +37,10 @@ public class PluginConfiguration {
         return cloneUrl;
     }
 
+    public String getCommitIdPattern() {
+        return commitIdPattern;
+    }
+
     public String getLocalDirectory() {
         return localDirectory;
     }
@@ -44,6 +51,10 @@ public class PluginConfiguration {
 
     public void setCloneUrl(String cloneUrl) {
         this.cloneUrl = cloneUrl;
+    }
+
+    public void setCommitIdPattern(String commitIdPattern) {
+        this.commitIdPattern = commitIdPattern;
     }
 
     public void setLocalDirectory(String localDirectory) {

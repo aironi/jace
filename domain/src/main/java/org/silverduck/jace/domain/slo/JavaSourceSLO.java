@@ -11,6 +11,8 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import java.util.List;
 @Table(name = "SLO")
 @DiscriminatorColumn(name = "SloType")
 @DiscriminatorValue(value = "SOURCE")
+@NamedQueries({ @NamedQuery(name = "findByPath", query = "SELECT s FROM JavaSourceSLO s WHERE s.path = :path") })
 public class JavaSourceSLO extends SLO {
 
     @Column(name = "ClassName")

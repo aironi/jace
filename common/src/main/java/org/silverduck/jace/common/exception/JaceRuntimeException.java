@@ -10,4 +10,8 @@ public class JaceRuntimeException extends RuntimeException {
     public JaceRuntimeException(String message, Throwable t) {
         super(message, t);
     }
+
+    public JaceRuntimeException(String message) {
+        super(message);
+    }
 }

@@ -6,7 +6,7 @@ import org.silverduck.jace.common.localization.LocalizedEnum;
  * Created by ihietala on 17.5.2014.
  */
 public enum AnalysisStatus implements LocalizedEnum {
-    IDLE("analysisStatus.idle"),
+    COMPLETE("analysisStatus.complete"),
 
     INITIAL_ANALYSIS("analysisStatus.initialAnalysis"),
 
