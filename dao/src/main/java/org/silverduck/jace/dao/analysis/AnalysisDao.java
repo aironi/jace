@@ -3,7 +3,9 @@ package org.silverduck.jace.dao.analysis;
 import org.silverduck.jace.dao.AbstractDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 
-import org.silverduck.jace.domain.slo.JavaSourceSLO;
+import org.silverduck.jace.domain.feature.ChangedFeature;
+import org.silverduck.jace.domain.slo.JavaMethod;
+import org.silverduck.jace.domain.slo.SLO;
 
 import java.util.List;
 
@@ -12,7 +14,79 @@ import java.util.List;
  */
 public interface AnalysisDao extends AbstractDao<Analysis> {
 
-    JavaSourceSLO findJavaSourceSLO(String path);
+    /**
+     * Finds a method by given line number. If an entity is not found returns null.
+     * 
+     * @param slo
+     *            SLO A Software Life-Cycle Object to search for the method
+     * @param lineNumber
+     *            A line-number in file where to look what method resides at that point
+     * @return JavaMethod containing the change, or null if no method may be found.
+     */
+    JavaMethod findMethodByLineNumber(SLO sLO, Integer lineNumber);
 
-    List<Analysis> listAll();
+    /**
+     * Attempts to find a SLO by given path. If an entity is not found returns null.
+     * 
+     * @param path
+     *            Path to use for search
+     * @return SLO or null
+     */
+    SLO findSLO(String path);
+
+    /**
+     * Lists all analyses.
+     * 
+     * @return
+     */
+    List<Analysis> listAllAnalyses();
+
+    /**
+     * Lists all analysed releases
+     * 
+     * @return
+     */
+    List<String> listAllReleases(Long projectId);
+
+    /**
+     * Lists Changed Features by Project
+     * 
+     * @return
+     */
+    List<ChangedFeature> listChangedFeaturesByProject(Long projectId);
+
+    /**
+     * Lists all changed versions by given release identifier
+     * 
+     * @param release
+     *            Release identifier
+     * @return
+     */
+    List<ChangedFeature> listChangedFeaturesByRelease(String release);
+
+    /**
+     * Lists unique feature names for changed features in a release
+     * 
+     * @param release
+     *            Release identifier
+     * @return
+     */
+    List<String> listChangedFeaturesNamesByRelease(String release);
+
+    /**
+     * Update SLO.sloStatus as SLOStatus.DELETED for given SLO ids
+     * 
+     * @param deletedSloIDs
+     *            SLO IDs to update
+     */
+    void updateSlosAsDeleted(List<Long> deletedSloIDs);
+
+    /**
+     * Update SLO.sloStatus as SLOStatus.OLD for given SLO ids
+     * 
+     * @param oldSloIDs
+     *            SLO IDs to update
+     */
+    void updateSlosAsOld(List<Long> oldSloIDs);
+
 }

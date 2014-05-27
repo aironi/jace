@@ -7,7 +7,7 @@ import javax.persistence.PrePersist;
 /**
  * @author Iiro Hietala 14.5.2014.
  */
-public abstract class AbstractDaoImpl<T> {
+public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
 
     @PersistenceContext(name = "jacePU", unitName = "jace-unit")
     private EntityManager em;
@@ -25,6 +25,11 @@ public abstract class AbstractDaoImpl<T> {
         em.persist(entity);
     }
 
+    @Override
+    public Object find(Class<?> clazz, Long id) {
+        return em.find(clazz, id);
+    }
+
     protected EntityManager getEntityManager() {
         return em;
     }
@@ -39,7 +44,6 @@ public abstract class AbstractDaoImpl<T> {
     public void refresh(T entity) {
         em.refresh(entity);
     }
-
 
     /**
      * Remove a persisted entity from database
@@ -61,5 +65,4 @@ public abstract class AbstractDaoImpl<T> {
     public T update(T entity) {
         return em.merge(entity);
     }
-
 }

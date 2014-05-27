@@ -19,6 +19,7 @@
 
     <dependencies>
         <!-- Internal Dependencies -->
+
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>domain</artifactId>
@@ -29,13 +30,108 @@
             <artifactId>javax.ejb-api</artifactId>
             <version>3.2</version>
         </dependency>
+
+
+        <!-- Test dependencies -->
+
         <dependency>
-            <groupId>com.vaadin.addon</groupId>
-            <artifactId>jpacontainer</artifactId>
-            <version>3.0.0.beta1</version>
+            <groupId>org.apache.openejb</groupId>
+            <artifactId>openejb-ejbd</artifactId>
+            <version>4.6.0.2</version>
+            <scope>test</scope>
         </dependency>
 
 
+
     </dependencies>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <!-- Copy persistence-test.xml over persistence.xml for embedded container that runs the tests to enable proper entity scanning !-->
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.3</version>
+                <executions>
+                    <execution>
+                        <id>copy-test-persistence</id>
+                        <phase>process-test-resources</phase>
+                        <configuration>
+                            <tasks>
+                                <!-- use the persistence.xml with the "test" version-->
+                                <copy file="${project.build.testOutputDirectory}/META-INF/persistence-test.xml" tofile="${project.build.outputDirectory}/META-INF/persistence.xml"/>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>restore-persistence</id>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <tasks>
+                                <delete file="${project.build.outputDirectory}/META-INF/persistence.xml" />
+                                <!--use the prod persistence.xml in package -->
+                                <copy file="${project.build.outputDirectory}/META-INF/persistence-prod.xml" tofile="${project.build.outputDirectory}/META-INF/persistence.xml"/>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-ejb-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- For testing, add java-agent for TomEE Embedded Container -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkMode>pertest</forkMode>
+                    <argLine>-javaagent:${project.basedir}/target/openejb-javaagent-4.6.0.jar</argLine>
+                    <workingDirectory>${project.basedir}/target</workingDirectory>
+                </configuration>
+           </plugin>
+
+            <!-- this tells maven to copy the openejb-javaagent jar into your target/ directory -->
+            <!-- where surefire can see it -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.openejb</groupId>
+                                    <artifactId>openejb-javaagent</artifactId>
+                                    <version>4.6.0</version>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+    </build>
 
 </project>

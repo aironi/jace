@@ -34,7 +34,7 @@ public class Diff extends AbstractDomainObject {
     private String oldPath;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "DiffRID")
+    @JoinColumn(name = "ParsedDiffRID")
     private ParsedDiff parsedDiff;
 
     @ManyToOne

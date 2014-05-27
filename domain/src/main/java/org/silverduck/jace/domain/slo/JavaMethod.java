@@ -9,6 +9,8 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.ArrayList;
@@ -20,14 +22,17 @@ import java.util.List;
  */
 @Entity
 @Table(name = "JavaMethod")
+@NamedQueries({ @NamedQuery(name = "findMethodByLineNumber", query = "SELECT m FROM JavaMethod m"
+    + " JOIN m.slo slo" + " WHERE m.slo.id = :SLORID AND"
+    + " m.startLine <= :LineNumber AND m.endLine >= :LineNumber") })
 public class JavaMethod extends AbstractDomainObject {
 
     @Column(name = "EndLine")
     private Integer endLine;
 
     @ManyToOne
-    @JoinColumn(name = "JavaSourceSLORID")
-    private JavaSourceSLO javaSourceSLO;
+    @JoinColumn(name = "SLORID")
+    private SLO slo;
 
     @Column(name = "MethodName")
     private String name;
@@ -52,8 +57,8 @@ public class JavaMethod extends AbstractDomainObject {
         return endLine;
     }
 
-    public JavaSourceSLO getJavaSourceSLO() {
-        return javaSourceSLO;
+    public SLO getSlo() {
+        return slo;
     }
 
     public String getName() {
@@ -82,8 +87,8 @@ public class JavaMethod extends AbstractDomainObject {
         this.endLine = endLine;
     }
 
-    public void setJavaSourceSLO(JavaSourceSLO javaSourceSLO) {
-        this.javaSourceSLO = javaSourceSLO;
+    public void setSlo(SLO slo) {
+        this.slo = slo;
     }
 
     public void setName(String name) {

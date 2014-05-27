@@ -1,0 +1,87 @@
+package org.silverduck.jace.domain.feature;
+
+import org.silverduck.jace.domain.AbstractDomainObject;
+import org.silverduck.jace.domain.analysis.Analysis;
+import org.silverduck.jace.domain.slo.JavaMethod;
+import org.silverduck.jace.domain.slo.SLO;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+/**
+ * Represents a Changed Feature. The Granularity may be file- or method based.
+ */
+@Entity
+@Table(name = "ChangedFeature")
+@NamedQueries({
+        @NamedQuery(name = "findChangedFeaturesByProject", query = "SELECT cf FROM ChangedFeature cf JOIN cf.analysis.project p WHERE p.id = :projectRID"),
+        @NamedQuery(name = "findChangedFeaturesByRelease", query = "SELECT cf FROM ChangedFeature cf "
+            + "JOIN cf.analysis a WHERE a.releaseVersion = :releaseVersion"),
+        @NamedQuery(name = "findFeatureNamesByReleaseVersion", query = "SELECT f.name FROM ChangedFeature cf "
+            + " JOIN cf.analysis a JOIN cf.feature f WHERE a.releaseVersion = :releaseVersion GROUP BY f.name") })
+public class ChangedFeature extends AbstractDomainObject {
+
+    @ManyToOne()
+    @JoinColumn(name = "AnalysisRID")
+    private Analysis analysis;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "FeatureRID")
+    private Feature feature;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "MethodRID")
+    private JavaMethod method;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "SLORID")
+    private SLO slo;
+
+    public ChangedFeature() {
+        super();
+    }
+
+    public ChangedFeature(Feature feature, SLO slo) {
+        this();
+        this.feature = feature;
+        this.slo = slo;
+    }
+
+    public Analysis getAnalysis() {
+        return analysis;
+    }
+
+    public Feature getFeature() {
+        return feature;
+    }
+
+    public JavaMethod getMethod() {
+        return method;
+    }
+
+    public SLO getSlo() {
+        return slo;
+    }
+
+    public void setAnalysis(Analysis analysis) {
+        this.analysis = analysis;
+    }
+
+    public void setFeature(Feature feature) {
+        this.feature = feature;
+    }
+
+    public void setMethod(JavaMethod method) {
+        this.method = method;
+    }
+
+    public void setSlo(SLO slo) {
+        this.slo = slo;
+    }
+}

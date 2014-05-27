@@ -9,8 +9,13 @@ import org.silverduck.jace.dao.analysis.AnalysisSettingDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.analysis.AnalysisStatus;
-import org.silverduck.jace.domain.slo.JavaSourceSLO;
+import org.silverduck.jace.domain.analysis.Granularity;
+import org.silverduck.jace.domain.feature.ChangedFeature;
+import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.slo.JavaMethod;
+import org.silverduck.jace.domain.slo.SLO;
 import org.silverduck.jace.domain.vcs.Diff;
+import org.silverduck.jace.domain.vcs.Hunk;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.ProjectService;
 
@@ -21,6 +26,7 @@ import javax.ejb.Stateless;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
@@ -55,17 +61,24 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
-    public void analyseProject(Long analysisSettingId) {
+    @Asynchronous
+    public Future<Boolean> analyseProject(Long analysisSettingId) {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
         if (setting == null) {
             throw new JaceRuntimeException("The analysis setting was not found when attempting to perform analysis.");
         }
 
         List<Diff> diffs = projectService.pullProject(setting.getProject());
+
         if (diffs.size() > 0) {
             Analysis analysis = new Analysis();
             analysis.setProject(setting.getProject());
             analysis.setAnalysisStatus(AnalysisStatus.ANALYSING);
+            analysisDao.add(analysis);
+
+            List<String> modifiedFiles = new ArrayList<String>();
+            List<Long> deletedSloIDs = new ArrayList<Long>();
+            List<Long> oldSloIDs = new ArrayList<Long>();
 
             for (Diff diff : diffs) {
                 diff.setProject(setting.getProject());
@@ -77,26 +90,75 @@ public class AnalysisServiceImpl implements AnalysisService {
                         diff.getCommit().setCommitId(matcher.group());
                     }
                 }
+
+                String path = diff.getOldPath();
+                if (!path.startsWith("/")) {
+                    path = "/" + path;
+                }
+                SLO oldSlo = findSloByPath(path);
+
                 switch (diff.getModificationType()) {
                 case ADD:
+                    modifiedFiles.add(diff.getNewPath());
                     break;
                 case MODIFY:
-                    JavaSourceSLO oldSLO = findJavaSourceSLO(diff.getOldPath());
+                    modifiedFiles.add(diff.getNewPath());
+                    if (oldSlo != null) {
+                        oldSloIDs.add(oldSlo.getId()); // This will be updated as 'OLD'
+                        if (setting.getGranularity() == Granularity.METHOD) {
+                            for (Hunk hunk : diff.getParsedDiff().getHunks()) {
+                                hunk.getOldStartLine();
+                                JavaMethod method = analysisDao.findMethodByLineNumber(oldSlo, hunk.getOldStartLine());
+                                if (method != null) {
+                                    // found a previous method
+                                    // TODO: Add Feature map to a method. It should look up all used Types and determine
+                                    // the features based on that (or, just map to SLOs)
+                                }
+                            }
+                        }
+                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo));
+                    }
 
                     break;
                 case DELETE:
+                    if (oldSlo != null) {
+                        deletedSloIDs.add(oldSlo.getId());
+                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo));
+                    }
                     break;
                 case RENAME:
+                    if (oldSlo != null) {
+                        oldSloIDs.add(oldSlo.getId());
+                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo));
+                    }
+                    modifiedFiles.add(diff.getNewPath());
                     break;
                 case COPY:
+                    modifiedFiles.add(diff.getNewPath());
                     break;
                 }
-
-                diff.getNewPath();
             }
-            analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
-        }
 
+            markSLOsAsOld(oldSloIDs);
+            markSLOsAsDeleted(deletedSloIDs);
+            analyseSLOs(setting, analysis, modifiedFiles);
+
+            analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
+            analysisDao.update(analysis);
+        }
+        return new AsyncResult<Boolean>(true);
+    }
+
+    private void analyseSLOs(AnalysisSetting setting, Analysis analysis, List<String> modifiedFiles) {
+        // Walk all files in the tree and analyse them
+
+        modifiedFiles.add(setting.getProject().getReleaseInfo().getPathToVersionFile()); // always read rel file
+        try {
+            Files.walkFileTree(Paths.get(analysis.getProject().getPluginConfiguration().getLocalDirectory()),
+                new AnalysisFileVisitor(setting, analysis, modifiedFiles));
+        } catch (IOException e) {
+            throw new JaceRuntimeException("Couldn't perform analysis.", e);
+        }
     }
 
     @Override
@@ -105,12 +167,17 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
+    public Analysis findAnalysisById(Long id) {
+        return (Analysis) analysisDao.find(Analysis.class, id);
+    }
+
+    @Override
     public AnalysisSetting findAnalysisSettingById(Long id) {
         return analysisSettingDao.findAnalysisSettingById(id);
     }
 
-    private JavaSourceSLO findJavaSourceSLO(String path) {
-        return analysisDao.findJavaSourceSLO(path);
+    private SLO findSloByPath(String path) {
+        return analysisDao.findSLO(path);
     }
 
     /**
@@ -146,13 +213,29 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     @Override
     public List<Analysis> listAllAnalyses() {
-        return analysisDao.listAll();
+        return analysisDao.listAllAnalyses();
     }
 
     @Override
-    public void performAnalysis(Long analysisSettingId) {
-        AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
-        // do the tango
+    public List<String> listAllReleases(Long projectId) {
+        return analysisDao.listAllReleases(projectId);
+    }
+
+    @Override
+    public List<ChangedFeature> listChangedFeaturesByRelease(String release) {
+        return analysisDao.listChangedFeaturesByRelease(release);
+    }
+
+    private void markSLOsAsDeleted(List<Long> deletedSloIDs) {
+        if (deletedSloIDs.size() > 0) {
+            analysisDao.updateSlosAsDeleted(deletedSloIDs);
+        }
+    }
+
+    private void markSLOsAsOld(List<Long> oldSloIDs) {
+        if (oldSloIDs.size() > 0) {
+            analysisDao.updateSlosAsOld(oldSloIDs);
+        }
     }
 
     @Override
@@ -161,11 +244,14 @@ public class AnalysisServiceImpl implements AnalysisService {
         analysisSettingDao.remove(setting);
     }
 
+    private void removeSLOs(AnalysisSetting setting, Analysis analysis, List<String> removedFiles) {
+
+    }
+
     @Override
     public void triggerAnalysis(Long analysisSettingId) {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
-        projectService.pullProject(setting.getProject());
-        performAnalysis(analysisSettingId);
+        analyseProject(analysisSettingId);
     }
 
     @Override

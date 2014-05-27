@@ -12,7 +12,6 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.common.xml.XmlUtils;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
@@ -21,10 +20,10 @@ import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.ReleaseInfo;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.JavaParameter;
-import org.silverduck.jace.domain.slo.JavaSourceSLO;
 import org.silverduck.jace.domain.slo.JavaType;
-import org.silverduck.jace.domain.slo.OtherFileSLO;
 import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.slo.SLOStatus;
+import org.silverduck.jace.domain.slo.SLOType;
 import org.xml.sax.InputSource;
 
 import javax.xml.xpath.XPath;
@@ -33,9 +32,7 @@ import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -53,7 +50,7 @@ import java.util.Set;
 /**
  * Initial Analysis implementation. Performs the initial analysis on the source tree and scans all of the found files.
  * 
- * Parses ".java"-files with ASTParser and creates appropriate JavaSourceSLO objects.
+ * Parses ".java"-files with ASTParser and creates appropriate SLO objects.
  * 
  * Parses other files... todo
  * 
@@ -118,7 +115,8 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
     private void processJavaFile(Path file, String relativePath) throws IOException {
         LOG.debug("Processing file: " + file.getFileName().toString());
-        final JavaSourceSLO slo = new JavaSourceSLO(relativePath);
+        final SLO slo = new SLO(relativePath, SLOType.SOURCE);
+        slo.setSloStatus(SLOStatus.CURRENT);
 
         ASTParser astParser = ASTParser.newParser(AST.JLS3);
         astParser.setKind(ASTParser.K_COMPILATION_UNIT);
@@ -208,7 +206,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             }
 
         });
-        getAnalysis().addJavaSourceSlo(slo);
+        getAnalysis().addSlo(slo);
     }
 
     private void processReleaseFile(Path file) {
@@ -268,15 +266,17 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         if (fileName.endsWith(".java")) {
             processJavaFile(file, relativePath);
         } else {
-            OtherFileSLO slo = new OtherFileSLO();
+            SLO slo = new SLO();
+            slo.setSloStatus(SLOStatus.CURRENT);
             slo.setPath(relativePath);
+            slo.setSloType(SLOType.OTHER_FILE);
             String featureName = file.getParent().getFileName().toString();
             List<String> nonFeatures = Arrays.asList(new String[] { "META-INF", "WEB-INF" }); // stupid functionality,
-                                                                                              // replace it
+                                                                                              // replace it with configurable one
             // Skip non-features
             if (!nonFeatures.contains(featureName)) {
                 processFeature(featureName, slo);
-                analysis.addOtherFileSLO(slo);
+                analysis.addSlo(slo);
             }
         }
         return FileVisitResult.CONTINUE;
