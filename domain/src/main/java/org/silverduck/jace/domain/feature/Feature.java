@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Represents a softeare feature
+ * Represents a software feature
  */
 @Entity
 @Table(name = "Feature")

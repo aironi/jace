@@ -7,6 +7,8 @@ import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.DiffCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
+import org.eclipse.jgit.api.MergeCommand;
+import org.eclipse.jgit.api.MergeResult;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
@@ -17,6 +19,8 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.merge.MergeStrategy;
+import org.eclipse.jgit.merge.Merger;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -102,8 +106,9 @@ public class GitServiceImpl implements GitService {
             }
         } catch (IOException e) {
             throw new JaceRuntimeException("Failed to find a git repository in directory ' " + localDirectory + "'", e);
+        } finally {
+            repository.close();
         }
-        repository.close();
     }
 
     /**
@@ -117,7 +122,8 @@ public class GitServiceImpl implements GitService {
     @Override
     public void cloneRepo(String cloneUrl, String localDirectory) {
         try {
-            Git.cloneRepository().setURI(cloneUrl).setDirectory(new File(localDirectory)).call();
+            Git call = Git.cloneRepository().setURI(cloneUrl).setDirectory(new File(localDirectory)).call();
+            call.close();
             LOG.info("cloneRepo(): Clone OK: " + cloneUrl);
         } catch (GitAPIException e) {
             throw new JaceRuntimeException("Failed to clone a remote git repository from URI '" + cloneUrl
@@ -142,9 +148,9 @@ public class GitServiceImpl implements GitService {
             branchList = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
         } catch (GitAPIException e) {
             throw new JaceRuntimeException("Failed to fetch a branch list for git repo ' " + localDirectory + "'", e);
+        } finally {
+            repository.close();
         }
-
-        repository.close();
 
         List<String> branches = new ArrayList<String>();
         for (Ref branch : branchList) {
@@ -214,9 +220,12 @@ public class GitServiceImpl implements GitService {
 
         Git git = new Git(repository);
         try {
-            PullResult pullResult = git.pull().setRebase(true).call();
+            PullResult pullResult = git.pull().call();
+            if (!pullResult.getMergeResult().getMergeStatus().isSuccessful()) {
 
-            if (pullResult.isSuccessful()) {
+                LOG.fatal("Merge was not successful");
+
+            } else {
                 // If pull succeeded...
                 FetchResult fetchResult = pullResult.getFetchResult();
                 Collection<TrackingRefUpdate> trackingRefUpdates = fetchResult.getTrackingRefUpdates();
@@ -236,10 +245,11 @@ public class GitServiceImpl implements GitService {
 
                     // Diff the old and new revisions and iterate the diffs.
                     DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(repository, oldObjectId))
-                        .setNewTree(resolveTreeIterator(repository, newObjectId));
+                            .setNewTree(resolveTreeIterator(repository, newObjectId));
                     List<DiffEntry> diffEntries = diffCommand.call();
 
                     for (DiffEntry diffEntry : diffEntries) {
+
                         ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
                         DiffFormatter diffFormatter = new DiffFormatter(diffOut);
                         diffFormatter.setRepository(repository);
@@ -254,18 +264,16 @@ public class GitServiceImpl implements GitService {
                         diffs.add(diff);
                     }
                 }
-            } else {
-                throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'.");
+//            } else {
+                //              throw new JaceRuntimeException("Failed to pull with rebase into directory '" + localDirectory + "'.");
+                //        }
             }
-
-        } catch (GitAPIException e) {
-            throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
-        } catch (MissingObjectException e) {
-            throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
-        } catch (IOException e) {
-            throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
+        } catch (Exception e) {
+                throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
+        } finally {
+            repository.close();
         }
-        repository.close();
+
         return diffs;
     }
 
@@ -286,7 +294,6 @@ public class GitServiceImpl implements GitService {
         return repository;
     }
 
-    // From JGit test case (how to diff 2 commits)
     private AbstractTreeIterator resolveTreeIterator(Repository repository, ObjectId objectId) throws IOException {
         final CanonicalTreeParser treeParser = new CanonicalTreeParser();
         final ObjectReader objectReader = repository.newObjectReader();

@@ -2,7 +2,6 @@ package org.silverduck.jace.web.component;
 
 import com.vaadin.server.ThemeResource;
 import com.vaadin.ui.*;
-import com.vaadin.ui.themes.BaseTheme;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.web.JaceUI;
 import org.silverduck.jace.web.view.AnalysisView;
@@ -24,6 +23,8 @@ public class ManagementToolbar extends CustomComponent {
 
     private Button manageProjectsButton;
 
+    private MenuBar menuBar;
+
     public ManagementToolbar() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
@@ -34,32 +35,12 @@ public class ManagementToolbar extends CustomComponent {
 
         createJaceLogo(hl);
 
-        MenuBar menubar = new MenuBar();
+        createMenuBar(hl);
 
-        hl.addComponent(menubar);
-        menubar.addItem(AppResources.getLocalizedString("label.analysisView", UI.getCurrent().getLocale()), new MenuBar.Command() {
-            @Override
-            public void menuSelected(MenuBar.MenuItem selectedItem) {
-                JaceUI.navigateTo(AnalysisView.VIEW);
-            }
-        });
-        menubar.addItem(AppResources.getLocalizedString("label.manageAnalysisSettingsView", UI.getCurrent().getLocale()), new MenuBar.Command() {
-            @Override
-            public void menuSelected(MenuBar.MenuItem selectedItem) {
-                JaceUI.navigateTo(ManageAnalysisSettingsView.VIEW);
-            }
-        });
-
-        menubar.addItem(AppResources.getLocalizedString("label.manageProjects", UI.getCurrent().getLocale()), new MenuBar.Command() {
-            @Override
-            public void menuSelected(MenuBar.MenuItem selectedItem) {
-                JaceUI.navigateTo(ManageProjectsView.VIEW);
-            }
-        });
-
+        hl.setExpandRatio(jaceLogo, 3);
+        hl.setExpandRatio(menuBar, 7);
         setCompositionRoot(hl);
     }
-
 
     private void createJaceLogo(HorizontalLayout layout) {
         jaceLogo = new Image(AppResources.getLocalizedString("label.jaceDescription", UI.getCurrent().getLocale()));
@@ -71,5 +52,35 @@ public class ManagementToolbar extends CustomComponent {
 
     }
 
+    private void createMenuBar(HorizontalLayout hl) {
+        menuBar = new MenuBar();
 
+        hl.addComponent(menuBar);
+        menuBar.addItem(AppResources.getLocalizedString("label.analysisView", UI.getCurrent().getLocale()),
+                new MenuBar.Command() {
+                    @Override
+                    public void menuSelected(MenuBar.MenuItem selectedItem) {
+                        JaceUI.navigateTo(AnalysisView.VIEW);
+                    }
+                }
+        );
+        menuBar.addItem(
+                AppResources.getLocalizedString("label.manageAnalysisSettingsView", UI.getCurrent().getLocale()),
+                new MenuBar.Command() {
+                    @Override
+                    public void menuSelected(MenuBar.MenuItem selectedItem) {
+                        JaceUI.navigateTo(ManageAnalysisSettingsView.VIEW);
+                    }
+                }
+        );
+
+        menuBar.addItem(AppResources.getLocalizedString("label.manageProjects", UI.getCurrent().getLocale()),
+                new MenuBar.Command() {
+                    @Override
+                    public void menuSelected(MenuBar.MenuItem selectedItem) {
+                        JaceUI.navigateTo(ManageProjectsView.VIEW);
+                    }
+                }
+        );
+    }
 }

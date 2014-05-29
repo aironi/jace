@@ -30,6 +30,8 @@ public class AnalysisSetting extends AbstractDomainObject {
         setting.setBranch("");
         setting.setAutomaticFeatureMapping(true);
         setting.setEnabled(true);
+        setting.setGranularity(Granularity.FILE);
+
         return setting;
     }
 

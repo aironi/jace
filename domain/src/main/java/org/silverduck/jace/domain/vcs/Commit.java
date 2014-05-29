@@ -16,7 +16,8 @@ import java.util.List;
  * Created by ihietala on 23.5.2014.
  */
 @Entity
-@Table(name = "Commit")
+@Table(name = "VcsCommit")
+// 'Commit' seems to be reserved word (internal error from EclipseLink)
 public class Commit extends AbstractDomainObject {
 
     @Column(name = "CommitId")

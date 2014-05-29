@@ -46,7 +46,7 @@ public class Analysis extends AbstractDomainObject {
     @OneToMany(mappedBy = "analysis", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ChangedFeature> changedFeatures = new ArrayList<ChangedFeature>();
 
-    // Initial Anaysis, i.e. the root of all analyses. TODO: Rename to baseAnalysis
+    // Initial Analysis, i.e. the root of all analyses. TODO: Rename to baseAnalysis
     @Column(name = "InitialAnalysis")
     private Boolean initialAnalysis;
 

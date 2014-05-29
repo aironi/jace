@@ -59,8 +59,11 @@ public class AnalysisDaoImplTest extends DaoTestCase {
     public void testFindSlo() throws Exception {
         SLO slo = new SLO("/my/relative/test/path/java.java", SLOType.SOURCE);
         SLO sloInvalid = new SLO("/my/relative/test/path/java2.java", SLOType.SOURCE);
+        SLO sloOld = new SLO("/my/relative/test/path/java.java", SLOType.SOURCE);
+        sloOld.setSloStatus(SLOStatus.OLD);
         getEntityManager().persist(slo);
         getEntityManager().persist(sloInvalid);
+        getEntityManager().persist(sloOld);
         SLO found = analysisDao.findSLO("/my/relative/test/path/java.java");
         Assert.assertEquals("Wrong SLO returned", slo, found);
     }
@@ -114,15 +117,14 @@ public class AnalysisDaoImplTest extends DaoTestCase {
         a.addSlo(slo1);
         a.addSlo(slo2);
         a.addSlo(slo3);
-        ChangedFeature cf1 = new ChangedFeature(feature1, slo1);
-        ChangedFeature cf2 = new ChangedFeature(feature1, slo2);
-        ChangedFeature cf3 = new ChangedFeature(feature2, slo3);
+        ChangedFeature cf1 = new ChangedFeature(feature1, slo1, null);
+        ChangedFeature cf2 = new ChangedFeature(feature1, slo2, null);
+        ChangedFeature cf3 = new ChangedFeature(feature2, slo3, null);
         a.addChangedFeature(cf1);
         a.addChangedFeature(cf2);
         a.addChangedFeature(cf3);
         a.setProject(project);
         getEntityManager().persist(a);
-
 
         List<ChangedFeature> list = analysisDao.listChangedFeaturesByProject(project.getId());
         Assert.assertEquals("Wrong amount of features returned", 3, list.size());
@@ -150,9 +152,9 @@ public class AnalysisDaoImplTest extends DaoTestCase {
         previousAnalysis.addSlo(slo1);
         previousAnalysis.addSlo(slo2);
         previousAnalysis.addSlo(slo3);
-        ChangedFeature cf1 = new ChangedFeature(feature1, slo1);
-        ChangedFeature cf2 = new ChangedFeature(feature1, slo2);
-        ChangedFeature cf3 = new ChangedFeature(feature2, slo3);
+        ChangedFeature cf1 = new ChangedFeature(feature1, slo1, null);
+        ChangedFeature cf2 = new ChangedFeature(feature1, slo2, null);
+        ChangedFeature cf3 = new ChangedFeature(feature2, slo3, null);
         previousAnalysis.addChangedFeature(cf1);
         previousAnalysis.addChangedFeature(cf2);
         previousAnalysis.addChangedFeature(cf3);
@@ -161,8 +163,8 @@ public class AnalysisDaoImplTest extends DaoTestCase {
         SLO newSlo1 = new SLO("/my/path/java.java", SLOType.SOURCE);
         SLO newSlo2 = new SLO("/my/path/java2.java", SLOType.SOURCE);
         // third not changed
-        ChangedFeature newCf1 = new ChangedFeature(feature1, newSlo1);
-        ChangedFeature newCf2 = new ChangedFeature(feature1, newSlo2);
+        ChangedFeature newCf1 = new ChangedFeature(feature1, newSlo1, null);
+        ChangedFeature newCf2 = new ChangedFeature(feature1, newSlo2, null);
         Analysis newAnalysis = new Analysis();
         newAnalysis.setReleaseVersion("1.1");
         newAnalysis.addSlo(newSlo1);
@@ -199,9 +201,9 @@ public class AnalysisDaoImplTest extends DaoTestCase {
         previousAnalysis.addSlo(slo1);
         previousAnalysis.addSlo(slo2);
         previousAnalysis.addSlo(slo3);
-        ChangedFeature cf1 = new ChangedFeature(feature1, slo1);
-        ChangedFeature cf2 = new ChangedFeature(feature1, slo2);
-        ChangedFeature cf3 = new ChangedFeature(feature2, slo3);
+        ChangedFeature cf1 = new ChangedFeature(feature1, slo1, null);
+        ChangedFeature cf2 = new ChangedFeature(feature1, slo2, null);
+        ChangedFeature cf3 = new ChangedFeature(feature2, slo3, null);
         previousAnalysis.addChangedFeature(cf1);
         previousAnalysis.addChangedFeature(cf2);
         previousAnalysis.addChangedFeature(cf3);
@@ -210,8 +212,8 @@ public class AnalysisDaoImplTest extends DaoTestCase {
         SLO newSlo1 = new SLO("/my/path/java.java", SLOType.SOURCE);
         SLO newSlo2 = new SLO("/my/path/java2.java", SLOType.SOURCE);
         // third not changed
-        ChangedFeature newCf1 = new ChangedFeature(feature1, newSlo1);
-        ChangedFeature newCf2 = new ChangedFeature(feature1, newSlo2);
+        ChangedFeature newCf1 = new ChangedFeature(feature1, newSlo1, null);
+        ChangedFeature newCf2 = new ChangedFeature(feature1, newSlo2, null);
         Analysis newAnalysis = new Analysis();
         newAnalysis.setReleaseVersion("1.1");
         newAnalysis.addSlo(newSlo1);

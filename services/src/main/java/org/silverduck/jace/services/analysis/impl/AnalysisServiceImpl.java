@@ -27,7 +27,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,6 +79,7 @@ public class AnalysisServiceImpl implements AnalysisService {
             analysis.setAnalysisStatus(AnalysisStatus.ANALYSING);
             analysisDao.add(analysis);
 
+            Map<String, Diff> addedFiles = new HashMap<String, Diff>();
             List<String> modifiedFiles = new ArrayList<String>();
             List<Long> deletedSloIDs = new ArrayList<Long>();
             List<Long> oldSloIDs = new ArrayList<Long>();
@@ -95,53 +99,72 @@ public class AnalysisServiceImpl implements AnalysisService {
                 if (!path.startsWith("/")) {
                     path = "/" + path;
                 }
+
                 SLO oldSlo = findSloByPath(path);
 
                 switch (diff.getModificationType()) {
                 case ADD:
-                    modifiedFiles.add(diff.getNewPath());
+                    addedFiles.put("/" + diff.getNewPath(), diff);
+                    modifiedFiles.add("/" + diff.getNewPath());
                     break;
                 case MODIFY:
-                    modifiedFiles.add(diff.getNewPath());
+                    modifiedFiles.add("/" + diff.getNewPath());
                     if (oldSlo != null) {
-                        oldSloIDs.add(oldSlo.getId()); // This will be updated as 'OLD'
                         if (setting.getGranularity() == Granularity.METHOD) {
                             for (Hunk hunk : diff.getParsedDiff().getHunks()) {
-                                hunk.getOldStartLine();
                                 JavaMethod method = analysisDao.findMethodByLineNumber(oldSlo, hunk.getOldStartLine());
                                 if (method != null) {
                                     // found a previous method
                                     // TODO: Add Feature map to a method. It should look up all used Types and determine
                                     // the features based on that (or, just map to SLOs)
+
                                 }
                             }
+                        } else {
+                            oldSloIDs.add(oldSlo.getId()); // This will be updated as 'OLD'
+                            analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo, diff));
                         }
-                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo));
                     }
 
                     break;
                 case DELETE:
                     if (oldSlo != null) {
                         deletedSloIDs.add(oldSlo.getId());
-                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo));
+                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo, diff));
                     }
                     break;
                 case RENAME:
                     if (oldSlo != null) {
                         oldSloIDs.add(oldSlo.getId());
-                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo));
+                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo, diff));
                     }
-                    modifiedFiles.add(diff.getNewPath());
+                    modifiedFiles.add("/" + diff.getNewPath());
                     break;
                 case COPY:
-                    modifiedFiles.add(diff.getNewPath());
+                    modifiedFiles.add("/" + diff.getNewPath());
                     break;
                 }
             }
 
+            // Mark old SLOs appropriately
             markSLOsAsOld(oldSloIDs);
             markSLOsAsDeleted(deletedSloIDs);
+
+            // Analyse all modified/added files and generate new SLOs
             analyseSLOs(setting, analysis, modifiedFiles);
+
+            // Iterate the added files set
+            Iterator<Map.Entry<String, Diff>> iterator = addedFiles.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Diff> item = iterator.next();
+                String path = item.getKey();
+                Diff diff = item.getValue();
+
+                SLO newSlo = findSloByPath(path);
+                if (newSlo != null) {
+                    analysis.addChangedFeature(new ChangedFeature(newSlo.getFeature(), newSlo, diff));
+                }
+            }
 
             analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
             analysisDao.update(analysis);
@@ -190,12 +213,13 @@ public class AnalysisServiceImpl implements AnalysisService {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
         String localDirectory = setting.getProject().getPluginConfiguration().getLocalDirectory();
 
+        Analysis analysis = new Analysis();
+        analysis.setProject(setting.getProject());
+        // This is a "root"-analysis
+        analysis.setInitialAnalysis(true);
+        analysis.setAnalysisStatus(AnalysisStatus.INITIAL_ANALYSIS);
+        analysisDao.add(analysis);
         try {
-            Analysis analysis = new Analysis();
-
-            analysis.setProject(setting.getProject());
-            // This is a "root"-analysis
-            analysis.setInitialAnalysis(true);
             // Change branch to the one defined in the setting
             projectService.changeBranch(setting.getProject().getPluginConfiguration().getLocalDirectory(),
                 setting.getBranch());
@@ -203,9 +227,11 @@ public class AnalysisServiceImpl implements AnalysisService {
             // Walk all files in the tree and analyse them
             Files.walkFileTree(Paths.get(localDirectory), new InitialAnalysisFileVisitor(setting, analysis));
 
-            // If all OK, add the analysis to DB
-            analysisDao.add(analysis);
+            analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
+            analysisDao.update(analysis);
         } catch (IOException e) {
+            analysis.setAnalysisStatus(AnalysisStatus.ERROR);
+            analysisDao.update(analysis);
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
         return new AsyncResult<Boolean>(Boolean.TRUE);
@@ -242,10 +268,6 @@ public class AnalysisServiceImpl implements AnalysisService {
     public void removeAnalysisSettingById(Long id) {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(id);
         analysisSettingDao.remove(setting);
-    }
-
-    private void removeSLOs(AnalysisSetting setting, Analysis analysis, List<String> removedFiles) {
-
     }
 
     @Override

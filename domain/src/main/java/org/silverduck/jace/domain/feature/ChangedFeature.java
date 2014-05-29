@@ -4,6 +4,7 @@ import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.vcs.Diff;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -31,6 +32,10 @@ public class ChangedFeature extends AbstractDomainObject {
     @JoinColumn(name = "AnalysisRID")
     private Analysis analysis;
 
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "DiffRID")
+    private Diff diff;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "FeatureRID")
     private Feature feature;
@@ -47,14 +52,19 @@ public class ChangedFeature extends AbstractDomainObject {
         super();
     }
 
-    public ChangedFeature(Feature feature, SLO slo) {
+    public ChangedFeature(Feature feature, SLO oldSlo, Diff diff) {
         this();
         this.feature = feature;
-        this.slo = slo;
+        this.slo = oldSlo;
+        this.diff = diff;
     }
 
     public Analysis getAnalysis() {
         return analysis;
+    }
+
+    public Diff getDiff() {
+        return diff;
     }
 
     public Feature getFeature() {
@@ -71,6 +81,10 @@ public class ChangedFeature extends AbstractDomainObject {
 
     public void setAnalysis(Analysis analysis) {
         this.analysis = analysis;
+    }
+
+    public void setDiff(Diff diff) {
+        this.diff = diff;
     }
 
     public void setFeature(Feature feature) {

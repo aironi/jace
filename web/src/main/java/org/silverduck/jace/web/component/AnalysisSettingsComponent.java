@@ -132,8 +132,9 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
     public void setReadOnly(boolean readOnly) {
         projectField.setReadOnly(readOnly);
         branchField.setReadOnly(readOnly);
-        granularityField.setReadOnly(readOnly);
-        // always disabled until manual feature mapping is implemented
+        // TODO: Always set Granurality read only until method level granularity is implemented
+        granularityField.setReadOnly(true);
+        // TODO: Always disable autoFeatureMapping until manual feature mapping is implemented
         automaticFeatureMappingField.setReadOnly(true);
         enabledField.setReadOnly(readOnly);
     }
