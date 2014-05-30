@@ -28,21 +28,16 @@ public class ManagementToolbar extends CustomComponent {
     public ManagementToolbar() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
+        vl.setDefaultComponentAlignment(Alignment.TOP_LEFT);
 
-        HorizontalLayout hl = new HorizontalLayout();
-        hl.setSizeFull();
-        vl.addComponent(hl);
+        createJaceLogo(vl);
 
-        createJaceLogo(hl);
+        createMenuBar(vl);
 
-        createMenuBar(hl);
-
-        hl.setExpandRatio(jaceLogo, 3);
-        hl.setExpandRatio(menuBar, 7);
-        setCompositionRoot(hl);
+        setCompositionRoot(vl);
     }
 
-    private void createJaceLogo(HorizontalLayout layout) {
+    private void createJaceLogo(VerticalLayout layout) {
         jaceLogo = new Image(AppResources.getLocalizedString("label.jaceDescription", UI.getCurrent().getLocale()));
         jaceLogo.setIcon(new ThemeResource("jace.png"));
         jaceLogo.setWidth(150, Unit.PIXELS);
@@ -52,35 +47,32 @@ public class ManagementToolbar extends CustomComponent {
 
     }
 
-    private void createMenuBar(HorizontalLayout hl) {
+    private void createMenuBar(VerticalLayout hl) {
         menuBar = new MenuBar();
 
         hl.addComponent(menuBar);
         menuBar.addItem(AppResources.getLocalizedString("label.analysisView", UI.getCurrent().getLocale()),
-                new MenuBar.Command() {
-                    @Override
-                    public void menuSelected(MenuBar.MenuItem selectedItem) {
-                        JaceUI.navigateTo(AnalysisView.VIEW);
-                    }
+            new MenuBar.Command() {
+                @Override
+                public void menuSelected(MenuBar.MenuItem selectedItem) {
+                    JaceUI.navigateTo(AnalysisView.VIEW);
                 }
-        );
+            });
         menuBar.addItem(
-                AppResources.getLocalizedString("label.manageAnalysisSettingsView", UI.getCurrent().getLocale()),
-                new MenuBar.Command() {
-                    @Override
-                    public void menuSelected(MenuBar.MenuItem selectedItem) {
-                        JaceUI.navigateTo(ManageAnalysisSettingsView.VIEW);
-                    }
+            AppResources.getLocalizedString("label.manageAnalysisSettingsView", UI.getCurrent().getLocale()),
+            new MenuBar.Command() {
+                @Override
+                public void menuSelected(MenuBar.MenuItem selectedItem) {
+                    JaceUI.navigateTo(ManageAnalysisSettingsView.VIEW);
                 }
-        );
+            });
 
         menuBar.addItem(AppResources.getLocalizedString("label.manageProjects", UI.getCurrent().getLocale()),
-                new MenuBar.Command() {
-                    @Override
-                    public void menuSelected(MenuBar.MenuItem selectedItem) {
-                        JaceUI.navigateTo(ManageProjectsView.VIEW);
-                    }
+            new MenuBar.Command() {
+                @Override
+                public void menuSelected(MenuBar.MenuItem selectedItem) {
+                    JaceUI.navigateTo(ManageProjectsView.VIEW);
                 }
-        );
+            });
     }
 }

@@ -9,7 +9,19 @@ import com.vaadin.data.util.filter.Compare;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
-import com.vaadin.ui.*;
+import com.vaadin.ui.AbstractSelect;
+import com.vaadin.ui.Accordion;
+import com.vaadin.ui.Alignment;
+import com.vaadin.ui.ComboBox;
+import com.vaadin.ui.Component;
+import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Label;
+import com.vaadin.ui.Panel;
+import com.vaadin.ui.TabSheet;
+import com.vaadin.ui.Table;
+import com.vaadin.ui.Tree;
+import com.vaadin.ui.UI;
+import com.vaadin.ui.VerticalLayout;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
@@ -122,7 +134,9 @@ public class AnalysisView extends BaseView implements View {
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
-
+        populateReleaseTree();
+        populateCommitTree();
+        populateAnalysisTree();
     }
 
     @PostConstruct
@@ -204,7 +218,7 @@ public class AnalysisView extends BaseView implements View {
             for (Analysis analysis : list) {
                 Object aItem = hca.addItem();
                 hca.setParent(aItem, parent);
-                String caption = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(analysis.getCreated());
+                String caption = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(analysis.getCreated());
                 if (Boolean.TRUE.equals(analysis.getInitialAnalysis())) {
                     caption += " (Initial)";
                 }
