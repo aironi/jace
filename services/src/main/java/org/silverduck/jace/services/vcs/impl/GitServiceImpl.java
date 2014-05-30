@@ -22,6 +22,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.merge.Merger;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.FetchResult;
@@ -238,38 +239,50 @@ public class GitServiceImpl implements GitService {
                     // Only process current branch changes
                     // if (repository.getFullBranch().equals(trackingRefUpdate.getLocalName()) {
 
-                    RevWalk walk = new RevWalk(repository);
-                    RevCommit commit = walk.parseCommit(newObjectId);
-                    Commit jaceCommit = new Commit();
-                    jaceCommit.setMessage(commit.getFullMessage().toString());
+                    Iterable<RevCommit> commits = git.log().addRange(oldObjectId, newObjectId).call();
+                    List<RevCommit> revCommits = new ArrayList<RevCommit>();
 
-                    // Diff the old and new revisions and iterate the diffs.
-                    DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(repository, oldObjectId))
-                            .setNewTree(resolveTreeIterator(repository, newObjectId));
-                    List<DiffEntry> diffEntries = diffCommand.call();
-
-                    for (DiffEntry diffEntry : diffEntries) {
-
-                        ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
-                        DiffFormatter diffFormatter = new DiffFormatter(diffOut);
-                        diffFormatter.setRepository(repository);
-                        diffFormatter.format(diffEntry);
-                        // Collect changed data and store it in db temporarily until analysis
-                        Diff diff = new Diff();
-                        diff.setOldPath(diffEntry.getOldPath());
-                        diff.setNewPath(diffEntry.getNewPath());
-                        diff.setParsedDiff(parseDiff(diffOut.toString())); // FIXME: encoding
-                        diff.setModificationType(ModificationType.valueOf(diffEntry.getChangeType().name()));
-                        diff.setCommit(jaceCommit);
-                        diffs.add(diff);
+                    for (RevCommit commit : commits) {
+                        revCommits.add(commit);
                     }
+                    Collections.reverse(revCommits);
+                    ObjectId prevCommitId = oldObjectId;
+
+                    for (RevCommit commit : revCommits) {
+                        Commit jaceCommit = new Commit();
+                        jaceCommit.setMessage(commit.getFullMessage().toString());
+
+                        // Diff the old and new revisions and iterate the diffs.
+                        DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(repository, prevCommitId))
+                            .setNewTree(resolveTreeIterator(repository, commit.toObjectId()));
+                        List<DiffEntry> diffEntries = diffCommand.call();
+
+                        for (DiffEntry diffEntry : diffEntries) {
+
+                            ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
+                            DiffFormatter diffFormatter = new DiffFormatter(diffOut);
+                            diffFormatter.setRepository(repository);
+                            diffFormatter.format(diffEntry);
+                            // Collect changed data and store it in db temporarily until analysis
+                            Diff diff = new Diff();
+                            diff.setOldPath(diffEntry.getOldPath());
+                            diff.setNewPath(diffEntry.getNewPath());
+                            diff.setParsedDiff(parseDiff(diffOut.toString())); // FIXME: encoding
+                            diff.setModificationType(ModificationType.valueOf(diffEntry.getChangeType().name()));
+                            diff.setCommit(jaceCommit);
+                            diffs.add(diff);
+                        }
+                        prevCommitId = commit.toObjectId();
+                    }
+
                 }
-//            } else {
-                //              throw new JaceRuntimeException("Failed to pull with rebase into directory '" + localDirectory + "'.");
-                //        }
+                // } else {
+                // throw new JaceRuntimeException("Failed to pull with rebase into directory '" + localDirectory +
+                // "'.");
+                // }
             }
         } catch (Exception e) {
-                throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
+            throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
         } finally {
             repository.close();
         }
