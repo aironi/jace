@@ -5,13 +5,12 @@
     <parent>
         <groupId>org.silverduck.jace</groupId>
         <artifactId>build</artifactId>
-        <version>1.0</version>
+        <version>0.2</version>
         <relativePath>../build/pom.xml</relativePath>
     </parent>
 
     <groupId>org.silverduck.jace</groupId>
     <artifactId>domain</artifactId>
-    <version>1.0</version>
     <packaging>jar</packaging>
     <name>Jace Domain</name>
 
@@ -24,7 +23,7 @@
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>common</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
         </dependency>
 
 

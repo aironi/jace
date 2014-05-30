@@ -2,7 +2,7 @@
     <parent>
         <groupId>org.silverduck.jace</groupId>
         <artifactId>build</artifactId>
-        <version>1.0</version>
+        <version>0.2</version>
         <relativePath>../build/pom.xml</relativePath>
     </parent>
 
@@ -10,43 +10,41 @@
     <groupId>org.silverduck.jace</groupId>
     <artifactId>jace-ear</artifactId>
     <packaging>ear</packaging>
-    <version>1.0</version>
     <name>Jace EAR</name>
-
 
     <dependencies>
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>common</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <type>jar</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>domain</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <type>jar</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>dao</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <type>ejb</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>services</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <type>ejb</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>web</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <type>war</type>
             <scope>provided</scope>
         </dependency>

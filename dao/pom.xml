@@ -2,7 +2,7 @@
     <parent>
         <groupId>org.silverduck.jace</groupId>
         <artifactId>build</artifactId>
-        <version>1.0</version>
+        <version>0.2</version>
         <relativePath>../build/pom.xml</relativePath>
     </parent>
 
@@ -10,7 +10,7 @@
     <groupId>org.silverduck.jace</groupId>
     <artifactId>dao</artifactId>
     <packaging>ejb</packaging>
-    <version>1.0</version>
+
     <name>Jace Data Access</name>
 
     <properties>
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>domain</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.ejb</groupId>

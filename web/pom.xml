@@ -5,14 +5,14 @@
     <parent>
         <groupId>org.silverduck.jace</groupId>
         <artifactId>build</artifactId>
-        <version>1.0</version>
+        <version>0.2</version>
         <relativePath>../build/pom.xml</relativePath>
     </parent>
 
     <groupId>org.silverduck.jace</groupId>
     <artifactId>web</artifactId>
     <packaging>war</packaging>
-    <version>1.0</version>
+
     <name>Jace Vaadin 7 Web Application</name>
 
 
@@ -54,19 +54,19 @@
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>common</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>domain</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.silverduck.jace</groupId>
             <artifactId>services</artifactId>
-            <version>1.0</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -164,6 +164,19 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                    <archiveClasses>true</archiveClasses>
                 </configuration>
             </plugin>
             <!-- As we are doing "inplace" GWT compilation, ensure the widgetset -->
