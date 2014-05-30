@@ -293,12 +293,7 @@ public class GitServiceImpl implements GitService {
                         }
                         prevCommitId = commit.toObjectId();
                     }
-
                 }
-                // } else {
-                // throw new JaceRuntimeException("Failed to pull with rebase into directory '" + localDirectory +
-                // "'.");
-                // }
             }
         } catch (Exception e) {
             throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
