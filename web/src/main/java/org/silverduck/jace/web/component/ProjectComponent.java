@@ -11,11 +11,13 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CustomComponent;
+import com.vaadin.ui.Field;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.PasswordField;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
@@ -48,11 +50,15 @@ public class ProjectComponent extends BaseComponent<Project> {
     @PropertyId("name")
     private TextField name;
 
+    private PasswordField passWord;
+
     private TextField pathToVersionFile;
 
     private ComboBox repositoryType;
 
     private Button testCloneUrlButton;
+
+    private TextField userName;
 
     private ComboBox versionFileType;
 
@@ -83,6 +89,8 @@ public class ProjectComponent extends BaseComponent<Project> {
         super.getFieldGroup().bind(cloneUrl, "pluginConfiguration.cloneUrl");
         super.getFieldGroup().bind(repositoryType, "pluginConfiguration.pluginType");
         super.getFieldGroup().bind(commitIdPattern, "pluginConfiguration.commitIdPattern");
+        super.getFieldGroup().bind(userName, "pluginConfiguration.userName");
+        super.getFieldGroup().bind(passWord, "pluginConfiguration.password");
         super.getFieldGroup().bind(versionFileType, "releaseInfo.versionFileType");
         super.getFieldGroup().bind(pathToVersionFile, "releaseInfo.pathToVersionFile");
         super.getFieldGroup().bind(versionPattern, "releaseInfo.pattern");
@@ -109,6 +117,12 @@ public class ProjectComponent extends BaseComponent<Project> {
         commitIdPattern = new TextField(AppResources.getLocalizedString("label.projectForm.commitIdPattern", locale));
         commitIdPattern.setImmediate(true);
 
+        userName = new TextField(AppResources.getLocalizedString("label.projectForm.userName", locale));
+        userName.setImmediate(true);
+
+        passWord = new PasswordField(AppResources.getLocalizedString("label.projectForm.passWord", locale));
+        passWord.setImmediate(true);
+
         testCloneUrlButton = new Button(AppResources.getLocalizedString("label.projectForm.testCloneUrlButton", locale));
         testCloneUrlButton.addClickListener(new Button.ClickListener() {
             @Override
@@ -124,6 +138,10 @@ public class ProjectComponent extends BaseComponent<Project> {
         basicDataForm.addComponent(name);
         basicDataForm.addComponent(repositoryType);
         basicDataForm.addComponent(cloneUrl);
+        basicDataForm.addComponent(new Label("Note: The password is stored in plain text to DB for now."));
+        ;
+        basicDataForm.addComponent(userName);
+        basicDataForm.addComponent(passWord);
         basicDataForm.addComponent(testCloneUrlButton);
         basicDataForm.addComponent(commitIdPattern);
 

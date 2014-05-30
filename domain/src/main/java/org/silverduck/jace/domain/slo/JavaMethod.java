@@ -22,19 +22,14 @@ import java.util.List;
  */
 @Entity
 @Table(name = "JavaMethod")
-@NamedQueries({ @NamedQuery(name = "findMethodByLineNumber", query = "SELECT m FROM JavaMethod m"
-    + " JOIN m.slo slo" + " WHERE m.slo.id = :SLORID AND"
-    + " m.startLine <= :LineNumber AND m.endLine >= :LineNumber") })
+@NamedQueries({ @NamedQuery(name = "findMethodByLineNumber", query = "SELECT m FROM JavaMethod m" + " JOIN m.slo slo"
+    + " WHERE m.slo.id = :SLORID AND" + " m.startLine <= :LineNumber AND m.endLine >= :LineNumber") })
 public class JavaMethod extends AbstractDomainObject {
 
     @Column(name = "EndLine")
     private Integer endLine;
 
-    @ManyToOne
-    @JoinColumn(name = "SLORID")
-    private SLO slo;
-
-    @Column(name = "MethodName")
+    @Column(name = "MethodName", length = 2048)
     private String name;
 
     @OneToMany(mappedBy = "javaMethod", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -42,6 +37,10 @@ public class JavaMethod extends AbstractDomainObject {
 
     @Embedded
     private JavaType returnType;
+
+    @ManyToOne
+    @JoinColumn(name = "SLORID")
+    private SLO slo;
 
     @Column(name = "startLine")
     private Integer startLine;
@@ -57,10 +56,6 @@ public class JavaMethod extends AbstractDomainObject {
         return endLine;
     }
 
-    public SLO getSlo() {
-        return slo;
-    }
-
     public String getName() {
         return name;
     }
@@ -71,6 +66,10 @@ public class JavaMethod extends AbstractDomainObject {
 
     public JavaType getReturnType() {
         return returnType;
+    }
+
+    public SLO getSlo() {
+        return slo;
     }
 
     public Integer getStartLine() {
@@ -87,16 +86,16 @@ public class JavaMethod extends AbstractDomainObject {
         this.endLine = endLine;
     }
 
-    public void setSlo(SLO slo) {
-        this.slo = slo;
-    }
-
     public void setName(String name) {
         this.name = name;
     }
 
     public void setReturnType(JavaType returnType) {
         this.returnType = returnType;
+    }
+
+    public void setSlo(SLO slo) {
+        this.slo = slo;
     }
 
     public void setStartLine(Integer startLine) {

@@ -9,10 +9,10 @@ import javax.persistence.Embeddable;
  */
 @Embeddable
 public class JavaType {
-    @Column(name = "FullyQualifiedType")
+    @Column(name = "FullyQualifiedType", length = 2048)
     private String fullyQualifiedType;
 
-    @Column(name = "Type")
+    @Column(name = "Type", length = 2048)
     private String type;
 
     public JavaType() {

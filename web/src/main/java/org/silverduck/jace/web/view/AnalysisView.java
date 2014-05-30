@@ -3,6 +3,7 @@ package org.silverduck.jace.web.view;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.cdi.CDIView;
+import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.filter.Compare;
@@ -26,6 +27,7 @@ import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.services.analysis.AnalysisService;
 
 import javax.annotation.PostConstruct;
@@ -33,16 +35,21 @@ import javax.ejb.EJB;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The root view of the application.
  */
 @CDIView
 public class AnalysisView extends BaseView implements View {
+
+    public static final String ALL_FEATURES = "All Features";
+
     public static final String VIEW = "";
 
     private Panel analysisPanel;
@@ -64,9 +71,9 @@ public class AnalysisView extends BaseView implements View {
 
     private VerticalLayout detailsLayout;
 
-    private Panel releasePanel;
+    private ComboBox featureSelect;
 
-    private ComboBox releaseSelect;
+    private Panel releasePanel;
 
     private Tree releaseTree;
 
@@ -97,10 +104,11 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesTable = new Table(AppResources.getLocalizedString("label.analysisView.changedFeaturesTable",
             locale), changedFeaturesContainer);
 
-        changedFeaturesTable.setVisibleColumns("feature.name", "slo.path", "slo.packageName", "slo.className",
-            "diff.modificationType", "diff.commit.commitId", "diff.commit.message");
+        changedFeaturesTable.setVisibleColumns("created", "feature.name", "slo.path", "slo.packageName",
+            "slo.className", "diff.modificationType", "diff.commit.commitId", "diff.commit.message");
 
         changedFeaturesTable.setColumnHeaders(
+            AppResources.getLocalizedString("label.changedFeatureTable.created", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.featureName", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.sloPath", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.sloPackageName", locale),
@@ -113,12 +121,25 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesTable.setSelectable(true);
         changedFeaturesTable.setSizeFull();
 
-        // detailsLayout.addComponent(releaseSelect);
-        detailsAccordion = new Accordion();
-        detailsAccordion.addTab(changedFeaturesTable);
-        detailsAccordion.addTab(new Label("All features"));
+        featureSelect = new ComboBox(AppResources.getLocalizedString("label.analysisView.features", locale));
+        featureSelect.setImmediate(true);
+        featureSelect.addValueChangeListener(new Property.ValueChangeListener() {
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                changedFeaturesContainer.removeContainerFilters("feature.name");
+                if (event.getProperty() != null && event.getProperty().getValue() != null) {
+                    String value = event.getProperty().getValue().toString();
+                    if (!ALL_FEATURES.equals(value)) {
+                        changedFeaturesContainer.addContainerFilter("feature.name", value, false, false);
+                    }
+                }
+            }
+        });
 
-        detailsLayout.addComponent(detailsAccordion);
+        // detailsLayout.addComponent(releaseSelect);
+        detailsLayout.addComponent(featureSelect);
+
+        detailsLayout.addComponent(changedFeaturesTable);
         detailsPanel.setContent(detailsLayout);
 
         return detailsPanel;
@@ -224,6 +245,7 @@ public class AnalysisView extends BaseView implements View {
                 }
                 hca.getContainerProperty(aItem, "caption").setValue(caption);
                 hca.getContainerProperty(aItem, "id").setValue(analysis.getId());
+                analysisTree.setChildrenAllowed(aItem, false);
 
             }
 
@@ -231,14 +253,20 @@ public class AnalysisView extends BaseView implements View {
         analysisTree.setItemCaptionMode(AbstractSelect.ItemCaptionMode.PROPERTY);
         analysisTree.setItemCaptionPropertyId("caption");
         analysisTree.setContainerDataSource(hca);
-        analysisTree.addItemClickListener(new ItemClickEvent.ItemClickListener() {
+        analysisTree.setImmediate(true);
+        /*
+         * Property idProperty = event.getItem().getItemProperty("id"); if (idProperty != null) { Object idValue =
+         * idProperty.getValue(); if (idValue != null) { Long id = (Long) idValue; populateDetailsForAnalysis(id); } }
+         */
+        analysisTree.addValueChangeListener(new Property.ValueChangeListener() {
             @Override
-            public void itemClick(ItemClickEvent event) {
-                Property idProperty = event.getItem().getItemProperty("id");
-                if (idProperty != null) {
-                    Object idValue = idProperty.getValue();
-                    if (idValue != null) {
-                        Long id = (Long) idValue;
+            public void valueChange(Property.ValueChangeEvent event) {
+                Object idValue = analysisTree.getValue();
+                Item item = analysisTree.getItem(idValue);
+                if (item != null) {
+                    Property idProperty = item.getItemProperty("id");
+                    if (idProperty != null) {
+                        Long id = (Long) idProperty.getValue();
                         populateDetailsForAnalysis(id);
                     }
                 }
@@ -248,15 +276,82 @@ public class AnalysisView extends BaseView implements View {
     }
 
     private void populateCommitTree() {
+        HierarchicalContainer hca = new HierarchicalContainer();
+        Map<Project, List<String>> projectCommits = new HashMap<Project, List<String>>();
+        hca.addContainerProperty("caption", String.class, "");
+        hca.addContainerProperty("id", String.class, null);
 
+        List<Analysis> analyses = analysisService.listAllAnalyses();
+        for (Analysis analysis : analyses) {
+            List<String> list = projectCommits.get(analysis.getProject());
+            if (list == null) {
+                list = analysisService.listAllCommitIds(analysis.getProject().getId());
+                projectCommits.put(analysis.getProject(), list);
+            }
+        }
+        Iterator<Map.Entry<Project, List<String>>> iter = projectCommits.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<Project, List<String>> item = iter.next();
+            Project project = item.getKey();
+            List<String> list = item.getValue();
+            Object parent = hca.addItem();
+            hca.getContainerProperty(parent, "caption").setValue(project.getName());
+            // hca.getContainerProperty(parent, "id").setValue(project.getId());
+            for (String commitId : list) {
+                Object aItem = hca.addItem();
+                hca.setParent(aItem, parent);
+                hca.getContainerProperty(aItem, "caption").setValue(commitId);
+                hca.getContainerProperty(aItem, "id").setValue(commitId);
+                commitTree.setChildrenAllowed(aItem, false);
+            }
+        }
+        commitTree.setItemCaptionMode(AbstractSelect.ItemCaptionMode.PROPERTY);
+        commitTree.setItemCaptionPropertyId("caption");
+        commitTree.setContainerDataSource(hca);
+        commitTree.setImmediate(true);
+        commitTree.addValueChangeListener(new Property.ValueChangeListener() {
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                Object idValue = commitTree.getValue();
+                Item item = commitTree.getItem(idValue);
+                if (item != null) {
+                    Property idProperty = item.getItemProperty("id");
+                    if (idProperty != null) {
+                        String commitId = (String) idProperty.getValue();
+                        populateDetailsForCommit(commitId);
+                    }
+                }
+            }
+        });
+    }
+
+    private void populateDetailsCommon() {
+        featureSelect.removeAllItems();
+        Set<String> featureNames = new HashSet<String>();
+        for (Object id : changedFeaturesContainer.getItemIds()) {
+            featureNames.add(changedFeaturesContainer.getItem(id).getEntity().getFeature().getName());
+        }
+
+        featureSelect.addItem(ALL_FEATURES);
+        for (String featureName : featureNames) {
+            featureSelect.addItem(featureName);
+        }
     }
 
     private void populateDetailsForAnalysis(Long analysisId) {
-        // releaseSelect.removeAllItems();
         changedFeaturesContainer.removeAllContainerFilters();
         changedFeaturesContainer.addContainerFilter(new Compare.Equal("analysis.id", analysisId));
         changedFeaturesContainer.applyFilters();
         changedFeaturesContainer.refresh();
+        populateDetailsCommon();
+    }
+
+    private void populateDetailsForCommit(String commitId) {
+        changedFeaturesContainer.removeAllContainerFilters();
+        changedFeaturesContainer.addContainerFilter(new Compare.Equal("diff.commit.commitId", commitId));
+        changedFeaturesContainer.applyFilters();
+        changedFeaturesContainer.refresh();
+        populateDetailsCommon();
     }
 
     private void populateDetailsForRelease(String release) {
@@ -264,6 +359,7 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesContainer.addContainerFilter(new Compare.Equal("analysis.releaseVersion", release));
         changedFeaturesContainer.applyFilters();
         changedFeaturesContainer.refresh();
+        populateDetailsCommon();
     }
 
     private void populateReleaseTree() {
@@ -293,25 +389,29 @@ public class AnalysisView extends BaseView implements View {
                 hca.setParent(aItem, parent);
                 hca.getContainerProperty(aItem, "caption").setValue(release);
                 hca.getContainerProperty(aItem, "id").setValue(release);
+                releaseTree.setChildrenAllowed(aItem, false);
             }
         }
         releaseTree.setItemCaptionMode(AbstractSelect.ItemCaptionMode.PROPERTY);
         releaseTree.setItemCaptionPropertyId("caption");
         releaseTree.setContainerDataSource(hca);
-        releaseTree.addItemClickListener(new ItemClickEvent.ItemClickListener() {
+        releaseTree.setImmediate(true);
+
+        releaseTree.addValueChangeListener(new Property.ValueChangeListener() {
             @Override
-            public void itemClick(ItemClickEvent event) {
-                Property idProperty = event.getItem().getItemProperty("id");
-                if (idProperty != null) {
-                    Object idValue = idProperty.getValue();
-                    if (idValue != null) {
-                        String release = (String) idValue;
+            public void valueChange(Property.ValueChangeEvent event) {
+                Object idValue = releaseTree.getValue();
+                Item item = releaseTree.getItem(idValue);
+
+                if (item != null) {
+                    Property idProperty = item.getItemProperty("id");
+                    if (idProperty != null) {
+                        String release = (String) idProperty.getValue();
                         populateDetailsForRelease(release);
                     }
                 }
             }
         });
-
     }
 
 }

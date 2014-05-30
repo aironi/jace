@@ -38,7 +38,8 @@ public class ManagementToolbar extends CustomComponent {
     }
 
     private void createJaceLogo(VerticalLayout layout) {
-        jaceLogo = new Image(AppResources.getLocalizedString("label.jaceDescription", UI.getCurrent().getLocale()));
+        jaceLogo = new Image(AppResources.getLocalizedString("label.jaceDescription", UI.getCurrent().getLocale())
+            + " - Version " + getClass().getPackage().getImplementationVersion());
         jaceLogo.setIcon(new ThemeResource("jace.png"));
         jaceLogo.setWidth(150, Unit.PIXELS);
 

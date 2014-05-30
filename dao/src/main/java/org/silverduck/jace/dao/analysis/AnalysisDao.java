@@ -6,6 +6,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.vcs.Commit;
 
 import java.util.List;
 
@@ -40,6 +41,14 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      * @return
      */
     List<Analysis> listAllAnalyses();
+
+    /**
+     * List all unique Commit IDs in a project
+     * 
+     * @param projectId
+     * @return
+     */
+    List<String> listAllCommits(Long projectId);
 
     /**
      * Lists all analysed releases
@@ -88,5 +97,4 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      *            SLO IDs to update
      */
     void updateSlosAsOld(List<Long> oldSloIDs);
-
 }

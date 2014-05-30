@@ -28,10 +28,16 @@ public class PluginConfiguration {
     @Column(name = "LocalDirectory")
     private String localDirectory;
 
+    @Column(name = "PassWord")
+    private String password;
+
     @NotNull
     @Column(name = "PluginType")
     @Enumerated(EnumType.STRING)
     private PluginType pluginType;
+
+    @Column(name = "UserName")
+    private String userName;
 
     public String getCloneUrl() {
         return cloneUrl;
@@ -45,8 +51,16 @@ public class PluginConfiguration {
         return localDirectory;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
     public PluginType getPluginType() {
         return pluginType;
+    }
+
+    public String getUserName() {
+        return userName;
     }
 
     public void setCloneUrl(String cloneUrl) {
@@ -61,7 +75,15 @@ public class PluginConfiguration {
         this.localDirectory = localDirectory;
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public void setPluginType(PluginType pluginType) {
         this.pluginType = pluginType;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 }

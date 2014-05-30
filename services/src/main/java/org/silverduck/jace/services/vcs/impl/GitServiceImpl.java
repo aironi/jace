@@ -1,8 +1,10 @@
 package org.silverduck.jace.services.vcs.impl;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.DiffCommand;
 import org.eclipse.jgit.api.Git;
@@ -19,14 +21,17 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.merge.Merger;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
@@ -43,6 +48,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -121,9 +128,19 @@ public class GitServiceImpl implements GitService {
      *            Local directory to clone into
      */
     @Override
-    public void cloneRepo(String cloneUrl, String localDirectory) {
+    public void cloneRepo(String cloneUrl, String localDirectory, String userName, String passWord) {
         try {
-            Git call = Git.cloneRepository().setURI(cloneUrl).setDirectory(new File(localDirectory)).call();
+            CloneCommand cloneCommand = Git.cloneRepository().setURI(cloneUrl).setDirectory(new File(localDirectory));
+
+            if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(passWord)) {
+                UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(userName,
+                    passWord);
+                cloneCommand.setCredentialsProvider(credProv);
+            }
+            // Writer out = new StringWriter();
+            // cloneCommand.setProgressMonitor(new TextProgressMonitor(out));
+            Git call = cloneCommand.call();
+
             call.close();
             LOG.info("cloneRepo(): Clone OK: " + cloneUrl);
         } catch (GitAPIException e) {
@@ -231,15 +248,18 @@ public class GitServiceImpl implements GitService {
                 FetchResult fetchResult = pullResult.getFetchResult();
                 Collection<TrackingRefUpdate> trackingRefUpdates = fetchResult.getTrackingRefUpdates();
                 // Iterate through all changed references
+                String fullBranch = repository.getFullBranch();
                 for (TrackingRefUpdate trackingRefUpdate : trackingRefUpdates) {
+                    if (!fullBranch.equals(trackingRefUpdate.getLocalName())) {
+                        continue;
+                    }
+
                     // Get old object id and new object id of each changed ref
                     ObjectId oldObjectId = trackingRefUpdate.getOldObjectId();
                     ObjectId newObjectId = trackingRefUpdate.getNewObjectId();
+                    Iterable<RevCommit> commits = git.log().addRange(oldObjectId, newObjectId).call();
 
                     // Only process current branch changes
-                    // if (repository.getFullBranch().equals(trackingRefUpdate.getLocalName()) {
-
-                    Iterable<RevCommit> commits = git.log().addRange(oldObjectId, newObjectId).call();
                     List<RevCommit> revCommits = new ArrayList<RevCommit>();
 
                     for (RevCommit commit : commits) {
@@ -258,7 +278,6 @@ public class GitServiceImpl implements GitService {
                         List<DiffEntry> diffEntries = diffCommand.call();
 
                         for (DiffEntry diffEntry : diffEntries) {
-
                             ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
                             DiffFormatter diffFormatter = new DiffFormatter(diffOut);
                             diffFormatter.setRepository(repository);

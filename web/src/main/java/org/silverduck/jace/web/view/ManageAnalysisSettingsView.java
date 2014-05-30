@@ -145,7 +145,7 @@ public class ManageAnalysisSettingsView extends BaseView {
                         cause = t.getMessage();
                     }
                 }
-                Notification.show("Creation of analysis settings failed. Error message: " + cause,
+                Notification.show("Error", "Creation of analysis settings failed. Error message: " + cause,
                     Notification.Type.ERROR_MESSAGE);
 
                 doDefault(event);
@@ -189,7 +189,7 @@ public class ManageAnalysisSettingsView extends BaseView {
                         public void run() {
                             try {
                                 if (Boolean.TRUE.equals(result.get())) {
-                                    getUI().access(new Runnable() {
+                                    UI.getCurrent().access(new Runnable() {
                                         @Override
                                         public void run() {
                                             analysisSettingsJPAContainer.refresh();

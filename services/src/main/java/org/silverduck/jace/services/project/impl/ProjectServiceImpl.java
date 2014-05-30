@@ -64,7 +64,8 @@ public class ProjectServiceImpl implements ProjectService {
         case GIT:
             LOG.info("addProject(): Cloning git repository...");
             gitService.cloneRepo(project.getPluginConfiguration().getCloneUrl(), project.getPluginConfiguration()
-                .getLocalDirectory());
+                .getLocalDirectory(), project.getPluginConfiguration().getUserName(), project.getPluginConfiguration()
+                .getPassword());
             for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
                 project.addBranch(new ProjectBranch(project, branch));
             }
@@ -75,7 +76,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         projectDao.add(project);
-        // The event-system does NOT work with Vadin 7.1.5
+        // The event-system does NOT work with Vaadin 7.1.5
         // Error:
         // Caused by: java.lang.IllegalStateException: CDI listener identified, but there is no active UI available.
         // at com.vaadin.cdi.internal.UIScopedContext.get(UIScopedContext.java:100)

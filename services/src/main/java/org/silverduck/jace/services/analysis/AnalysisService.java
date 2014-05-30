@@ -4,6 +4,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.services.project.impl.PullingCompleteEvent;
 
 import javax.ejb.Asynchronous;
@@ -30,8 +31,7 @@ public interface AnalysisService {
      * 
      * @param setting
      */
-    @Asynchronous
-    java.util.concurrent.Future<Boolean> initialAnalysis(Long analysisSettingId);
+    void initialAnalysis(Long analysisSettingId);
 
     /**
      * Lists all analyses performed
@@ -40,7 +40,8 @@ public interface AnalysisService {
      */
     List<Analysis> listAllAnalyses();
 
-    List<ChangedFeature> listChangedFeaturesByRelease(String release);
+    List<String> listAllCommitIds(Long projectId);
+
     /**
      * Lists all releases that have been analysed
      * 
@@ -49,6 +50,8 @@ public interface AnalysisService {
      * @return
      */
     List<String> listAllReleases(Long projectId);
+
+    List<ChangedFeature> listChangedFeaturesByRelease(String release);
 
     void removeAnalysisSettingById(Long id);
 

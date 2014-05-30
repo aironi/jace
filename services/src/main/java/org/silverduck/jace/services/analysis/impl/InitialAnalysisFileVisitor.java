@@ -15,6 +15,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.silverduck.jace.common.xml.XmlUtils;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.feature.Feature;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.ReleaseInfo;
@@ -40,6 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -272,7 +274,8 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             slo.setSloType(SLOType.OTHER_FILE);
             String featureName = file.getParent().getFileName().toString();
             List<String> nonFeatures = Arrays.asList(new String[] { "META-INF", "WEB-INF" }); // stupid functionality,
-                                                                                              // replace it with configurable one
+                                                                                              // replace it with
+                                                                                              // configurable one
             // Skip non-features
             if (!nonFeatures.contains(featureName)) {
                 processFeature(featureName, slo);
@@ -286,5 +289,9 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
     public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
         LOG.debug("visitFileFailed: " + file.getFileName());
         return FileVisitResult.CONTINUE;
+    }
+
+    protected void addFeatures(Collection<String> features) {
+        this.features.addAll(features);
     }
 };

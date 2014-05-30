@@ -11,7 +11,19 @@ public interface Plugin {
 
     void checkout(String localDirectory, String branch);
 
-    void cloneRepo(String cloneUrl, String localDirectory);
+    /**
+     * Clone a repository
+     * 
+     * @param cloneUrl
+     *            Remote URL
+     * @param localDirectory
+     *            Local Directory
+     * @param userName
+     *            Username (optional, may be null)
+     * @param passWord
+     *            Password (optional, may be null))
+     */
+    void cloneRepo(String cloneUrl, String localDirectory, String userName, String passWord);
 
     List<String> listBranches(String localDirectory);
 

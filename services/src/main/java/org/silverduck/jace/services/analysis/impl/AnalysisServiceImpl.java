@@ -14,6 +14,7 @@ import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.domain.vcs.Hunk;
 import org.silverduck.jace.services.analysis.AnalysisService;
@@ -208,8 +209,8 @@ public class AnalysisServiceImpl implements AnalysisService {
      * 
      * @param analysisSettingId
      */
-    @Asynchronous
-    public Future<Boolean> initialAnalysis(Long analysisSettingId) {
+    @Override
+    public void initialAnalysis(Long analysisSettingId) {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
         String localDirectory = setting.getProject().getPluginConfiguration().getLocalDirectory();
 
@@ -234,12 +235,17 @@ public class AnalysisServiceImpl implements AnalysisService {
             analysisDao.update(analysis);
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
-        return new AsyncResult<Boolean>(Boolean.TRUE);
+
     }
 
     @Override
     public List<Analysis> listAllAnalyses() {
         return analysisDao.listAllAnalyses();
+    }
+
+    @Override
+    public List<String> listAllCommitIds(Long projectId) {
+        return analysisDao.listAllCommits(projectId);
     }
 
     @Override

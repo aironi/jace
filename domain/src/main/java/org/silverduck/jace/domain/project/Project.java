@@ -38,6 +38,8 @@ public class Project extends AbstractDomainObject {
         p.getPluginConfiguration().setCloneUrl("https://github.com/aironi/jacetesting.git");
         p.getPluginConfiguration().setCommitIdPattern("Jace #(\\d+)");
         p.getPluginConfiguration().setLocalDirectory("");
+        p.getPluginConfiguration().setUserName("");
+        p.getPluginConfiguration().setPassword("");
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
         p.getReleaseInfo().setPathToVersionFile("/testing/pom.xml");
         p.getReleaseInfo().setPattern("/project/version");

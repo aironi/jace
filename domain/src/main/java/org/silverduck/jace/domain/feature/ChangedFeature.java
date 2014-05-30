@@ -25,7 +25,9 @@ import javax.persistence.Table;
         @NamedQuery(name = "findChangedFeaturesByRelease", query = "SELECT cf FROM ChangedFeature cf "
             + "JOIN cf.analysis a WHERE a.releaseVersion = :releaseVersion"),
         @NamedQuery(name = "findFeatureNamesByReleaseVersion", query = "SELECT f.name FROM ChangedFeature cf "
-            + " JOIN cf.analysis a JOIN cf.feature f WHERE a.releaseVersion = :releaseVersion GROUP BY f.name") })
+            + " JOIN cf.analysis a JOIN cf.feature f WHERE a.releaseVersion = :releaseVersion GROUP BY f.name"),
+        @NamedQuery(name = "findAllCommitIds", query = "SELECT c.commitId FROM ChangedFeature cf "
+            + "JOIN cf.analysis.project p JOIN cf.diff.commit c WHERE p.id = :projectRID GROUP BY c.commitId") })
 public class ChangedFeature extends AbstractDomainObject {
 
     @ManyToOne()

@@ -7,6 +7,7 @@ import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
 import org.silverduck.jace.domain.slo.SLOStatus;
+import org.silverduck.jace.domain.vcs.Commit;
 
 import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
@@ -49,6 +50,13 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     @Override
     public List<Analysis> listAllAnalyses() {
         Query query = getEntityManager().createNamedQuery("findAllAnalyses", Analysis.class);
+        return query.getResultList();
+    }
+
+    @Override
+    public List<String> listAllCommits(Long projectId) {
+        Query query = getEntityManager().createNamedQuery("findAllCommitIds", ChangedFeature.class);
+        query.setParameter("projectRID", projectId);
         return query.getResultList();
     }
 
