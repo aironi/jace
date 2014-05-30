@@ -222,7 +222,6 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             case PROPERTIES:
                 Properties p = new Properties();
                 try {
-
                     p.load(is);
                     is.close();
                 } catch (IOException e) {

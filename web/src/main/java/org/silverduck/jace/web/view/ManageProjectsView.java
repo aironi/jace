@@ -280,10 +280,12 @@ public class ManageProjectsView extends BaseView {
         super.getContentLayout().addComponent(vl);
     }
 
+    /*
     public void observeProjectAdd(@Observes @Any AddingProjectCompleteEvent event) {
         LOG.fatal("observeProjectAdd called!");
         projectsContainer.refresh();
     }
+    */
 
     private void showNewProjectPopup() {
         createProjectPopup(null);
