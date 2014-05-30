@@ -136,7 +136,7 @@ public class ProjectServiceImpl implements ProjectService {
      * Pulls all configured projects from remote repository to locally configured directories
      */
     @Override
-    @Schedule(minute = "5")
+    // @Schedule(minute = "5")
     public void pullProjects() {
         List<Project> projects = projectDao.findAllProjects();
         for (Project project : projects) {

@@ -250,7 +250,7 @@ public class GitServiceImpl implements GitService {
                 // Iterate through all changed references
                 String fullBranch = repository.getFullBranch();
                 for (TrackingRefUpdate trackingRefUpdate : trackingRefUpdates) {
-                    if (!fullBranch.equals(trackingRefUpdate.getLocalName())) {
+                    if (!fullBranch.equals(trackingRefUpdate.getRemoteName())) {
                         continue;
                     }
 
