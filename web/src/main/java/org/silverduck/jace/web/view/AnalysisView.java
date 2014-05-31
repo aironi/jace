@@ -23,6 +23,7 @@ import com.vaadin.ui.Table;
 import com.vaadin.ui.Tree;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
@@ -34,6 +35,9 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -41,6 +45,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * The root view of the application.
@@ -227,7 +233,15 @@ public class AnalysisView extends BaseView implements View {
     private void populateAnalysisTree() {
         // TODO: Investigate if it is possible to implement with JPAContainer.
         HierarchicalContainer hca = new HierarchicalContainer();
-        Map<Project, List<Analysis>> projectAnalyses = new HashMap<Project, List<Analysis>>();
+        SortedMap<Project, List<Analysis>> projectAnalyses = new TreeMap<Project, List<Analysis>>(
+            new Comparator<Project>() {
+                @Override
+                public int compare(Project o1, Project o2) {
+                    CompareToBuilder ctb = new CompareToBuilder();
+                    ctb.append(o1.getName(), o2.getName());
+                    return ctb.build();
+                }
+            });
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", Long.class, null);
 
@@ -247,7 +261,14 @@ public class AnalysisView extends BaseView implements View {
             List<Analysis> list = item.getValue();
             Object parent = hca.addItem();
             hca.getContainerProperty(parent, "caption").setValue(project.getName());
-
+            Collections.sort(list, new Comparator<Analysis>() {
+                @Override
+                public int compare(Analysis o1, Analysis o2) {
+                    CompareToBuilder ctb = new CompareToBuilder();
+                    ctb.append(o2.getCreated(), o1.getCreated()); // reversed
+                    return ctb.build();
+                }
+            });
             for (Analysis analysis : list) {
                 Object aItem = hca.addItem();
                 hca.setParent(aItem, parent);
@@ -289,7 +310,14 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateCommitTree() {
         HierarchicalContainer hca = new HierarchicalContainer();
-        Map<Project, List<String>> projectCommits = new HashMap<Project, List<String>>();
+        SortedMap<Project, List<String>> projectCommits = new TreeMap<Project, List<String>>(new Comparator<Project>() {
+            @Override
+            public int compare(Project o1, Project o2) {
+                CompareToBuilder ctb = new CompareToBuilder();
+                ctb.append(o1.getName(), o2.getName());
+                return ctb.build();
+            }
+        });
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", String.class, null);
 
@@ -308,7 +336,19 @@ public class AnalysisView extends BaseView implements View {
             List<String> list = item.getValue();
             Object parent = hca.addItem();
             hca.getContainerProperty(parent, "caption").setValue(project.getName());
-            // hca.getContainerProperty(parent, "id").setValue(project.getId());
+
+            Collections.sort(list, new Comparator<String>() {
+                @Override
+                public int compare(String o1, String o2) {
+                    // Use CTB since the Collections.sort won't handle nulls properly:
+                    // java.lang.NullPointerException at
+                    // java.util.ComparableTimSort.countRunAndMakeAscending(ComparableTimSort.java:295)
+                    CompareToBuilder ctb = new CompareToBuilder();
+                    ctb.append(o1, o2);
+                    return ctb.build();
+                }
+            });
+
             for (String commitId : list) {
                 Object aItem = hca.addItem();
                 hca.setParent(aItem, parent);
@@ -376,7 +416,15 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateReleaseTree() {
         HierarchicalContainer hca = new HierarchicalContainer();
-        Map<Project, List<String>> projectReleases = new HashMap<Project, List<String>>();
+        SortedMap<Project, List<String>> projectReleases = new TreeMap<Project, List<String>>(
+            new Comparator<Project>() {
+                @Override
+                public int compare(Project o1, Project o2) {
+                    CompareToBuilder ctb = new CompareToBuilder();
+                    ctb.append(o1.getName(), o2.getName());
+                    return ctb.build();
+                }
+            });
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", String.class, null);
 
@@ -396,6 +444,7 @@ public class AnalysisView extends BaseView implements View {
             Object parent = hca.addItem();
             hca.getContainerProperty(parent, "caption").setValue(project.getName());
             // hca.getContainerProperty(parent, "id").setValue(project.getId());
+            Collections.sort(list);
             for (String release : list) {
                 Object aItem = hca.addItem();
                 hca.setParent(aItem, parent);
