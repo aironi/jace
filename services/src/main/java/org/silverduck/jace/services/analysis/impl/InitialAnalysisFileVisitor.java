@@ -72,6 +72,10 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         this.analysis = analysis;
     }
 
+    protected void addFeatures(Collection<String> features) {
+        this.features.addAll(features);
+    }
+
     public Analysis getAnalysis() {
         return analysis;
     }
@@ -243,6 +247,9 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                 }
 
                 break;
+            default:
+                release = "Unknown";
+                break;
             }
         } catch (FileNotFoundException e) {
             LOG.warn("processReleaseFile(): File not found.", e);
@@ -288,9 +295,5 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
     public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
         LOG.debug("visitFileFailed: " + file.getFileName());
         return FileVisitResult.CONTINUE;
-    }
-
-    protected void addFeatures(Collection<String> features) {
-        this.features.addAll(features);
     }
 };

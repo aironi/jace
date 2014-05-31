@@ -104,18 +104,21 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesTable = new Table(AppResources.getLocalizedString("label.analysisView.changedFeaturesTable",
             locale), changedFeaturesContainer);
 
-        changedFeaturesTable.setVisibleColumns("created", "feature.name", "slo.path", "slo.packageName",
-            "slo.className", "diff.modificationType", "diff.commit.commitId", "diff.commit.message");
+        changedFeaturesTable.setVisibleColumns("feature.name", "slo.path", "slo.packageName", "slo.className",
+            "diff.modificationType", "diff.commit.commitId", "diff.commit.message", "diff.commit.authorName",
+            "diff.commit.authorEmail", "diff.commit.authorDateOfChange", "diff.commit.authorTimeZone",
+            "diff.commit.authorTimeZoneOffSet", "created");
 
         changedFeaturesTable.setColumnHeaders(
-            AppResources.getLocalizedString("label.changedFeatureTable.created", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.featureName", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.sloPath", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.sloPackageName", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.sloClassName", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.modificationType", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.commitId", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.commitMessage", locale));
+            AppResources.getLocalizedString("label.changedFeatureTable.commitMessage", locale), "name", "email",
+            "dateofchange", "tz", "tzOffSet",
+            AppResources.getLocalizedString("label.changedFeatureTable.created", locale));
 
         changedFeaturesTable.setImmediate(true);
         changedFeaturesTable.setSelectable(true);
@@ -179,6 +182,11 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesContainer.addNestedContainerProperty("diff.modificationType");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.commitId");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.message");
+        changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorName");
+        changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorEmail");
+        changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorDateOfChange");
+        changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZone");
+        changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZoneOffSet");
 
         TabSheet analysisTabs = new TabSheet();
         analysisTabs.setSizeFull();

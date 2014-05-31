@@ -271,7 +271,13 @@ public class GitServiceImpl implements GitService {
                     for (RevCommit commit : revCommits) {
                         Commit jaceCommit = new Commit();
                         jaceCommit.setMessage(commit.getFullMessage().toString());
-
+                        // Add these.
+                        jaceCommit.setAuthorName(commit.getAuthorIdent().getName());
+                        jaceCommit.setAuthorEmail(commit.getAuthorIdent().getEmailAddress());
+                        jaceCommit.setAuthorTimeZone(commit.getAuthorIdent().getTimeZone());
+                        jaceCommit.setAuthorTimeZoneOffSet(commit.getAuthorIdent().getTimeZoneOffset());
+                        jaceCommit.setAuthorDateOfChange(commit.getAuthorIdent().getWhen());
+                        
                         // Diff the old and new revisions and iterate the diffs.
                         DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(repository, prevCommitId))
                             .setNewTree(resolveTreeIterator(repository, commit.toObjectId()));

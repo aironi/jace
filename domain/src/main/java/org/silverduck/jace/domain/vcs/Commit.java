@@ -11,8 +11,12 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * Created by ihietala on 23.5.2014.
@@ -21,6 +25,25 @@ import java.util.List;
 @Table(name = "VcsCommit")
 // 'Commit' seems to be reserved word (internal error from EclipseLink)
 public class Commit extends AbstractDomainObject {
+
+    @Column(name = "Author")
+    private String author;
+
+    @Column(name = "AuthorDateOfChange")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date authorDateOfChange;
+
+    @Column(name = "AuthorEmail")
+    private String authorEmail;
+
+    @Column(name = "AuthorName")
+    private String authorName;
+
+    @Column(name = "AuthorTz")
+    private TimeZone authorTimeZone;
+
+    @Column(name = "AuthorTzOffset")
+    private Integer authorTimeZoneOffSet;
 
     @Column(name = "CommitId")
     private String commitId;
@@ -36,6 +59,30 @@ public class Commit extends AbstractDomainObject {
             diffs.add(diff);
             diff.setCommit(this);
         }
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public Date getAuthorDateOfChange() {
+        return authorDateOfChange;
+    }
+
+    public String getAuthorEmail() {
+        return authorEmail;
+    }
+
+    public String getAuthorName() {
+        return authorName;
+    }
+
+    public TimeZone getAuthorTimeZone() {
+        return authorTimeZone;
+    }
+
+    public Integer getAuthorTimeZoneOffSet() {
+        return authorTimeZoneOffSet;
     }
 
     public String getCommitId() {
@@ -55,6 +102,30 @@ public class Commit extends AbstractDomainObject {
             diffs.remove(diff);
             diff.setCommit(null);
         }
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public void setAuthorDateOfChange(Date authorDateOfChange) {
+        this.authorDateOfChange = authorDateOfChange;
+    }
+
+    public void setAuthorEmail(String authorEmail) {
+        this.authorEmail = authorEmail;
+    }
+
+    public void setAuthorName(String authorName) {
+        this.authorName = authorName;
+    }
+
+    public void setAuthorTimeZone(TimeZone authorTimeZone) {
+        this.authorTimeZone = authorTimeZone;
+    }
+
+    public void setAuthorTimeZoneOffSet(Integer authorTimeZoneOffSet) {
+        this.authorTimeZoneOffSet = authorTimeZoneOffSet;
     }
 
     public void setCommitId(String commitId) {

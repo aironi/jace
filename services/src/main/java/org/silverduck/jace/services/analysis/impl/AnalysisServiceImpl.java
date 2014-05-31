@@ -118,7 +118,6 @@ public class AnalysisServiceImpl implements AnalysisService {
                                     // found a previous method
                                     // TODO: Add Feature map to a method. It should look up all used Types and determine
                                     // the features based on that (or, just map to SLOs)
-
                                 }
                             }
                         } else {
