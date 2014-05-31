@@ -116,8 +116,12 @@ public class AnalysisView extends BaseView implements View {
             AppResources.getLocalizedString("label.changedFeatureTable.sloClassName", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.modificationType", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.commitId", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.commitMessage", locale), "name", "email",
-            "dateofchange", "tz", "tzOffSet",
+            AppResources.getLocalizedString("label.changedFeatureTable.commitMessage", locale),
+            AppResources.getLocalizedString("label.changedFeatureTable.authorName", locale),
+            AppResources.getLocalizedString("label.changedFeatureTable.authorEmail", locale),
+            AppResources.getLocalizedString("label.changedFeatureTable.dateOfChange", locale),
+            AppResources.getLocalizedString("label.changedFeatureTable.timeZone", locale),
+            AppResources.getLocalizedString("label.changedFeatureTable.timeZoneOffSet", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.created", locale));
 
         changedFeaturesTable.setImmediate(true);
