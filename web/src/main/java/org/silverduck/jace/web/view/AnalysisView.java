@@ -112,8 +112,9 @@ public class AnalysisView extends BaseView implements View {
 
         changedFeaturesTable.setVisibleColumns("feature.name", "slo.path", "slo.packageName", "slo.className",
             "diff.modificationType", "diff.commit.commitId", "diff.commit.message", "diff.commit.authorName",
-            "diff.commit.authorEmail", "diff.commit.authorDateOfChange", "diff.commit.authorTimeZone",
-            "diff.commit.authorTimeZoneOffSet", "created");
+            "diff.commit.authorEmail", "diff.commit.authorDateOfChange",
+            // "diff.commit.authorTimeZone",
+            "diff.commit.formattedTimeZoneOffset", "created");
 
         changedFeaturesTable.setColumnHeaders(
             AppResources.getLocalizedString("label.changedFeatureTable.featureName", locale),
@@ -126,7 +127,7 @@ public class AnalysisView extends BaseView implements View {
             AppResources.getLocalizedString("label.changedFeatureTable.authorName", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.authorEmail", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.dateOfChange", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.timeZone", locale),
+            // AppResources.getLocalizedString("label.changedFeatureTable.timeZone", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.timeZoneOffSet", locale),
             AppResources.getLocalizedString("label.changedFeatureTable.created", locale));
 
@@ -195,8 +196,9 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorName");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorEmail");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorDateOfChange");
-        changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZone");
-        changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZoneOffSet");
+        // TODO: The table doesn't know how to show this field
+        // changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZone");
+        changedFeaturesContainer.addNestedContainerProperty("diff.commit.formattedTimeZoneOffset");
 
         TabSheet analysisTabs = new TabSheet();
         analysisTabs.setSizeFull();
@@ -276,6 +278,9 @@ public class AnalysisView extends BaseView implements View {
                 if (Boolean.TRUE.equals(analysis.getInitialAnalysis())) {
                     caption += " (Initial)";
                 }
+                caption += " - "
+                    + AppResources.getLocalizedString(analysis.getAnalysisStatus().getResourceKey(), UI.getCurrent()
+                        .getLocale());
                 hca.getContainerProperty(aItem, "caption").setValue(caption);
                 hca.getContainerProperty(aItem, "id").setValue(analysis.getId());
                 analysisTree.setChildrenAllowed(aItem, false);

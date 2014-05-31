@@ -13,6 +13,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -50,6 +51,10 @@ public class Commit extends AbstractDomainObject {
 
     @OneToMany(mappedBy = "commit", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Diff> diffs = new ArrayList<Diff>();
+
+    // Dummy field for Vaadin ....
+    @Transient
+    private String formattedTimeZoneOffset;
 
     @Column(name = "Message")
     private String message;
@@ -91,6 +96,24 @@ public class Commit extends AbstractDomainObject {
 
     public List<Diff> getDiffs() {
         return diffs;
+    }
+
+    @Transient
+    public String getFormattedTimeZoneOffset() {
+        if (getAuthorTimeZoneOffSet() != null) {
+            int tz = getAuthorTimeZoneOffSet() / 60;
+            StringBuilder sb = new StringBuilder();
+            sb.append("UTC");
+            if (tz < 0) {
+                sb.append("-");
+            } else {
+                sb.append("+");
+            }
+            sb.append(tz);
+            return sb.toString();
+        } else {
+            return "";
+        }
     }
 
     public String getMessage() {

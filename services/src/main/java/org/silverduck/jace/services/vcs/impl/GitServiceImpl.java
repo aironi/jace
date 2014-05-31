@@ -277,7 +277,7 @@ public class GitServiceImpl implements GitService {
                         jaceCommit.setAuthorTimeZone(commit.getAuthorIdent().getTimeZone());
                         jaceCommit.setAuthorTimeZoneOffSet(commit.getAuthorIdent().getTimeZoneOffset());
                         jaceCommit.setAuthorDateOfChange(commit.getAuthorIdent().getWhen());
-                        
+
                         // Diff the old and new revisions and iterate the diffs.
                         DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(repository, prevCommitId))
                             .setNewTree(resolveTreeIterator(repository, commit.toObjectId()));
