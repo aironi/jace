@@ -114,7 +114,8 @@ public class ProjectServiceImpl implements ProjectService {
         List<Diff> diffs = new ArrayList<Diff>();
         switch (project.getPluginConfiguration().getPluginType()) {
         case GIT:
-            diffs = gitService.pull(project.getPluginConfiguration().getLocalDirectory());
+            diffs = gitService.pull(project.getPluginConfiguration().getLocalDirectory(), project
+                .getPluginConfiguration().getUserName(), project.getPluginConfiguration().getPassword());
 
             project.removeAllBranches();
             for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {

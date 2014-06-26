@@ -56,7 +56,7 @@ public class Commit extends AbstractDomainObject {
     @Transient
     private String formattedTimeZoneOffset;
 
-    @Column(name = "Message")
+    @Column(name = "Message", length=1024)
     private String message;
 
     private void addDiff(Diff diff) {

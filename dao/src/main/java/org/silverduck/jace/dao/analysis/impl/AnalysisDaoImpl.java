@@ -7,7 +7,6 @@ import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
 import org.silverduck.jace.domain.slo.SLOStatus;
-import org.silverduck.jace.domain.vcs.Commit;
 
 import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
@@ -36,11 +35,12 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     }
 
     @Override
-    public SLO findSLO(String path) {
+    public SLO findSLO(String path, Long projectId) {
         // In this particular case it is possible that entity might not be found.
         try {
             Query query = getEntityManager().createNamedQuery("findByPath", SLO.class);
             query.setParameter("path", path);
+            query.setParameter("projectRID", projectId);
             return (SLO) query.getSingleResult();
         } catch (NoResultException e) {
             return null;

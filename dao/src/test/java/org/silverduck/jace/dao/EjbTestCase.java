@@ -1,32 +1,23 @@
 package org.silverduck.jace.dao;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.runner.RunWith;
-import org.junit.runners.BlockJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import javax.ejb.embeddable.EJBContainer;
-import javax.enterprise.context.Conversation;
-import javax.enterprise.inject.Produces;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.transaction.UserTransaction;
 import java.util.Properties;
-import org.apache.openejb.api.LocalClient;
-import org.silverduck.jace.dao.analysis.impl.AnalysisDaoImplTest;
 
 /**
  * Created by ihietala on 25.5.2014.
  */
 
-public abstract class DaoTestCase {
+public abstract class EjbTestCase {
     private static EJBContainer ejbContainer;
 
     @BeforeClass
@@ -51,7 +42,7 @@ public abstract class DaoTestCase {
         return entityManager;
     }
 
-    public void inject(DaoTestCase testCase) throws NamingException {
+    public void inject(EjbTestCase testCase) throws NamingException {
         Context context = ejbContainer.getContext();
         context.bind("inject", testCase);
     }

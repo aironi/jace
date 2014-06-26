@@ -6,13 +6,13 @@ import org.silverduck.jace.domain.feature.Feature;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -28,10 +28,13 @@ import java.util.List;
 @Entity
 @Table(name = "SLO")
 @NamedQueries({
-        @NamedQuery(name = "findByPath", query = "SELECT s FROM SLO s WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT"),
+        @NamedQuery(name = "findByPath", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID"),
         @NamedQuery(name = "updateStatus", query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids") })
 public class SLO extends AbstractDomainObject {
-
+    /*
+     * Add Imports that this SLO uses Add fully qualified type helper construct a 'ripple' collection (where this SLO is
+     * used) -> needs another phase after analysing the SLOs (analyseDependencies to AnalysisService)
+     */
     @ManyToOne
     @JoinColumn(name = "AnalysisRID")
     private Analysis analysis;
@@ -39,6 +42,32 @@ public class SLO extends AbstractDomainObject {
     @Column(name = "ClassName")
     private String className;
 
+    @ManyToMany(mappedBy = "dependsOn")
+    private List<SLO> dependantOf = new ArrayList<SLO>();
+
+    /**
+     * File level dependencies for ripple-effects
+     */
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "SLODependencies", joinColumns = { @JoinColumn(name = "SLODependsOnRID") }, inverseJoinColumns = { @JoinColumn(name = "SLODependantOfRID") })
+    private List<SLO> dependsOn = new ArrayList<SLO>();
+
+    /**
+     * This SLO is super class of these SLOs
+     */
+    @OneToMany(mappedBy = "extending", fetch = FetchType.LAZY)
+    private List<SLO> extendedBy = new ArrayList<SLO>();
+
+    /**
+     * This SLO is extending superclass
+     */
+    @ManyToOne
+    @JoinColumn(name = "childRID")
+    private SLO extending;
+
+    /**
+     * This file releates to this feature on file level
+     */
     @ManyToOne
     @JoinColumn(name = "FeatureRID")
     private Feature feature;
@@ -71,6 +100,13 @@ public class SLO extends AbstractDomainObject {
         this.sloStatus = SLOStatus.CURRENT;
     }
 
+    public void addDependency(SLO slo) {
+        if (!this.dependsOn.contains(slo)) {
+            this.dependsOn.add(slo);
+            this.dependantOf.add(this);
+        }
+    }
+
     public void addMethod(JavaMethod method) {
         if (!this.javaMethods.contains(method)) {
             javaMethods.add(method);
@@ -84,6 +120,14 @@ public class SLO extends AbstractDomainObject {
 
     public String getClassName() {
         return className;
+    }
+
+    public List<SLO> getExtendedBy() {
+        return extendedBy;
+    }
+
+    public SLO getExtending() {
+        return extending;
     }
 
     public Feature getFeature() {
@@ -110,6 +154,13 @@ public class SLO extends AbstractDomainObject {
         return sloType;
     }
 
+    public void removeDependency(SLO slo) {
+        if (this.dependsOn.contains(slo)) {
+            this.dependsOn.remove(slo);
+            this.dependantOf.remove(this);
+        }
+    }
+
     public void removeMethod(JavaMethod method) {
         if (this.javaMethods.contains(method)) {
             javaMethods.add(method);
@@ -123,6 +174,10 @@ public class SLO extends AbstractDomainObject {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public void setExtending(SLO parent) {
+        this.extending = parent;
     }
 
     public void setFeature(Feature feature) {

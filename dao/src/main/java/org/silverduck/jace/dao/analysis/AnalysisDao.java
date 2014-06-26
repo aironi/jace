@@ -31,9 +31,10 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      * 
      * @param path
      *            Path to use for search
+     * @param projectRID
      * @return SLO or null
      */
-    SLO findSLO(String path);
+    SLO findSLO(String path, Long projectRID);
 
     /**
      * Lists all analyses.

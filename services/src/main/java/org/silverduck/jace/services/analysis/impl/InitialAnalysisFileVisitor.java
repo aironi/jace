@@ -1,17 +1,29 @@
 package org.silverduck.jace.services.analysis.impl;
 
+import javafx.beans.property.SimpleStringProperty;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.SimplePropertyDescriptor;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.silverduck.jace.common.xml.XmlUtils;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
@@ -35,6 +47,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Path;
@@ -127,6 +140,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         ASTParser astParser = ASTParser.newParser(AST.JLS3);
         astParser.setKind(ASTParser.K_COMPILATION_UNIT);
         astParser.setSource(FileUtils.readFileToString(new File(file.toAbsolutePath().toString())).toCharArray());
+
         final CompilationUnit cu = (CompilationUnit) astParser.createAST(null);
 
         cu.accept(new ASTVisitor() {
@@ -134,10 +148,13 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
             private Map<String, String> imports = new HashMap<String, String>();
 
+            Map<String, String> variables = new HashMap<String, String>();
+
             public boolean visit(PackageDeclaration node) {
                 slo.setPackageName(node.getName().toString());
 
                 if (setting.getAutomaticFeatureMapping()) {
+
                     String[] packageParts = slo.getPackageName().split("\\.");
                     String featureName;
                     if (packageParts.length > 0) {
@@ -160,6 +177,54 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                 if (node.isPackageMemberTypeDeclaration()) {
                     slo.setClassName(node.getName().toString());
                 }
+
+                return true;
+            }
+
+            public boolean visit(MethodInvocation node) {
+
+                // TODO: Not done. Need to find out the calling types. One way:
+                // 1. Store the method invocations temporarily into associated JavaMethod (transient)
+                // 2. On second pass, evaluate the return types of the method calls and associate them persistently
+                // OR
+                // 1. Figure out how to get the ASTParser resolveBindings working outside of Eclipse Plugin framework...
+                if (currentMethod != null) {
+
+                    Expression exp = node.getExpression();
+
+                    String name = null;
+                    if (exp != null) {
+                        name = exp.toString();
+                    }
+                    String methodCall = node.getName().toString();
+                    String type = variables.get(name);
+                    // // currentMethod.addMethodCall(new JavaMethodCall(name, type,
+                    // cu.getLineNumber(node.getStartPosition())));
+
+                }
+                return true;
+            }
+
+            public boolean visit(VariableDeclarationFragment node) {
+
+                // if (currentMethod != null) {
+                String name = node.getName().toString();
+
+                String type = null;
+                try {
+                    type = BeanUtils.getProperty(node.getParent(), "type");
+                } catch (IllegalAccessException e) {
+                    // Bummer
+                } catch (InvocationTargetException e) {
+                    // Bummer
+                } catch (NoSuchMethodException e) {
+                    // Bummer
+                }
+
+                String fullyQualifiedType = resolveQualifiedType(type);
+                variables.put(name, fullyQualifiedType);
+                // }
+
                 return true;
             }
 
@@ -171,8 +236,18 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             }
 
             @Override
+            public void endVisit(MethodDeclaration node) {
+                if (currentMethod != null) {
+                    slo.addMethod(currentMethod);
+                    currentMethod = null;
+                }
+            }
+
+            @Override
             public boolean visit(MethodDeclaration node) {
                 LOG.debug("visit(MethodDeclaration): Visiting JavaMethod " + node.getName());
+                // variables = new HashMap<String, String>();
+
                 currentMethod = new JavaMethod();
                 currentMethod.setName(node.getName().toString());
                 currentMethod.setStartLine(cu.getLineNumber(node.getStartPosition()));
@@ -196,19 +271,25 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                     JavaParameter javaParameter = new JavaParameter(javaType, name);
                     currentMethod.addParameter(javaParameter);
                 }
-                slo.addMethod(currentMethod);
 
                 return true;
             }
 
             private String resolveQualifiedType(String type) {
-                String fullyQualifiedName;
+                String fullyQualifiedType;
                 if (type.contains(".")) {
-                    fullyQualifiedName = type;
+                    fullyQualifiedType = type;
                 } else {
-                    fullyQualifiedName = imports.get(type);
+                    fullyQualifiedType = imports.get(type);
                 }
-                return fullyQualifiedName;
+                if (fullyQualifiedType == null) {
+                    fullyQualifiedType = type; // Couldn't resolve. Perhaps imports are used with .* wildcard.
+                                               // FIXME: This might introduce a Fatal issue with type resolving that is
+                                               // related to
+                                               // the fact that we are not resolving bindings. Consider using something
+                                               // else than ASParser
+                }
+                return fullyQualifiedType;
             }
 
         });
@@ -251,8 +332,11 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                 release = "Unknown";
                 break;
             }
+            is.close();
         } catch (FileNotFoundException e) {
             LOG.warn("processReleaseFile(): File not found.", e);
+        } catch (IOException e) {
+            LOG.warn("processReleaseFile(): Exception when closing file.", e);
         }
 
         analysis.setReleaseVersion(release);

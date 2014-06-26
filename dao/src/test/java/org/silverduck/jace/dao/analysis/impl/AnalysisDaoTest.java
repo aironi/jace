@@ -5,7 +5,7 @@ import org.apache.openejb.api.LocalClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
-import org.silverduck.jace.dao.DaoTestCase;
+import org.silverduck.jace.dao.EjbTestCase;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
@@ -25,7 +25,7 @@ import java.util.List;
  */
 @RunWith(BlockJUnit4ClassRunner.class)
 @LocalClient
-public class AnalysisDaoImplTest extends DaoTestCase {
+public class AnalysisDaoTest extends EjbTestCase {
 
     @EJB
     private AnalysisDao analysisDao;
@@ -61,10 +61,18 @@ public class AnalysisDaoImplTest extends DaoTestCase {
         SLO sloInvalid = new SLO("/my/relative/test/path/java2.java", SLOType.SOURCE);
         SLO sloOld = new SLO("/my/relative/test/path/java.java", SLOType.SOURCE);
         sloOld.setSloStatus(SLOStatus.OLD);
+        Analysis analysis = new Analysis();
+        Project project = Project.newProject();
+        analysis.setProject(project);
+        slo.setAnalysis(analysis);
+        sloInvalid.setAnalysis(analysis);
+        sloOld.setAnalysis(analysis);
+        getEntityManager().persist(project);
+        getEntityManager().persist(analysis);
         getEntityManager().persist(slo);
         getEntityManager().persist(sloInvalid);
         getEntityManager().persist(sloOld);
-        SLO found = analysisDao.findSLO("/my/relative/test/path/java.java");
+        SLO found = analysisDao.findSLO("/my/relative/test/path/java.java", project.getId());
         Assert.assertEquals("Wrong SLO returned", slo, found);
     }
 

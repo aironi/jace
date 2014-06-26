@@ -27,6 +27,6 @@ public interface Plugin {
 
     List<String> listBranches(String localDirectory);
 
-    List<Diff> pull(String localDirectory);
+    List<Diff> pull(String localDirectory, String userName, String passWord);
 
 }

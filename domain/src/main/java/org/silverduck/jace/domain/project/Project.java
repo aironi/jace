@@ -33,15 +33,16 @@ public class Project extends AbstractDomainObject {
 
     public static Project newProject() {
         Project p = new Project();
-        p.setName("Jace Testing");
+
+        p.setName("J-Ace");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
-        p.getPluginConfiguration().setCloneUrl("https://github.com/aironi/jacetesting.git");
+        p.getPluginConfiguration().setCloneUrl("https://github.com/aironi/jace.git");
         p.getPluginConfiguration().setCommitIdPattern("Jace #(\\d+)");
         p.getPluginConfiguration().setLocalDirectory("");
         p.getPluginConfiguration().setUserName("");
         p.getPluginConfiguration().setPassword("");
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
-        p.getReleaseInfo().setPathToVersionFile("/testing/pom.xml");
+        p.getReleaseInfo().setPathToVersionFile("/build/pom.xml");
         p.getReleaseInfo().setPattern("/project/version");
         /*
          * p.setName(""); p.getPluginConfiguration().setPluginType(PluginType.GIT);

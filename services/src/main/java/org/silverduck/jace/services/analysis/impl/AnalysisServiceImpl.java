@@ -11,10 +11,8 @@ import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.analysis.AnalysisStatus;
 import org.silverduck.jace.domain.analysis.Granularity;
 import org.silverduck.jace.domain.feature.ChangedFeature;
-import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
-import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.domain.vcs.Hunk;
 import org.silverduck.jace.services.analysis.AnalysisService;
@@ -101,7 +99,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                     path = "/" + path;
                 }
 
-                SLO oldSlo = findSloByPath(path);
+                SLO oldSlo = findSloByPath(path, analysis.getProject().getId());
 
                 switch (diff.getModificationType()) {
                 case ADD:
@@ -160,7 +158,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                 String path = item.getKey();
                 Diff diff = item.getValue();
 
-                SLO newSlo = findSloByPath(path);
+                SLO newSlo = findSloByPath(path, analysis.getProject().getId());
                 if (newSlo != null) {
                     analysis.addChangedFeature(new ChangedFeature(newSlo.getFeature(), newSlo, diff));
                 }
@@ -199,8 +197,8 @@ public class AnalysisServiceImpl implements AnalysisService {
         return analysisSettingDao.findAnalysisSettingById(id);
     }
 
-    private SLO findSloByPath(String path) {
-        return analysisDao.findSLO(path);
+    private SLO findSloByPath(String path, Long projectId) {
+        return analysisDao.findSLO(path, projectId);
     }
 
     /**
@@ -227,6 +225,8 @@ public class AnalysisServiceImpl implements AnalysisService {
             // Walk all files in the tree and analyse them
             Files.walkFileTree(Paths.get(localDirectory), new InitialAnalysisFileVisitor(setting, analysis));
 
+            analyseDependencies(analysis);
+            
             analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
             analysisDao.update(analysis);
         } catch (IOException e) {
@@ -235,6 +235,12 @@ public class AnalysisServiceImpl implements AnalysisService {
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
 
+    }
+
+    private void analyseDependencies(Analysis analysis) {
+        for (SLO slo : analysis.getSlos()) {
+
+        }
     }
 
     @Override

@@ -11,6 +11,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.MergeResult;
+import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
@@ -99,7 +100,7 @@ public class GitServiceImpl implements GitService {
                         // No worries, the branch already exists locally
                     } else {
                         throw new JaceRuntimeException("Failed to checkout branch '" + branch
-                            + "' to local directory ' " + localDirectory + "'", e);
+                            + "' to local directory '" + localDirectory + "'", e);
                     }
                 }
 
@@ -232,13 +233,22 @@ public class GitServiceImpl implements GitService {
     }
 
     @Override
-    public List<Diff> pull(String localDirectory) {
+    public List<Diff> pull(String localDirectory, String userName, String passWord) {
         List<Diff> diffs = new ArrayList<Diff>();
         Repository repository = resolveRepository(localDirectory);
 
         Git git = new Git(repository);
         try {
-            PullResult pullResult = git.pull().call();
+            PullCommand pullCommand = git.pull();
+
+            if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(passWord)) {
+                UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(userName,
+                    passWord);
+                pullCommand.setCredentialsProvider(credProv);
+            }
+
+            PullResult pullResult = pullCommand.call();
+
             if (!pullResult.getMergeResult().getMergeStatus().isSuccessful()) {
 
                 LOG.fatal("Merge was not successful");

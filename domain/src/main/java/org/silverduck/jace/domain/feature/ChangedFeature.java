@@ -42,10 +42,16 @@ public class ChangedFeature extends AbstractDomainObject {
     @JoinColumn(name = "FeatureRID")
     private Feature feature;
 
+    /**
+     * Method level change
+     */
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "MethodRID")
     private JavaMethod method;
 
+    /**
+     * File level change
+     */
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "SLORID")
     private SLO slo;
