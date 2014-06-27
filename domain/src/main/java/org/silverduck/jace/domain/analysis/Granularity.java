@@ -3,7 +3,7 @@ package org.silverduck.jace.domain.analysis;
 import org.silverduck.jace.common.localization.LocalizedEnum;
 
 /**
- * Created by ihietala on 17.5.2014.
+ * Created by Iiro Hietala on 17.5.2014.
  */
 public enum Granularity implements LocalizedEnum {
     FILE("granularity.file"),

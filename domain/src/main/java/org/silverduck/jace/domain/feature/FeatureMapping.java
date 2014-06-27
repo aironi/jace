@@ -12,7 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * Created by ihietala on 17.5.2014.
+ * Created by Iiro Hietala on 17.5.2014.
  */
 @Entity
 @Table(name = "FeatureMapping")

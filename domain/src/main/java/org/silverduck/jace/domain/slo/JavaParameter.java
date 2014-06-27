@@ -10,7 +10,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * Created by ihietala on 18.5.2014.
+ * Created by Iiro Hietala on 18.5.2014.
  */
 @Entity
 @Table(name = "JavaParameter")

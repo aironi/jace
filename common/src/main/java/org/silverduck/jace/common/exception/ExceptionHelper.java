@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by ihietala on 21.5.2014.
+ * Created by Iiro Hietala on 21.5.2014.
  */
 public class ExceptionHelper {
     /**

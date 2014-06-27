@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by ihietala on 18.5.2014.
+ * Created by Iiro Hietala on 18.5.2014.
  */
 @Entity
 @Table(name = "JavaMethod")

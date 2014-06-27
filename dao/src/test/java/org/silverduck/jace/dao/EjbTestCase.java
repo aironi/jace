@@ -14,7 +14,7 @@ import javax.transaction.UserTransaction;
 import java.util.Properties;
 
 /**
- * Created by ihietala on 25.5.2014.
+ * Created by Iiro Hietala on 25.5.2014.
  */
 
 public abstract class EjbTestCase {

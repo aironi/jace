@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Created by ihietala on 17.5.2014.
+ * Created by Iiro Hietala on 17.5.2014.
  */
 public class BeanComboBoxHelper {
 

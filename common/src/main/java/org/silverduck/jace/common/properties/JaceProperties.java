@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * Created by ihietala on 17.5.2014.
+ * Created by Iiro Hietala on 17.5.2014.
  */
 public class JaceProperties {
 

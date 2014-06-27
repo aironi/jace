@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by ihietala on 27.5.2014.
+ * Created by Iiro Hietala on 27.5.2014.
  */
 public class AnalysisFileVisitor extends InitialAnalysisFileVisitor {
     private static final Log LOG = LogFactory.getLog(AnalysisFileVisitor.class);

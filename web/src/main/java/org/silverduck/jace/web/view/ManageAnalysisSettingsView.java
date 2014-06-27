@@ -175,7 +175,6 @@ public class ManageAnalysisSettingsView extends BaseView {
             public void buttonClick(Button.ClickEvent event) {
                 if (analysisSettingsComponent.isValid()) {
                     final AnalysisSetting settings = analysisSettingsComponent.commit();
-                    // FIXME: Implement JCA compliant solution.
 
                     final Future<Boolean> result;
                     if (settings.getId() == null) {

@@ -7,7 +7,7 @@ import org.junit.Test;
 import org.silverduck.jace.domain.vcs.ParsedDiff;
 
 /**
- * Created by ihietala on 23.5.2014.
+ * Created by Iiro Hietala on 23.5.2014.
  */
 public class GitServiceImplTest {
     GitServiceImpl service = new GitServiceImpl();

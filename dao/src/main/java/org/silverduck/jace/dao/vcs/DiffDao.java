@@ -5,7 +5,7 @@ import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.vcs.Diff;
 
 /**
- * Created by ihietala on 22.5.2014.
+ * Created by Iiro Hietala on 22.5.2014.
  */
 public interface DiffDao extends AbstractDao<Diff> {
 

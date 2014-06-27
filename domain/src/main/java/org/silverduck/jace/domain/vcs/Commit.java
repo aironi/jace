@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
- * Created by ihietala on 23.5.2014.
+ * Created by Iiro Hietala on 23.5.2014.
  */
 @Entity
 @Table(name = "VcsCommit")

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by ihietala on 23.5.2014.
+ * Created by Iiro Hietala on 23.5.2014.
  */
 @Entity
 @Table(name = "Hunk")

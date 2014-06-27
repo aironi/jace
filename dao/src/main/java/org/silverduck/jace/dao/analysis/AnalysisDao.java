@@ -11,7 +11,7 @@ import org.silverduck.jace.domain.vcs.Commit;
 import java.util.List;
 
 /**
- * Created by ihietala on 18.5.2014.
+ * Created by Iiro Hietala on 18.5.2014.
  */
 public interface AnalysisDao extends AbstractDao<Analysis> {
 

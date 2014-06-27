@@ -16,7 +16,7 @@ import javax.persistence.Query;
 import java.util.List;
 
 /**
- * Created by ihietala on 18.5.2014.
+ * Created by Iiro Hietala on 18.5.2014.
  */
 @Stateless(name = "AnalysisDaoEJB")
 @TransactionManagement(TransactionManagementType.CONTAINER)

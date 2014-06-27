@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by ihietala on 24.5.2014.
+ * Created by Iiro Hietala on 24.5.2014.
  */
 @RunWith(BlockJUnit4ClassRunner.class)
 @LocalClient

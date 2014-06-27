@@ -3,7 +3,7 @@ package org.silverduck.jace.domain.slo;
 import org.silverduck.jace.common.localization.LocalizedEnum;
 
 /**
- * Created by ihietala on 27.5.2014.
+ * Created by Iiro Hietala on 27.5.2014.
  */
 public enum SLOStatus implements LocalizedEnum {
 
