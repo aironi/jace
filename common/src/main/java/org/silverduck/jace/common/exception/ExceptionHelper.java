@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class ExceptionHelper {
     /**
-     * A stupid Exception cause-walker that picks up the messages from Exceptions and makes a string out of them in
+     * A simple Exception cause-walker that picks up the messages from Exceptions and makes a string out of them in
      * similar fashion as Stack Trace is shown.
      * 
      * @param t

@@ -28,7 +28,7 @@ import java.util.List;
 @Entity
 @Table(name = "SLO")
 @NamedQueries({
-        @NamedQuery(name = "findByPath", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID"),
+        @NamedQuery(name = "findByPath", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID ORDER BY s.created DESC"),
         @NamedQuery(name = "updateStatus", query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids") })
 public class SLO extends AbstractDomainObject {
     /*

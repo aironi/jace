@@ -25,6 +25,7 @@ import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.silverduck.jace.common.localization.AppResources;
+import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
@@ -57,6 +58,9 @@ public class AnalysisView extends BaseView implements View {
     public static final String ALL_FEATURES = "All Features";
 
     public static final String VIEW = "";
+
+    @EJB
+    private AnalysisDao analysisDao;
 
     private Panel analysisPanel;
 
@@ -247,7 +251,7 @@ public class AnalysisView extends BaseView implements View {
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", Long.class, null);
 
-        List<Analysis> analyses = analysisService.listAllAnalyses();
+        List<Analysis> analyses = analysisDao.listAllAnalyses();
         for (Analysis analysis : analyses) {
             List<Analysis> list = projectAnalyses.get(analysis.getProject());
             if (list == null) {
@@ -315,50 +319,41 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateCommitTree() {
         HierarchicalContainer hca = new HierarchicalContainer();
-        SortedMap<Project, List<String>> projectCommits = new TreeMap<Project, List<String>>(new Comparator<Project>() {
-            @Override
-            public int compare(Project o1, Project o2) {
-                CompareToBuilder ctb = new CompareToBuilder();
-                ctb.append(o1.getName(), o2.getName());
-                return ctb.build();
-            }
-        });
-        hca.addContainerProperty("caption", String.class, "");
-        hca.addContainerProperty("id", String.class, null);
-
-        List<Analysis> analyses = analysisService.listAllAnalyses();
-        for (Analysis analysis : analyses) {
-            List<String> list = projectCommits.get(analysis.getProject());
-            if (list == null) {
-                list = analysisService.listAllCommitIds(analysis.getProject().getId());
-                projectCommits.put(analysis.getProject(), list);
-            }
-        }
-        Iterator<Map.Entry<Project, List<String>>> iter = projectCommits.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<Project, List<String>> item = iter.next();
-            Project project = item.getKey();
-            List<String> list = item.getValue();
-            Object parent = hca.addItem();
-            hca.getContainerProperty(parent, "caption").setValue(project.getName());
-
-            Collections.sort(list, new Comparator<String>() {
+        SortedMap<Project, List<Object[]>> projectCommits = new TreeMap<Project, List<Object[]>>(
+            new Comparator<Project>() {
                 @Override
-                public int compare(String o1, String o2) {
-                    // Use CTB since the Collections.sort won't handle nulls properly:
-                    // java.lang.NullPointerException at
-                    // java.util.ComparableTimSort.countRunAndMakeAscending(ComparableTimSort.java:295)
+                public int compare(Project o1, Project o2) {
                     CompareToBuilder ctb = new CompareToBuilder();
-                    ctb.append(o1, o2);
+                    ctb.append(o1.getName(), o2.getName());
                     return ctb.build();
                 }
             });
+        hca.addContainerProperty("caption", String.class, "");
+        hca.addContainerProperty("id", String.class, null);
 
-            for (String commitId : list) {
+        List<Analysis> analyses = analysisDao.listAllAnalyses();
+        for (Analysis analysis : analyses) {
+            List<Object[]> list = projectCommits.get(analysis.getProject());
+            if (list == null) {
+                list = analysisDao.listScoredCommitsByRelease(analysis.getProject().getId(),
+                    analysis.getReleaseVersion());
+                projectCommits.put(analysis.getProject(), list);
+            }
+        }
+        Iterator<Map.Entry<Project, List<Object[]>>> iter = projectCommits.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<Project, List<Object[]>> item = iter.next();
+            Project project = item.getKey();
+            List<Object[]> list = item.getValue();
+            Object parent = hca.addItem();
+            hca.getContainerProperty(parent, "caption").setValue(project.getName());
+
+            for (Object[] scoredCommitId : list) {
                 Object aItem = hca.addItem();
                 hca.setParent(aItem, parent);
-                hca.getContainerProperty(aItem, "caption").setValue(commitId);
-                hca.getContainerProperty(aItem, "id").setValue(commitId);
+                String caption = scoredCommitId[1] + " (" + scoredCommitId[0] + ")";
+                hca.getContainerProperty(aItem, "caption").setValue(caption);
+                hca.getContainerProperty(aItem, "id").setValue(scoredCommitId[1]);
                 commitTree.setChildrenAllowed(aItem, false);
             }
         }
@@ -433,11 +428,11 @@ public class AnalysisView extends BaseView implements View {
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", String.class, null);
 
-        List<Analysis> analyses = analysisService.listAllAnalyses();
+        List<Analysis> analyses = analysisDao.listAllAnalyses();
         for (Analysis analysis : analyses) {
             List<String> list = projectReleases.get(analysis.getProject());
             if (list == null) {
-                list = analysisService.listAllReleases(analysis.getProject().getId());
+                list = analysisDao.listAllReleases(analysis.getProject().getId());
                 projectReleases.put(analysis.getProject(), list);
             }
         }

@@ -10,9 +10,8 @@ import org.silverduck.jace.domain.vcs.Diff;
  */
 public class DiffDaoImpl extends AbstractDaoImpl<Diff> implements DiffDao {
 
-
     @Override
     public void removeAllDiffs(Project project) {
-
+        // TODO: Implement
     }
 }

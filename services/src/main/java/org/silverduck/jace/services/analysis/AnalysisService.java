@@ -33,26 +33,6 @@ public interface AnalysisService {
      */
     void initialAnalysis(Long analysisSettingId);
 
-    /**
-     * Lists all analyses performed
-     * 
-     * @return
-     */
-    List<Analysis> listAllAnalyses();
-
-    List<String> listAllCommitIds(Long projectId);
-
-    /**
-     * Lists all releases that have been analysed
-     * 
-     * @param projectId
-     *            ProjectD to look for
-     * @return
-     */
-    List<String> listAllReleases(Long projectId);
-
-    List<ChangedFeature> listChangedFeaturesByRelease(String release);
-
     void removeAnalysisSettingById(Long id);
 
     /**

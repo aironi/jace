@@ -84,6 +84,16 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
     List<String> listChangedFeaturesNamesByRelease(String release);
 
     /**
+     * Returns a scored list of commits in a list of two-dimension Object where index 0 contains the score and index 1
+     * the commit Id
+     * 
+     * @param projectId
+     * @param releaseVersion
+     * @return
+     */
+    List<Object[]> listScoredCommitsByRelease(Long projectId, String releaseVersion);
+
+    /**
      * Update SLO.sloStatus as SLOStatus.DELETED for given SLO ids
      * 
      * @param deletedSloIDs
@@ -98,4 +108,5 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      *            SLO IDs to update
      */
     void updateSlosAsOld(List<Long> oldSloIDs);
+
 }

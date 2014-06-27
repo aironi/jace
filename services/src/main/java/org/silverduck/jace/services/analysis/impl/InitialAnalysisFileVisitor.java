@@ -1,6 +1,5 @@
 package org.silverduck.jace.services.analysis.impl;
 
-import javafx.beans.property.SimpleStringProperty;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -185,7 +184,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
                 // TODO: Not done. Need to find out the calling types. One way:
                 // 1. Store the method invocations temporarily into associated JavaMethod (transient)
-                // 2. On second pass, evaluate the return types of the method calls and associate them persistently
+                // 2. On second pass (Note: not implemented), evaluate the return types of the method calls and associate them persistently
                 // OR
                 // 1. Figure out how to get the ASTParser resolveBindings working outside of Eclipse Plugin framework...
                 if (currentMethod != null) {
@@ -263,9 +262,8 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                     SingleVariableDeclaration var = (SingleVariableDeclaration) parameter;
 
                     String name = var.getName().toString();
-                    String fullyQualifiedName;
                     String type = var.getType().toString();
-                    fullyQualifiedName = resolveQualifiedType(type);
+                    String fullyQualifiedName = resolveQualifiedType(type);
 
                     JavaType javaType = new JavaType(fullyQualifiedName, type);
                     JavaParameter javaParameter = new JavaParameter(javaType, name);

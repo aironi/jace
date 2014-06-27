@@ -19,7 +19,7 @@ public class Line extends AbstractDomainObject {
     @JoinColumn(name = "HunkRID")
     private Hunk hunk;
 
-    @Column(name = "Line")
+    @Column(name = "Line", length = 1024)
     private String line;
 
     @Column(name = "LineNumber")

@@ -62,6 +62,12 @@ public class AnalysisServiceImpl implements AnalysisService {
         return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 
+    private void analyseDependencies(Analysis analysis) {
+        // TODO: Implement
+        // for (SLO slo : analysis.getSlos()) {
+        // }
+    }
+
     @Override
     @Asynchronous
     public Future<Boolean> analyseProject(Long analysisSettingId) {
@@ -91,7 +97,11 @@ public class AnalysisServiceImpl implements AnalysisService {
                     Matcher matcher = pattern.matcher(diff.getCommit().getMessage());
                     if (matcher.find()) {
                         diff.getCommit().setCommitId(matcher.group());
+                    } else {
+                        // TODO: Consider making this configurable, not everyone likes to see such things
+                        diff.getCommit().setCommitId(diff.getCommit().getMessage());
                     }
+
                 }
 
                 String path = diff.getOldPath();
@@ -226,7 +236,7 @@ public class AnalysisServiceImpl implements AnalysisService {
             Files.walkFileTree(Paths.get(localDirectory), new InitialAnalysisFileVisitor(setting, analysis));
 
             analyseDependencies(analysis);
-            
+
             analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
             analysisDao.update(analysis);
         } catch (IOException e) {
@@ -235,32 +245,6 @@ public class AnalysisServiceImpl implements AnalysisService {
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
 
-    }
-
-    private void analyseDependencies(Analysis analysis) {
-        for (SLO slo : analysis.getSlos()) {
-
-        }
-    }
-
-    @Override
-    public List<Analysis> listAllAnalyses() {
-        return analysisDao.listAllAnalyses();
-    }
-
-    @Override
-    public List<String> listAllCommitIds(Long projectId) {
-        return analysisDao.listAllCommits(projectId);
-    }
-
-    @Override
-    public List<String> listAllReleases(Long projectId) {
-        return analysisDao.listAllReleases(projectId);
-    }
-
-    @Override
-    public List<ChangedFeature> listChangedFeaturesByRelease(String release) {
-        return analysisDao.listChangedFeaturesByRelease(release);
     }
 
     private void markSLOsAsDeleted(List<Long> deletedSloIDs) {

@@ -41,6 +41,8 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
             Query query = getEntityManager().createNamedQuery("findByPath", SLO.class);
             query.setParameter("path", path);
             query.setParameter("projectRID", projectId);
+            query.setFirstResult(0);
+            query.setMaxResults(1);
             return (SLO) query.getSingleResult();
         } catch (NoResultException e) {
             return null;
@@ -85,6 +87,14 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     public List<String> listChangedFeaturesNamesByRelease(String release) {
         Query query = getEntityManager().createNamedQuery("findFeatureNamesByReleaseVersion", ChangedFeature.class);
         query.setParameter("releaseVersion", release);
+        return query.getResultList();
+    }
+
+    @Override
+    public List<Object[]> listScoredCommitsByRelease(Long projectId, String releaseVersion) {
+        Query query = getEntityManager().createNamedQuery("findScoredCommitsByReleaseVersion", ChangedFeature.class);
+        query.setParameter("projectRID", projectId);
+        query.setParameter("releaseVersion", releaseVersion);
         return query.getResultList();
     }
 
