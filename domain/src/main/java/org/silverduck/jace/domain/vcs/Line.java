@@ -5,6 +5,7 @@ import org.silverduck.jace.domain.AbstractDomainObject;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
@@ -19,7 +20,8 @@ public class Line extends AbstractDomainObject {
     @JoinColumn(name = "HunkRID")
     private Hunk hunk;
 
-    @Column(name = "Line", length = 1024)
+    @Column(name = "Line")
+    @Lob
     private String line;
 
     @Column(name = "LineNumber")
