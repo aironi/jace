@@ -7,7 +7,6 @@ import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.filter.Compare;
-import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.ui.AbstractSelect;
@@ -16,7 +15,6 @@ import com.vaadin.ui.Alignment;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.Table;
@@ -24,22 +22,21 @@ import com.vaadin.ui.Tree;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
-import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.services.analysis.AnalysisService;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -56,6 +53,8 @@ import java.util.TreeMap;
 public class AnalysisView extends BaseView implements View {
 
     public static final String ALL_FEATURES = "All Features";
+
+    private static final Log LOG = LogFactory.getLog(AnalysisView.class);
 
     public static final String VIEW = "";
 
@@ -75,7 +74,7 @@ public class AnalysisView extends BaseView implements View {
 
     private Panel commitPanel;
 
-    private Tree commitTree;
+    // private Tree commitTree;
 
     Accordion detailsAccordion;
 
@@ -96,13 +95,6 @@ public class AnalysisView extends BaseView implements View {
         analysisPanel = new Panel(AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
         analysisPanel.setContent(analysisTree);
         return analysisPanel;
-    }
-
-    private Component createCommitTab() {
-        commitPanel = new Panel(AppResources.getLocalizedString("label.commits", UI.getCurrent().getLocale()));
-        commitTree = new Tree();
-        commitPanel.setContent(commitTree);
-        return commitPanel;
     }
 
     private Component createDetails() {
@@ -154,14 +146,12 @@ public class AnalysisView extends BaseView implements View {
             }
         });
 
-        // detailsLayout.addComponent(releaseSelect);
         detailsLayout.addComponent(featureSelect);
 
         detailsLayout.addComponent(changedFeaturesTable);
         detailsPanel.setContent(detailsLayout);
 
         return detailsPanel;
-
     }
 
     private Component createReleaseTab() {
@@ -174,7 +164,6 @@ public class AnalysisView extends BaseView implements View {
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         populateReleaseTree();
-        populateCommitTree();
         populateAnalysisTree();
     }
 
@@ -207,7 +196,6 @@ public class AnalysisView extends BaseView implements View {
         TabSheet analysisTabs = new TabSheet();
         analysisTabs.setSizeFull();
         analysisTabs.addTab(createReleaseTab());
-        analysisTabs.addTab(createCommitTab());
         analysisTabs.addTab(createAnalysisTab());
         analysisTabs.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener() {
             @Override
@@ -216,14 +204,13 @@ public class AnalysisView extends BaseView implements View {
                     populateAnalysisTree();
                 } else if (event.getTabSheet().getSelectedTab().equals(releasePanel)) {
                     populateReleaseTree();
-                } else if (event.getTabSheet().getSelectedTab().equals(commitPanel)) {
-                    populateCommitTree();
                 }
             }
         });
 
         HorizontalLayout hl = new HorizontalLayout();
-        hl.setSizeFull();
+        hl.setWidth(100, Unit.PERCENTAGE);
+        hl.setHeight(80, Unit.PERCENTAGE);
         hl.setSpacing(true);
 
         Component detailsPanel = createDetails();
@@ -317,66 +304,6 @@ public class AnalysisView extends BaseView implements View {
 
     }
 
-    private void populateCommitTree() {
-        HierarchicalContainer hca = new HierarchicalContainer();
-        SortedMap<Project, List<Object[]>> projectCommits = new TreeMap<Project, List<Object[]>>(
-            new Comparator<Project>() {
-                @Override
-                public int compare(Project o1, Project o2) {
-                    CompareToBuilder ctb = new CompareToBuilder();
-                    ctb.append(o1.getName(), o2.getName());
-                    return ctb.build();
-                }
-            });
-        hca.addContainerProperty("caption", String.class, "");
-        hca.addContainerProperty("id", String.class, null);
-
-        List<Analysis> analyses = analysisDao.listAllAnalyses();
-        for (Analysis analysis : analyses) {
-            List<Object[]> list = projectCommits.get(analysis.getProject());
-            if (list == null) {
-                list = analysisDao.listScoredCommitsByRelease(analysis.getProject().getId(),
-                    analysis.getReleaseVersion());
-                projectCommits.put(analysis.getProject(), list);
-            }
-        }
-        Iterator<Map.Entry<Project, List<Object[]>>> iter = projectCommits.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<Project, List<Object[]>> item = iter.next();
-            Project project = item.getKey();
-            List<Object[]> list = item.getValue();
-            Object parent = hca.addItem();
-            hca.getContainerProperty(parent, "caption").setValue(project.getName());
-
-            for (Object[] scoredCommitId : list) {
-                Object aItem = hca.addItem();
-                hca.setParent(aItem, parent);
-                String caption = scoredCommitId[1] + " (" + scoredCommitId[0] + ")";
-                hca.getContainerProperty(aItem, "caption").setValue(caption);
-                hca.getContainerProperty(aItem, "id").setValue(scoredCommitId[1]);
-                commitTree.setChildrenAllowed(aItem, false);
-            }
-        }
-        commitTree.setItemCaptionMode(AbstractSelect.ItemCaptionMode.PROPERTY);
-        commitTree.setItemCaptionPropertyId("caption");
-        commitTree.setContainerDataSource(hca);
-        commitTree.setImmediate(true);
-        commitTree.addValueChangeListener(new Property.ValueChangeListener() {
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                Object idValue = commitTree.getValue();
-                Item item = commitTree.getItem(idValue);
-                if (item != null) {
-                    Property idProperty = item.getItemProperty("id");
-                    if (idProperty != null) {
-                        String commitId = (String) idProperty.getValue();
-                        populateDetailsForCommit(commitId);
-                    }
-                }
-            }
-        });
-    }
-
     private void populateDetailsCommon() {
         featureSelect.removeAllItems();
         Set<String> featureNames = new HashSet<String>();
@@ -416,6 +343,9 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateReleaseTree() {
         HierarchicalContainer hca = new HierarchicalContainer();
+
+        SortedMap<String, List<Object[]>> releaseCommits = new TreeMap<String, List<Object[]>>();
+
         SortedMap<Project, List<String>> projectReleases = new TreeMap<Project, List<String>>(
             new Comparator<Project>() {
                 @Override
@@ -427,6 +357,7 @@ public class AnalysisView extends BaseView implements View {
             });
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", String.class, null);
+        hca.addContainerProperty("type", String.class, null);
 
         List<Analysis> analyses = analysisDao.listAllAnalyses();
         for (Analysis analysis : analyses) {
@@ -434,6 +365,17 @@ public class AnalysisView extends BaseView implements View {
             if (list == null) {
                 list = analysisDao.listAllReleases(analysis.getProject().getId());
                 projectReleases.put(analysis.getProject(), list);
+                for (String release : list) {
+                    if (release != null) {
+                        List<Object[]> commits = analysisDao.listScoredCommitsByRelease(analysis.getProject().getId(),
+                            release);
+                        if (commits == null) {
+                            commits = new ArrayList<>();
+                        }
+
+                        releaseCommits.put(release, commits);
+                    }
+                }
             }
         }
         Iterator<Map.Entry<Project, List<String>>> iter = projectReleases.entrySet().iterator();
@@ -441,16 +383,30 @@ public class AnalysisView extends BaseView implements View {
             Map.Entry<Project, List<String>> item = iter.next();
             Project project = item.getKey();
             List<String> list = item.getValue();
-            Object parent = hca.addItem();
-            hca.getContainerProperty(parent, "caption").setValue(project.getName());
-            // hca.getContainerProperty(parent, "id").setValue(project.getId());
+            Object projectItem = hca.addItem();
+            hca.getContainerProperty(projectItem, "caption").setValue(project.getName());
+            hca.getContainerProperty(projectItem, "type").setValue("project");
+            hca.getContainerProperty(projectItem, "id").setValue(project.getId().toString());
             Collections.sort(list);
             for (String release : list) {
-                Object aItem = hca.addItem();
-                hca.setParent(aItem, parent);
-                hca.getContainerProperty(aItem, "caption").setValue(release);
-                hca.getContainerProperty(aItem, "id").setValue(release);
-                releaseTree.setChildrenAllowed(aItem, false);
+                Object releaseItem = hca.addItem();
+                hca.setParent(releaseItem, projectItem);
+                hca.getContainerProperty(releaseItem, "caption").setValue(release);
+                hca.getContainerProperty(releaseItem, "id").setValue(release);
+                hca.getContainerProperty(releaseItem, "type").setValue("release");
+                if (release != null) {
+                    for (Object[] scoredCommitId : releaseCommits.get(release)) {
+                        Object commitItem = hca.addItem();
+                        hca.setParent(commitItem, releaseItem);
+                        String caption = scoredCommitId[1] + " (Score: " + scoredCommitId[0] + ")";
+                        hca.getContainerProperty(commitItem, "caption").setValue(caption);
+                        hca.getContainerProperty(commitItem, "id").setValue(scoredCommitId[1]);
+                        hca.getContainerProperty(commitItem, "type").setValue("commit");
+                        releaseTree.setChildrenAllowed(commitItem, false);
+                    }
+                } else {
+                    releaseTree.setChildrenAllowed(releaseItem, false);
+                }
             }
         }
         releaseTree.setItemCaptionMode(AbstractSelect.ItemCaptionMode.PROPERTY);
@@ -466,9 +422,15 @@ public class AnalysisView extends BaseView implements View {
 
                 if (item != null) {
                     Property idProperty = item.getItemProperty("id");
-                    if (idProperty != null) {
-                        String release = (String) idProperty.getValue();
-                        populateDetailsForRelease(release);
+                    Property typeProperty = item.getItemProperty("type");
+                    if (idProperty != null && typeProperty != null) {
+                        String type = (String) typeProperty.getValue();
+                        String key = (String) idProperty.getValue();
+                        if ("release".equals(type)) {
+                            populateDetailsForRelease(key);
+                        } else if ("commit".equals(type)) {
+                            populateDetailsForCommit(key);
+                        }
                     }
                 }
             }

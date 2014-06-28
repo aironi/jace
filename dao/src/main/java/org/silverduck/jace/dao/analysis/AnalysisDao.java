@@ -109,4 +109,5 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      */
     void updateSlosAsOld(List<Long> oldSloIDs);
 
+
 }

@@ -217,6 +217,11 @@ public class GitServiceImpl implements GitService {
                         oldLineNumber++;
                     } else if (line.startsWith("+")) {
                         newLineNumber++;
+                        LOG.fatal("Addingline to to hunk: " + hunk);
+                        if (hunk != null) {
+                            LOG.fatal("hunk.newstartline=" + hunk.getNewStartLine());
+                            LOG.fatal("The diff is: " + diff);
+                        }
                         hunk.addAddedLine(new Line(hunk.getNewStartLine() + newLineNumber - 1, line));// FIXME: NPE here
                     } else if (line.startsWith("-")) {
                         oldLineNumber++;
