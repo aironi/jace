@@ -208,14 +208,16 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
     }
 
-    public Long calculateFileDependenciesScore(SLO slo, int depth) {
+    public Long calculateFileDependenciesScore(SLO slo, SLO parent, int depth) {
         Long score = 0L;
 
         List<SLO> dependsOn = slo.getDependsOn();
         score += (dependsOn.size() / depth); // direct dependencies multiplier = 1, for each level divide by depth
 
         for (SLO dependency : dependsOn) {
-            score += calculateFileDependenciesScore(dependency, depth + 1);
+            if (!dependency.getClass().equals(parent.getClassName())) {
+                score += calculateFileDependenciesScore(dependency, parent, depth + 1);
+            }
         }
         return score;
     }
@@ -294,7 +296,7 @@ public class AnalysisServiceImpl implements AnalysisService {
 
             if (score != null) {
                 if (cf.getAnalysis().getAnalysisSetting().getGranularity() == Granularity.FILE) {
-                    score += calculateFileDependenciesScore(cf.getSlo(), 1);
+                    score += calculateFileDependenciesScore(cf.getSlo(), cf.getSlo(), 1);
                 } else {
                     // TODO: Implement method level granularity score calculation
                 }
