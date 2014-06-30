@@ -140,6 +140,10 @@ public class AnalysisDaoTest extends EjbTestCase {
 
     @Test
     public void testListChangedFeaturesByRelease() {
+        Project project = new Project();
+        project.setName("Test");
+        getEntityManager().persist(project);
+
         Feature feature1 = new Feature();
         feature1.setName("Feature 1");
         Feature feature2 = new Feature();
@@ -156,6 +160,7 @@ public class AnalysisDaoTest extends EjbTestCase {
         slo2.setSloStatus(SLOStatus.DELETED);
         slo3.setSloStatus(SLOStatus.CURRENT);
         Analysis previousAnalysis = new Analysis();
+        previousAnalysis.setProject(project);
         previousAnalysis.setReleaseVersion("1.0");
         previousAnalysis.addSlo(slo1);
         previousAnalysis.addSlo(slo2);
@@ -174,6 +179,7 @@ public class AnalysisDaoTest extends EjbTestCase {
         ChangedFeature newCf1 = new ChangedFeature(feature1, newSlo1, null);
         ChangedFeature newCf2 = new ChangedFeature(feature1, newSlo2, null);
         Analysis newAnalysis = new Analysis();
+        newAnalysis.setProject(project);
         newAnalysis.setReleaseVersion("1.1");
         newAnalysis.addSlo(newSlo1);
         newAnalysis.addSlo(newSlo2);
@@ -181,7 +187,7 @@ public class AnalysisDaoTest extends EjbTestCase {
         newAnalysis.addChangedFeature(newCf2);
         getEntityManager().persist(newAnalysis);
 
-        List<ChangedFeature> list = analysisDao.listChangedFeaturesByRelease("1.1");
+        List<ChangedFeature> list = analysisDao.listChangedFeaturesByRelease(project.getId(), "1.1");
         Assert.assertEquals("Wrong amount of features returned", 2, list.size());
         Assert.assertTrue("newCf1 was not contained in list", list.contains(newCf1));
         Assert.assertTrue("newCf2 was not contained in list", list.contains(newCf2));

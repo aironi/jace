@@ -1,6 +1,7 @@
 package org.silverduck.jace.services.analysis.impl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
@@ -10,6 +11,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.analysis.AnalysisStatus;
 import org.silverduck.jace.domain.analysis.Granularity;
+import org.silverduck.jace.domain.analysis.slo.SLOImport;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
@@ -26,6 +28,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -63,9 +67,20 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     private void analyseDependencies(Analysis analysis) {
-        // TODO: Implement
-        // for (SLO slo : analysis.getSlos()) {
-        // }
+        for (SLO slo : analysis.getSlos()) {
+            for (SLOImport sloImport : slo.getSloImports()) {
+                SLO dependency = analysisDao.findSLOByQualifiedClassName(sloImport.getQualifiedClassName(), analysis
+                    .getProject().getId());
+                if (dependency != null) {
+                    slo.addDependency(dependency);
+                    dependency.setAnalysis(analysis);
+                    LOG.fatal("Adding dependency for SLO " + slo.getQualifiedClassName() + " to -> "
+                        + dependency.getQualifiedClassName());
+                }
+            }
+            // Clear first-phase stuff
+            slo.removeSLOImports();
+        }
     }
 
     @Override
@@ -82,6 +97,7 @@ public class AnalysisServiceImpl implements AnalysisService {
             Analysis analysis = new Analysis();
             analysis.setProject(setting.getProject());
             analysis.setAnalysisStatus(AnalysisStatus.ANALYSING);
+            analysis.setAnalysisSetting(setting);
             analysisDao.add(analysis);
 
             Map<String, Diff> addedFiles = new HashMap<String, Diff>();
@@ -192,6 +208,18 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
     }
 
+    public Long calculateFileDependenciesScore(SLO slo, int depth) {
+        Long score = 0L;
+
+        List<SLO> dependsOn = slo.getDependsOn();
+        score += (dependsOn.size() / depth); // direct dependencies multiplier = 1, for each level divide by depth
+
+        for (SLO dependency : dependsOn) {
+            score += calculateFileDependenciesScore(dependency, depth + 1);
+        }
+        return score;
+    }
+
     @Override
     public List<AnalysisSetting> findAllAnalysisSettings() {
         return analysisSettingDao.findAllAnalysisSettings();
@@ -223,6 +251,7 @@ public class AnalysisServiceImpl implements AnalysisService {
 
         Analysis analysis = new Analysis();
         analysis.setProject(setting.getProject());
+        analysis.setAnalysisSetting(setting);
         // This is a "root"-analysis
         analysis.setInitialAnalysis(true);
         analysis.setAnalysisStatus(AnalysisStatus.INITIAL_ANALYSIS);
@@ -238,13 +267,59 @@ public class AnalysisServiceImpl implements AnalysisService {
             analyseDependencies(analysis);
 
             analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
-            analysisDao.update(analysis);
+            // analysisDao.update(analysis);
         } catch (IOException e) {
             analysis.setAnalysisStatus(AnalysisStatus.ERROR);
             analysisDao.update(analysis);
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
 
+    }
+
+    @Override
+    public List<ScoredCommit> listScoredCommitsByRelease(Long projectId, String releaseVersion) {
+        // Get the directly changed feature from db and the initial score
+        Map<String, Long> commitScoreMap = new HashMap<String, Long>();
+        List<Object[]> commits = analysisDao.listScoredCommitsByRelease(projectId, releaseVersion);
+        for (Object[] commit : commits) {
+            Long score = (Long) commit[0];
+            String commitId = (String) commit[1];
+            commitScoreMap.put(commitId, score);
+        }
+
+        // Analyse all changed feature dependencies
+        List<ChangedFeature> changedFeatures = analysisDao.listChangedFeaturesByRelease(projectId, releaseVersion);
+        for (ChangedFeature cf : changedFeatures) {
+            Long score = commitScoreMap.get(cf.getDiff().getCommit().getCommitId());
+
+            if (score != null) {
+                if (cf.getAnalysis().getAnalysisSetting().getGranularity() == Granularity.FILE) {
+                    score += calculateFileDependenciesScore(cf.getSlo(), 1);
+                } else {
+                    // TODO: Implement method level granularity score calculation
+                }
+                commitScoreMap.put(cf.getDiff().getCommit().getCommitId(), score);
+            }
+        }
+
+        // Create a ordered ScoredCommit list...
+        List<ScoredCommit> list = new ArrayList<ScoredCommit>();
+        Iterator<Map.Entry<String, Long>> iterator = commitScoreMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Long> item = iterator.next();
+            list.add(new ScoredCommit(item.getKey(), item.getValue()));
+        }
+
+        Collections.sort(list, new Comparator<ScoredCommit>() {
+            @Override
+            public int compare(ScoredCommit o1, ScoredCommit o2) {
+                CompareToBuilder ctb = new CompareToBuilder();
+                ctb.append(o2.getScore(), o1.getScore()); // inverse
+                return ctb.toComparison();
+            }
+        });
+
+        return list;
     }
 
     private void markSLOsAsDeleted(List<Long> deletedSloIDs) {

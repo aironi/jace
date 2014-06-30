@@ -37,6 +37,17 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
     SLO findSLO(String path, Long projectRID);
 
     /**
+     * Attempts to find a SLO with a qualified class name
+     * 
+     * @param qualifiedClassName
+     *            Qualified Class name
+     * @param projectId
+     *            Project Identifier
+     * @return If found the SLO, otherwise null
+     */
+    SLO findSLOByQualifiedClassName(String qualifiedClassName, Long projectId);
+
+    /**
      * Lists all analyses.
      * 
      * @return
@@ -72,7 +83,7 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      *            Release identifier
      * @return
      */
-    List<ChangedFeature> listChangedFeaturesByRelease(String release);
+    List<ChangedFeature> listChangedFeaturesByRelease(Long projectID, String release);
 
     /**
      * Lists unique feature names for changed features in a release
@@ -108,6 +119,4 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      *            SLO IDs to update
      */
     void updateSlosAsOld(List<Long> oldSloIDs);
-
-
 }

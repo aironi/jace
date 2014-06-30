@@ -23,6 +23,7 @@ public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
             throw new RuntimeException("The EntityManager was null!");
         }
         em.persist(entity);
+        em.flush();
     }
 
     @Override
@@ -56,7 +57,7 @@ public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
     }
 
     /**
-     * Update a persited entity into databasee
+     * Update a persisted entity into databasee
      * 
      * @param entity
      *            A persisted entity to update into database

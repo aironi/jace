@@ -253,7 +253,6 @@ public class ManageAnalysisSettingsView extends BaseView {
         HorizontalLayout hl = new HorizontalLayout();
 
         vl.setSizeFull();
-
         hl.setSizeFull();
 
         super.getContentLayout().addComponent(vl);

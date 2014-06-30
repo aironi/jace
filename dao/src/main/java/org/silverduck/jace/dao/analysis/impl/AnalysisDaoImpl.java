@@ -16,7 +16,7 @@ import javax.persistence.Query;
 import java.util.List;
 
 /**
- * Created by Iiro Hietala on 18.5.2014.
+ * Analysis related database operations Created by Iiro Hietala on 18.5.2014.
  */
 @Stateless(name = "AnalysisDaoEJB")
 @TransactionManagement(TransactionManagementType.CONTAINER)
@@ -40,6 +40,20 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
         try {
             Query query = getEntityManager().createNamedQuery("findByPath", SLO.class);
             query.setParameter("path", path);
+            query.setParameter("projectRID", projectId);
+            query.setFirstResult(0);
+            query.setMaxResults(1);
+            return (SLO) query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public SLO findSLOByQualifiedClassName(String qualifiedClassName, Long projectId) {
+        try {
+            Query query = getEntityManager().createNamedQuery("findByQualifiedClassName", SLO.class);
+            query.setParameter("qualifiedClassName", qualifiedClassName);
             query.setParameter("projectRID", projectId);
             query.setFirstResult(0);
             query.setMaxResults(1);
@@ -77,9 +91,10 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     }
 
     @Override
-    public List<ChangedFeature> listChangedFeaturesByRelease(String release) {
+    public List<ChangedFeature> listChangedFeaturesByRelease(Long projectId, String release) {
         Query query = getEntityManager().createNamedQuery("findChangedFeaturesByRelease", ChangedFeature.class);
         query.setParameter("releaseVersion", release);
+        query.setParameter("projectRID", projectId);
         return query.getResultList();
     }
 

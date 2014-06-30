@@ -2,6 +2,7 @@ package org.silverduck.jace.domain.slo;
 
 import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.analysis.Analysis;
+import org.silverduck.jace.domain.analysis.slo.SLOImport;
 import org.silverduck.jace.domain.feature.Feature;
 
 import javax.persistence.CascadeType;
@@ -29,6 +30,7 @@ import java.util.List;
 @Table(name = "SLO")
 @NamedQueries({
         @NamedQuery(name = "findByPath", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID ORDER BY s.created DESC"),
+        @NamedQuery(name = "findByQualifiedClassName", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.qualifiedClassName = :qualifiedClassName AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID ORDER BY s.created DESC"),
         @NamedQuery(name = "updateStatus", query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids") })
 public class SLO extends AbstractDomainObject {
     /*
@@ -45,22 +47,13 @@ public class SLO extends AbstractDomainObject {
     @ManyToMany(mappedBy = "dependsOn")
     private List<SLO> dependantOf = new ArrayList<SLO>();
 
-    /**
-     * File level dependencies for ripple-effects
-     */
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "SLODependencies", joinColumns = { @JoinColumn(name = "SLODependsOnRID") }, inverseJoinColumns = { @JoinColumn(name = "SLODependantOfRID") })
     private List<SLO> dependsOn = new ArrayList<SLO>();
 
-    /**
-     * This SLO is super class of these SLOs
-     */
     @OneToMany(mappedBy = "extending", fetch = FetchType.LAZY)
     private List<SLO> extendedBy = new ArrayList<SLO>();
 
-    /**
-     * This SLO is extending superclass
-     */
     @ManyToOne
     @JoinColumn(name = "childRID")
     private SLO extending;
@@ -68,7 +61,7 @@ public class SLO extends AbstractDomainObject {
     /**
      * This file releates to this feature on file level
      */
-    @ManyToOne
+    @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "FeatureRID")
     private Feature feature;
 
@@ -80,6 +73,12 @@ public class SLO extends AbstractDomainObject {
 
     @Column(name = "Path")
     private String path;
+
+    @Column(name = "QualifiedClassName")
+    private String qualifiedClassName;
+
+    @OneToMany(mappedBy = "slo", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<SLOImport> sloImports = new ArrayList<SLOImport>();
 
     @Column(name = "SLOStatus")
     @Enumerated(EnumType.STRING)
@@ -101,9 +100,9 @@ public class SLO extends AbstractDomainObject {
     }
 
     public void addDependency(SLO slo) {
-        if (!this.dependsOn.contains(slo)) {
-            this.dependsOn.add(slo);
-            this.dependantOf.add(this);
+        if (!this.getDependsOn().contains(slo)) {
+            this.getDependsOn().add(slo);
+            this.getDependantOf().add(this);
         }
     }
 
@@ -111,6 +110,13 @@ public class SLO extends AbstractDomainObject {
         if (!this.javaMethods.contains(method)) {
             javaMethods.add(method);
             method.setSlo(this);
+        }
+    }
+
+    public void addSLOImport(SLOImport sloImport) {
+        if (!this.getSloImports().contains(sloImport)) {
+            getSloImports().add(sloImport);
+            sloImport.setSlo(this);
         }
     }
 
@@ -122,10 +128,27 @@ public class SLO extends AbstractDomainObject {
         return className;
     }
 
+    public List<SLO> getDependantOf() {
+        return dependantOf;
+    }
+
+    /**
+     * File level dependencies for ripple-effects
+     */
+    public List<SLO> getDependsOn() {
+        return dependsOn;
+    }
+
+    /**
+     * This SLO is super class of these SLOs
+     */
     public List<SLO> getExtendedBy() {
         return extendedBy;
     }
 
+    /**
+     * This SLO is extending superclass
+     */
     public SLO getExtending() {
         return extending;
     }
@@ -146,6 +169,14 @@ public class SLO extends AbstractDomainObject {
         return path;
     }
 
+    public String getQualifiedClassName() {
+        return qualifiedClassName;
+    }
+
+    public List<SLOImport> getSloImports() {
+        return sloImports;
+    }
+
     public SLOStatus getSloStatus() {
         return sloStatus;
     }
@@ -155,9 +186,9 @@ public class SLO extends AbstractDomainObject {
     }
 
     public void removeDependency(SLO slo) {
-        if (this.dependsOn.contains(slo)) {
-            this.dependsOn.remove(slo);
-            this.dependantOf.remove(this);
+        if (this.getDependsOn().contains(slo)) {
+            this.getDependsOn().remove(slo);
+            this.getDependantOf().remove(this);
         }
     }
 
@@ -166,6 +197,20 @@ public class SLO extends AbstractDomainObject {
             javaMethods.add(method);
             method.setSlo(this);
         }
+    }
+
+    public void removeSLOImport(SLOImport sloImport) {
+        if (this.getSloImports().contains(sloImport)) {
+            getSloImports().remove(sloImport);
+            sloImport.setSlo(null);
+        }
+    }
+
+    public void removeSLOImports() {
+        for (SLOImport sloImport : getSloImports()) {
+            sloImport.setSlo(null);
+        }
+        getSloImports().clear();
     }
 
     public void setAnalysis(Analysis analysis) {
@@ -190,6 +235,10 @@ public class SLO extends AbstractDomainObject {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public void setQualifiedClassName(String qualifiedClassName) {
+        this.qualifiedClassName = qualifiedClassName;
     }
 
     public void setSloStatus(SLOStatus sloStatus) {

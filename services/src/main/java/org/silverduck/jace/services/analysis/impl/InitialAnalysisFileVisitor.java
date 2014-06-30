@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.silverduck.jace.common.xml.XmlUtils;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.analysis.slo.SLOImport;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.feature.Feature;
 import org.silverduck.jace.domain.project.Project;
@@ -175,6 +176,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             public boolean visit(TypeDeclaration node) {
                 if (node.isPackageMemberTypeDeclaration()) {
                     slo.setClassName(node.getName().toString());
+                    slo.setQualifiedClassName(slo.getPackageName() + "." + slo.getClassName());
                 }
 
                 return true;
@@ -184,7 +186,8 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
                 // TODO: Not done. Need to find out the calling types. One way:
                 // 1. Store the method invocations temporarily into associated JavaMethod (transient)
-                // 2. On second pass (Note: not implemented), evaluate the return types of the method calls and associate them persistently
+                // 2. On second pass (Note: not implemented), evaluate the return types of the method calls and
+                // associate them persistently
                 // OR
                 // 1. Figure out how to get the ASTParser resolveBindings working outside of Eclipse Plugin framework...
                 if (currentMethod != null) {
@@ -231,6 +234,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                 String packageName = node.getName().toString();
                 String className = packageName.substring(packageName.lastIndexOf('.') + 1);
                 imports.put(className, packageName);
+                slo.addSLOImport(new SLOImport(packageName));
                 return true;
             }
 
@@ -285,7 +289,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                                                // FIXME: This might introduce a Fatal issue with type resolving that is
                                                // related to
                                                // the fact that we are not resolving bindings. Consider using something
-                                               // else than ASParser
+                                               // else than ASTParser
                 }
                 return fullyQualifiedType;
             }

@@ -5,6 +5,7 @@ import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.vcs.Commit;
+import org.silverduck.jace.services.analysis.impl.ScoredCommit;
 import org.silverduck.jace.services.project.impl.PullingCompleteEvent;
 
 import javax.ejb.Asynchronous;
@@ -32,6 +33,8 @@ public interface AnalysisService {
      * @param setting
      */
     void initialAnalysis(Long analysisSettingId);
+
+    List<ScoredCommit> listScoredCommitsByRelease(Long projectId, String releaseVersion);
 
     void removeAnalysisSettingById(Long id);
 

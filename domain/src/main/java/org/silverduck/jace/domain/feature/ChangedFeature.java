@@ -23,10 +23,10 @@ import javax.persistence.Table;
 @NamedQueries({
         @NamedQuery(name = "findChangedFeaturesByProject", query = "SELECT cf FROM ChangedFeature cf JOIN cf.analysis.project p WHERE p.id = :projectRID"),
         @NamedQuery(name = "findChangedFeaturesByRelease", query = "SELECT cf FROM ChangedFeature cf "
-            + "JOIN cf.analysis a WHERE a.releaseVersion = :releaseVersion"),
+            + "JOIN cf.analysis a WHERE a.releaseVersion = :releaseVersion AND a.project.id = :projectRID"),
         @NamedQuery(name = "findFeatureNamesByReleaseVersion", query = "SELECT f.name FROM ChangedFeature cf "
-            + " JOIN cf.analysis a JOIN cf.feature f WHERE a.releaseVersion = :releaseVersion GROUP BY f.name"),
-        @NamedQuery(name = "findScoredCommitsByReleaseVersion", query = "SELECT COUNT(cf) as score, c.commitId FROM ChangedFeature cf JOIN cf.analysis a JOIN cf.analysis.project p JOIN cf.diff.commit C WHERE p.id = :projectRID AND a.releaseVersion = :releaseVersion GROUP BY c.commitId ORDER BY score DESC, c.commitId ASC"),
+            + " JOIN cf.analysis a JOIN cf.feature f WHERE a.releaseVersion = :releaseVersion AND a.project.id = :projectRID GROUP BY f.name"),
+        @NamedQuery(name = "findScoredCommitsByReleaseVersion", query = "SELECT COUNT(cf) * 2 as score, c.commitId FROM ChangedFeature cf JOIN cf.analysis a JOIN cf.analysis.project p JOIN cf.diff.commit c WHERE p.id = :projectRID AND a.releaseVersion = :releaseVersion GROUP BY c.commitId ORDER BY score DESC, c.commitId ASC"),
         @NamedQuery(name = "findAllCommitIds", query = "SELECT c.commitId FROM ChangedFeature cf "
             + "JOIN cf.analysis.project p JOIN cf.diff.commit c WHERE p.id = :projectRID GROUP BY c.commitId") })
 public class ChangedFeature extends AbstractDomainObject {

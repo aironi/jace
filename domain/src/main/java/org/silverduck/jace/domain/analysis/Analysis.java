@@ -43,6 +43,7 @@ public class Analysis extends AbstractDomainObject {
     @Enumerated(EnumType.STRING)
     private AnalysisStatus analysisStatus;
 
+
     @OneToMany(mappedBy = "analysis", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ChangedFeature> changedFeatures = new ArrayList<ChangedFeature>();
 
@@ -129,5 +130,13 @@ public class Analysis extends AbstractDomainObject {
 
     public void setReleaseVersion(String releaseVersion) {
         this.releaseVersion = releaseVersion;
+    }
+
+    public AnalysisSetting getAnalysisSetting() {
+        return analysisSetting;
+    }
+
+    public void setAnalysisSetting(AnalysisSetting analysisSetting) {
+        this.analysisSetting = analysisSetting;
     }
 }

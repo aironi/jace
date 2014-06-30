@@ -30,6 +30,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.services.analysis.AnalysisService;
+import org.silverduck.jace.services.analysis.impl.ScoredCommit;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -344,7 +345,7 @@ public class AnalysisView extends BaseView implements View {
     private void populateReleaseTree() {
         HierarchicalContainer hca = new HierarchicalContainer();
 
-        SortedMap<String, List<Object[]>> releaseCommits = new TreeMap<String, List<Object[]>>();
+        SortedMap<String, List<ScoredCommit>> releaseCommits = new TreeMap<String, List<ScoredCommit>>();
 
         SortedMap<Project, List<String>> projectReleases = new TreeMap<Project, List<String>>(
             new Comparator<Project>() {
@@ -367,8 +368,8 @@ public class AnalysisView extends BaseView implements View {
                 projectReleases.put(analysis.getProject(), list);
                 for (String release : list) {
                     if (release != null) {
-                        List<Object[]> commits = analysisDao.listScoredCommitsByRelease(analysis.getProject().getId(),
-                            release);
+                        List<ScoredCommit> commits = analysisService.listScoredCommitsByRelease(analysis.getProject()
+                            .getId(), release);
                         if (commits == null) {
                             commits = new ArrayList<>();
                         }
@@ -395,12 +396,12 @@ public class AnalysisView extends BaseView implements View {
                 hca.getContainerProperty(releaseItem, "id").setValue(release);
                 hca.getContainerProperty(releaseItem, "type").setValue("release");
                 if (release != null) {
-                    for (Object[] scoredCommitId : releaseCommits.get(release)) {
+                    for (ScoredCommit scoredCommit : releaseCommits.get(release)) {
                         Object commitItem = hca.addItem();
                         hca.setParent(commitItem, releaseItem);
-                        String caption = scoredCommitId[1] + " (Score: " + scoredCommitId[0] + ")";
+                        String caption = scoredCommit.getCommitId() + " (Score: " + scoredCommit.getScore() + ")";
                         hca.getContainerProperty(commitItem, "caption").setValue(caption);
-                        hca.getContainerProperty(commitItem, "id").setValue(scoredCommitId[1]);
+                        hca.getContainerProperty(commitItem, "id").setValue(scoredCommit.getCommitId());
                         hca.getContainerProperty(commitItem, "type").setValue("commit");
                         releaseTree.setChildrenAllowed(commitItem, false);
                     }
