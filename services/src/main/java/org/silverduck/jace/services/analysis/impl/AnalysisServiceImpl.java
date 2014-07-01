@@ -360,7 +360,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     public void triggerAnalysis(Long analysisSettingId) {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
-        analyseProject(analysisSettingId);
+        analysisService.analyseProject(analysisSettingId);
     }
 
     @Override
