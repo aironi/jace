@@ -200,15 +200,45 @@ public class GitServiceImpl implements GitService {
                     // It's a hunk
                     hunk = new Hunk();
                     parsedDiff.addHunk(hunk);
-                    // Pattern pattern = Pattern.compile("-(\\d+),(\\d+)\\s+(\\d+),(\\d+)");
-                    Pattern pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+),(\\d+)");
+
+                    // A very fine implementation of
+                    // http://www.gnu.org/software/diffutils/manual/diffutils.html#Detailed-Unified
+                    Pattern pattern = Pattern.compile("-(\\d+) \\+(\\d+)");
                     Matcher matcher = pattern.matcher(line);
                     if (matcher.find()) {
                         hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
-                        hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
-                        hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
-                        hunk.setNewLineCount(Integer.parseInt(matcher.group(4)));
+                        hunk.setOldLineCount(1);
+                        hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
+                        hunk.setNewLineCount(1);
+                    } else {
+                        pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+)");
+                        matcher = pattern.matcher(line);
+                        if (matcher.find()) {
+                            hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
+                            hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
+                            hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
+                            hunk.setNewLineCount(1);
+                        } else {
+                            pattern = Pattern.compile("-(\\d+) \\+(\\d+),(\\d+)");
+                            matcher = pattern.matcher(line);
+                            if (matcher.find()) {
+                                hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
+                                hunk.setOldLineCount(1);
+                                hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
+                                hunk.setNewLineCount(Integer.parseInt(matcher.group(3)));
+                            } else {
+                                pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+),(\\d+)");
+                                matcher = pattern.matcher(line);
+                                if (matcher.find()) {
+                                    hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
+                                    hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
+                                    hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
+                                    hunk.setNewLineCount(Integer.parseInt(matcher.group(4)));
+                                }
+                            }
+                        }
                     }
+
                     oldLineNumber = newLineNumber = 0;
                 } else if (hunk != null) {
                     // Reading a hunk
@@ -217,7 +247,7 @@ public class GitServiceImpl implements GitService {
                         oldLineNumber++;
                     } else if (line.startsWith("+")) {
                         newLineNumber++;
-                        LOG.fatal("Addingline to to hunk: " + hunk);
+                        LOG.fatal("Adding line to to hunk: " + hunk);
                         if (hunk != null) {
                             LOG.fatal("hunk.newstartline=" + hunk.getNewStartLine());
                             LOG.fatal("The diff is: " + diff);

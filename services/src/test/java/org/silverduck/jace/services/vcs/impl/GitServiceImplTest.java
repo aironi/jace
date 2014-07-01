@@ -28,6 +28,8 @@ public class GitServiceImplTest {
             + "index ca6f217..41f82e2 100644\n"
             + "--- a/testing/src/main/java/org/silverduck/jacetesting/domain/tool/Wrench.java\n"
             + "+++ b/testing/src/main/java/org/silverduck/jacetesting/domain/tool/Wrench.java\n"
+            + "@@ -7,0 +8 @@\n"
+            + "+    // One Line added\n"
             + "@@ -9,7 +9,7 @@\n"
             + " \n"
             + "     private Long milliMetres;\n"
@@ -59,10 +61,13 @@ public class GitServiceImplTest {
         // :D
 
         ParsedDiff parsedDiff = service.parseDiff(diffString);
-        Assert.assertEquals("Wrong amount of Hunks", 3, parsedDiff.getHunks().size());
-        Assert.assertTrue("Wrong contents in first added line", parsedDiff.getHunks().get(0).getAddedLines().get(0).getLine().contains("weight"));
-        Assert.assertEquals("Wrong line number in added rows", (int)12, (int)parsedDiff.getHunks().get(0).getAddedLines().get(0)
-            .getLineNumber());
+        Assert.assertEquals("Wrong amount of Hunks", 4, parsedDiff.getHunks().size());
+        Assert.assertTrue("Wrong contents in first added line", parsedDiff.getHunks().get(0).getAddedLines().get(0)
+            .getLine().contains("One Line"));
+        Assert.assertTrue("Wrong contents in second added line", parsedDiff.getHunks().get(1).getAddedLines().get(0)
+            .getLine().contains("weight"));
+        Assert.assertEquals("Wrong line number in added rows", (int) 12, (int) parsedDiff.getHunks().get(1)
+            .getAddedLines().get(0).getLineNumber());
 
     }
 }
