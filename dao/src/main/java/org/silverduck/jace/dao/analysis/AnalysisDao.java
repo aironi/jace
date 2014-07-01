@@ -69,6 +69,8 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      */
     List<String> listAllReleases(Long projectId);
 
+    List<Analysis> listAnalysesBySetting(Long analysisSettingId);
+
     /**
      * Lists Changed Features by Project
      * 
@@ -103,6 +105,8 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      * @return
      */
     List<Object[]> listScoredCommitsByRelease(Long projectId, String releaseVersion);
+
+    List<SLO> listSLOs(Long projectId);
 
     /**
      * Update SLO.sloStatus as SLOStatus.DELETED for given SLO ids

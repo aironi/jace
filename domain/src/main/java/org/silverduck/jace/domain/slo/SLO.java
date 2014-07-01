@@ -31,6 +31,7 @@ import java.util.List;
 @NamedQueries({
         @NamedQuery(name = "findByPath", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID ORDER BY s.created DESC"),
         @NamedQuery(name = "findByQualifiedClassName", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.qualifiedClassName = :qualifiedClassName AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID ORDER BY s.created DESC"),
+        @NamedQuery(name = "listSLOs", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE p.id = :projectRID AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT"),
         @NamedQuery(name = "updateStatus", query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids") })
 public class SLO extends AbstractDomainObject {
     /*

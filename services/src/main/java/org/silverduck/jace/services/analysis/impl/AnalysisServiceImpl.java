@@ -31,9 +31,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,10 +69,15 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     private void analyseDependencies(Analysis analysis) {
+
+        List<SLO> slos = analysisDao.listSLOs(analysis.getProject().getId());
+        Map<String, SLO> qualifiedSlos = new HashMap<String, SLO>(slos.size());
+        for (SLO slo : slos) {
+            qualifiedSlos.put(slo.getQualifiedClassName(), slo);
+        }
         for (SLO slo : analysis.getSlos()) {
             for (SLOImport sloImport : slo.getSloImports()) {
-                SLO dependency = analysisDao.findSLOByQualifiedClassName(sloImport.getQualifiedClassName(), analysis
-                    .getProject().getId());
+                SLO dependency = qualifiedSlos.get(sloImport.getQualifiedClassName());
                 if (dependency != null) {
                     slo.addDependency(dependency);
                     dependency.setAnalysis(analysis);
@@ -208,16 +215,18 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
     }
 
-    public Long calculateFileDependenciesScore(SLO slo, SLO parent, int depth) {
+    protected Long calculateFileDependenciesScore(SLO slo, Set<SLO> processed, int depth) {
         Long score = 0L;
 
         List<SLO> dependsOn = slo.getDependsOn();
         score += (dependsOn.size() / depth); // direct dependencies multiplier = 1, for each level divide by depth
 
+        if (!processed.contains(slo)) {
+            processed.add(slo);
+        }
+
         for (SLO dependency : dependsOn) {
-            if (!dependency.getClass().equals(parent.getClassName())) {
-                score += calculateFileDependenciesScore(dependency, parent, depth + 1);
-            }
+            score += calculateFileDependenciesScore(dependency, processed, depth + 1);
         }
         return score;
     }
@@ -296,7 +305,9 @@ public class AnalysisServiceImpl implements AnalysisService {
 
             if (score != null) {
                 if (cf.getAnalysis().getAnalysisSetting().getGranularity() == Granularity.FILE) {
-                    score += calculateFileDependenciesScore(cf.getSlo(), cf.getSlo(), 1);
+                    Set<SLO> processed = new HashSet<SLO>();
+                    processed.add(cf.getSlo());
+                    score += calculateFileDependenciesScore(cf.getSlo(), processed, 1);
                 } else {
                     // TODO: Implement method level granularity score calculation
                 }
@@ -339,6 +350,10 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     public void removeAnalysisSettingById(Long id) {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(id);
+        List<Analysis> analyses = analysisDao.listAnalysesBySetting(id);
+        for (Analysis analysis : analyses) {
+            analysisDao.remove(analysis);
+        }
         analysisSettingDao.remove(setting);
     }
 

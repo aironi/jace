@@ -31,6 +31,7 @@ import org.silverduck.jace.domain.slo.SLO;
 @Table(name = "Analysis")
 @NamedQueries({
         @NamedQuery(name = "findAllAnalyses", query = "SELECT a FROM Analysis a ORDER BY a.created DESC"),
+        @NamedQuery(name = "listAnalysesBySettingId", query = "SELECT a FROM Analysis a WHERE a.analysisSetting.id = :analysisSettingRID"),
         @NamedQuery(name = "findAllReleases", query = "SELECT a.releaseVersion FROM Analysis a JOIN a.project p WHERE p.id = :projectRID "
             + "GROUP BY a.releaseVersion") })
 public class Analysis extends AbstractDomainObject {
@@ -42,7 +43,6 @@ public class Analysis extends AbstractDomainObject {
     @Column(name = "AnalysisStatus")
     @Enumerated(EnumType.STRING)
     private AnalysisStatus analysisStatus;
-
 
     @OneToMany(mappedBy = "analysis", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ChangedFeature> changedFeatures = new ArrayList<ChangedFeature>();
@@ -76,6 +76,10 @@ public class Analysis extends AbstractDomainObject {
             slos.add(slo);
             slo.setAnalysis(this);
         }
+    }
+
+    public AnalysisSetting getAnalysisSetting() {
+        return analysisSetting;
     }
 
     public AnalysisStatus getAnalysisStatus() {
@@ -116,6 +120,10 @@ public class Analysis extends AbstractDomainObject {
         }
     }
 
+    public void setAnalysisSetting(AnalysisSetting analysisSetting) {
+        this.analysisSetting = analysisSetting;
+    }
+
     public void setAnalysisStatus(AnalysisStatus analysisStatus) {
         this.analysisStatus = analysisStatus;
     }
@@ -130,13 +138,5 @@ public class Analysis extends AbstractDomainObject {
 
     public void setReleaseVersion(String releaseVersion) {
         this.releaseVersion = releaseVersion;
-    }
-
-    public AnalysisSetting getAnalysisSetting() {
-        return analysisSetting;
-    }
-
-    public void setAnalysisSetting(AnalysisSetting analysisSetting) {
-        this.analysisSetting = analysisSetting;
     }
 }

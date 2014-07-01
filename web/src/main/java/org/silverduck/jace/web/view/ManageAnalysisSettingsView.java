@@ -175,7 +175,7 @@ public class ManageAnalysisSettingsView extends BaseView {
             public void buttonClick(Button.ClickEvent event) {
                 if (analysisSettingsComponent.isValid()) {
                     final AnalysisSetting settings = analysisSettingsComponent.commit();
-
+                    Notification.show("Initial Analysis Started.", Notification.Type.TRAY_NOTIFICATION);
                     final Future<Boolean> result;
                     if (settings.getId() == null) {
                         result = analysisService.addAnalysisSetting(settings);

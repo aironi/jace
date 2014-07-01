@@ -84,6 +84,13 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     }
 
     @Override
+    public List<Analysis> listAnalysesBySetting(Long analysisSettingId) {
+        Query query = getEntityManager().createNamedQuery("listAnalysesBySettingId");
+        query.setParameter("analysisSettingRID", analysisSettingId);
+        return query.getResultList();
+    }
+
+    @Override
     public List<ChangedFeature> listChangedFeaturesByProject(Long projectId) {
         Query query = getEntityManager().createNamedQuery("findChangedFeaturesByProject", ChangedFeature.class);
         query.setParameter("projectRID", projectId);
@@ -110,6 +117,13 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
         Query query = getEntityManager().createNamedQuery("findScoredCommitsByReleaseVersion", ChangedFeature.class);
         query.setParameter("projectRID", projectId);
         query.setParameter("releaseVersion", releaseVersion);
+        return query.getResultList();
+    }
+
+    @Override
+    public List<SLO> listSLOs(Long projectId) {
+        Query query = getEntityManager().createNamedQuery("listSLOs", SLO.class);
+        query.setParameter("projectRID", projectId);
         return query.getResultList();
     }
 
