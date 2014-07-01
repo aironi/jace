@@ -223,11 +223,11 @@ public class AnalysisServiceImpl implements AnalysisService {
 
         if (!processed.contains(slo)) {
             processed.add(slo);
+            for (SLO dependency : dependsOn) {
+                score += calculateFileDependenciesScore(dependency, processed, depth + 1);
+            }
         }
 
-        for (SLO dependency : dependsOn) {
-            score += calculateFileDependenciesScore(dependency, processed, depth + 1);
-        }
         return score;
     }
 
