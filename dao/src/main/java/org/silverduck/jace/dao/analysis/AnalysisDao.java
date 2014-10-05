@@ -89,12 +89,14 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
 
     /**
      * Lists unique feature names for changed features in a release
-     * 
+     *
+     * @param projectId    Project ID
+     *
      * @param release
      *            Release identifier
      * @return
      */
-    List<String> listChangedFeaturesNamesByRelease(String release);
+    List<String> listChangedFeaturesNamesByRelease(Long projectId, String release);
 
     /**
      * Returns a scored list of commits in a list of two-dimension Object where index 0 contains the score and index 1

@@ -106,9 +106,10 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     }
 
     @Override
-    public List<String> listChangedFeaturesNamesByRelease(String release) {
+    public List<String> listChangedFeaturesNamesByRelease(Long projectId, String release) {
         Query query = getEntityManager().createNamedQuery("findFeatureNamesByReleaseVersion", ChangedFeature.class);
         query.setParameter("releaseVersion", release);
+        query.setParameter("projectRID", projectId);
         return query.getResultList();
     }
 
