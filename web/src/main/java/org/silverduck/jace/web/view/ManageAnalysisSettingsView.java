@@ -51,8 +51,8 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     private void addAnalysisSettingTable(VerticalLayout vl) {
         final Locale locale = UI.getCurrent().getLocale();
-        analysisTable = new Table(AppResources.getLocalizedString("label.analysisSettingsTable", locale),
-            analysisSettingsJPAContainer);
+        analysisTable = new Table();
+        analysisTable.setContainerDataSource(analysisSettingsJPAContainer);
 
         analysisSettingsJPAContainer.addNestedContainerProperty("project.name");
         analysisTable.setVisibleColumns("project.name", "branch", "enabled");

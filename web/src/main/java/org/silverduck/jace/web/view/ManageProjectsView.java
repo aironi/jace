@@ -3,44 +3,26 @@ package org.silverduck.jace.web.view;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.cdi.CDIView;
-import com.vaadin.data.Container;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.DefaultErrorHandler;
-import com.vaadin.shared.ui.MarginInfo;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.Component;
-import com.vaadin.ui.Field;
-import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.Table;
-import com.vaadin.ui.TableFieldFactory;
-import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.exception.ExceptionHelper;
-import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.project.Project;
-import org.silverduck.jace.domain.vcs.PluginType;
 import org.silverduck.jace.services.project.ProjectService;
-import org.silverduck.jace.services.project.impl.AddingProjectCompleteEvent;
 import org.silverduck.jace.web.component.ProjectComponent;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Any;
-import javax.inject.Inject;
-import javax.swing.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -91,7 +73,8 @@ public class ManageProjectsView extends BaseView {
         projectsContainer.addNestedContainerProperty("releaseInfo.pathToVersionFile");
         projectsContainer.addNestedContainerProperty("releaseInfo.pattern");
 
-        projectsTable = new Table(AppResources.getLocalizedString("label.projectsTable", locale), projectsContainer);
+        projectsTable = new Table();
+        projectsTable.setContainerDataSource(projectsContainer);
 
         projectsTable.setVisibleColumns("name", "pluginConfiguration.pluginType", "pluginConfiguration.cloneUrl",
             "pluginConfiguration.commitIdPattern", "releaseInfo.versionFileType", "releaseInfo.pathToVersionFile",

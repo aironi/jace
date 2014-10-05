@@ -62,8 +62,6 @@ public class AnalysisView extends BaseView implements View {
     @EJB
     private AnalysisDao analysisDao;
 
-    private Panel analysisPanel;
-
     @EJB
     private AnalysisService analysisService;
 
@@ -73,17 +71,11 @@ public class AnalysisView extends BaseView implements View {
 
     private Table changedFeaturesTable;
 
-    private Panel commitPanel;
-
-    // private Tree commitTree;
-
     Accordion detailsAccordion;
 
     private VerticalLayout detailsLayout;
 
     private ComboBox featureSelect;
-
-    private Panel releasePanel;
 
     private Tree releaseTree;
 
@@ -93,19 +85,19 @@ public class AnalysisView extends BaseView implements View {
 
     private Component createAnalysisTab() {
         analysisTree = new Tree();
-        analysisPanel = new Panel(AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
-        analysisPanel.setContent(analysisTree);
-        return analysisPanel;
+        //analysisPanel = new Panel(AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
+        //analysisPanel.setContent(analysisTree);
+        return analysisTree;
     }
 
     private Component createDetails() {
         detailsLayout = new VerticalLayout();
 
         Locale locale = UI.getCurrent().getLocale();
-        Panel detailsPanel = new Panel(AppResources.getLocalizedString("label.analysisView.details", locale));
+        Panel detailsPanel = new Panel(AppResources.getLocalizedString("label.analysisView.changedFeatures", locale));
 
-        changedFeaturesTable = new Table(AppResources.getLocalizedString("label.analysisView.changedFeaturesTable",
-            locale), changedFeaturesContainer);
+        changedFeaturesTable = new Table();
+        changedFeaturesTable.setContainerDataSource(changedFeaturesContainer);
 
         changedFeaturesTable.setVisibleColumns("feature.name", "slo.path", "slo.packageName", "slo.className",
             "diff.modificationType", "diff.commit.commitId", "diff.commit.message", "diff.commit.authorName",
@@ -156,10 +148,9 @@ public class AnalysisView extends BaseView implements View {
     }
 
     private Component createReleaseTab() {
-        releasePanel = new Panel(AppResources.getLocalizedString("label.releases", UI.getCurrent().getLocale()));
         releaseTree = new Tree();
-        releasePanel.setContent(releaseTree);
-        return releasePanel;
+        //releasePanel.setContent(releaseTree);
+        return releaseTree;
     }
 
     @Override
@@ -194,16 +185,16 @@ public class AnalysisView extends BaseView implements View {
         // changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZone");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.formattedTimeZoneOffset");
 
-        TabSheet analysisTabs = new TabSheet();
+        final TabSheet analysisTabs = new TabSheet();
         analysisTabs.setSizeFull();
-        analysisTabs.addTab(createReleaseTab());
-        analysisTabs.addTab(createAnalysisTab());
+        analysisTabs.addTab(createReleaseTab(), AppResources.getLocalizedString("label.releases", UI.getCurrent().getLocale()));
+        analysisTabs.addTab(createAnalysisTab(), AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
         analysisTabs.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener() {
             @Override
             public void selectedTabChange(TabSheet.SelectedTabChangeEvent event) {
-                if (event.getTabSheet().getSelectedTab().equals(analysisPanel)) {
+                if (event.getTabSheet().getSelectedTab().equals(analysisTree)) {
                     populateAnalysisTree();
-                } else if (event.getTabSheet().getSelectedTab().equals(releasePanel)) {
+                } else if (event.getTabSheet().getSelectedTab().equals(releaseTree)) {
                     populateReleaseTree();
                 }
             }
