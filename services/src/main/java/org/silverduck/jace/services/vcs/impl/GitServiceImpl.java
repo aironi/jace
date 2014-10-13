@@ -4,32 +4,21 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.jgit.api.CloneCommand;
-import org.eclipse.jgit.api.CreateBranchCommand;
-import org.eclipse.jgit.api.DiffCommand;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListBranchCommand;
-import org.eclipse.jgit.api.MergeCommand;
-import org.eclipse.jgit.api.MergeResult;
-import org.eclipse.jgit.api.PullCommand;
-import org.eclipse.jgit.api.PullResult;
+import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.merge.MergeStrategy;
-import org.eclipse.jgit.merge.Merger;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevSort;
+
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.jgit.transport.CredentialsProvider;
+
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -49,8 +38,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,6 +56,9 @@ import java.util.regex.Pattern;
 public class GitServiceImpl implements GitService {
 
     private static final Log LOG = LogFactory.getLog(GitServiceImpl.class);
+
+    private static final String REF_HEAD = "HEAD";
+    public static final String HUNK_IDENTIFIER = "@@";
 
     /**
      * Checkout a branch to local directory
@@ -196,7 +186,7 @@ public class GitServiceImpl implements GitService {
             int newLineNumber = 0;
             for (String line : diffLines) {
 
-                if (line.contains("@@")) {
+                if (line.contains(HUNK_IDENTIFIER)) {
                     // It's a hunk
                     hunk = new Hunk();
                     parsedDiff.addHunk(hunk);
@@ -247,10 +237,10 @@ public class GitServiceImpl implements GitService {
                         oldLineNumber++;
                     } else if (line.startsWith("+")) {
                         newLineNumber++;
-                        LOG.fatal("Adding line to to hunk: " + hunk);
+                        LOG.debug("GitServiceImpl.parseDiff: Adding line to to hunk: " + hunk);
                         if (hunk != null) {
-                            LOG.fatal("hunk.newstartline=" + hunk.getNewStartLine());
-                            LOG.fatal("The diff is: " + diff);
+                            LOG.debug("GitServiceImpl.parseDiff: hunk.newstartline=" + hunk.getNewStartLine());
+                            LOG.debug("GitServiceImpl.parseDiff: The diff is: " + diff);
                         }
                         hunk.addAddedLine(new Line(hunk.getNewStartLine() + newLineNumber - 1, line));// FIXME: NPE here
                     } else if (line.startsWith("-")) {
@@ -261,98 +251,228 @@ public class GitServiceImpl implements GitService {
             }
 
         } catch (IOException e) {
-            LOG.fatal("Failed to parse git diff", e);
+            throw new IllegalStateException("Failed to parse git diff", e);
         }
 
         return parsedDiff;
     }
 
-    @Override
-    public List<Diff> pull(String localDirectory, String userName, String passWord) {
-        List<Diff> diffs = new ArrayList<Diff>();
-        Repository repository = resolveRepository(localDirectory);
 
+    @Override
+    public List<Diff> pull(String localDirectory, String username, String password) {
+        LOG.info("GitServiceImpl.pull() called with localDirectory = " + localDirectory);
+        Repository repository = resolveRepository(localDirectory);
         Git git = new Git(repository);
+
+        String fullBranchName = resolveFullBranch(repository);
+        Ref oldHead = null;
         try {
+            oldHead = git.getRepository().getRef(fullBranchName);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        PullResult pullResult = pullInternal(git, username, password);
+
+        LOG.info("GitServiceImpl.pull: MergeStatus=" + pullResult.getMergeResult().getMergeStatus());
+        if (!pullResult.getMergeResult().getMergeStatus().isSuccessful()) {
+            throw new IllegalStateException("The merging was not successful when pulling.");
+        }
+
+        return resolveChanges(git, pullResult, oldHead);
+    }
+
+    private MergeResult mergeInternal(Git git, FetchResult fetchResult) {
+        throw new IllegalStateException("Not implemented");
+        /*
+        LOG.info("GitServiceImpl.mergeInternal() called");
+        MergeCommand mergeCommand = git.merge();
+        mergeCommand.include("HEAD^");
+        mergeCommand.setFastForward(MergeCommand.FastForwardMode.NO_FF);
+        mergeCommand.setStrategy(MergeStrategy.THEIRS);
+        try {
+            return mergeCommand.call();
+        } catch (GitAPIException e) {
+            throw new IllegalStateException(e);
+        }
+        */
+    }
+
+    private FetchResult fetchInternal(Git git, String username, String password) {
+        LOG.info("GitServiceImpl.fetchInternal() called");
+
+        FetchResult fetchResult = null;
+        try {
+
+            FetchCommand fetchCommand = git.fetch();
+
+            if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(password)) {
+                UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(username,
+                        password);
+                fetchCommand.setCredentialsProvider(credProv);
+            }
+
+            fetchResult = fetchCommand.call();
+        } catch (Exception e) {
+            throw new JaceRuntimeException("Failed to fetch into directory ' " + git.getRepository().getDirectory() + "'", e);
+        } finally {
+            git.getRepository().close();
+        }
+        LOG.info("GitServiceImpl.fetchInternal: Returning fetchResult.fetchResult: " + fetchResult != null ? fetchResult : "null");
+        return fetchResult;
+    }
+
+    /**
+     * Performs pull operation
+     * @param git
+     * @param userName
+     * @param passWord
+     * @return
+     */
+    private PullResult pullInternal(Git git, String userName, String passWord) {
+        LOG.info("GitServiceImpl.pullInternal() called");
+
+        PullResult pullResult = null;
+        try {
+
             PullCommand pullCommand = git.pull();
 
             if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(passWord)) {
                 UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(userName,
-                    passWord);
+                        passWord);
                 pullCommand.setCredentialsProvider(credProv);
             }
 
-            PullResult pullResult = pullCommand.call();
-
-            if (!pullResult.getMergeResult().getMergeStatus().isSuccessful()) {
-
-                LOG.fatal("Merge was not successful");
-
-            } else {
-                // If pull succeeded...
-                FetchResult fetchResult = pullResult.getFetchResult();
-                Collection<TrackingRefUpdate> trackingRefUpdates = fetchResult.getTrackingRefUpdates();
-                // Iterate through all changed references
-                String fullBranch = repository.getFullBranch();
-                for (TrackingRefUpdate trackingRefUpdate : trackingRefUpdates) {
-                    if (!fullBranch.equals(trackingRefUpdate.getRemoteName())) {
-                        continue;
-                    }
-
-                    // Get old object id and new object id of each changed ref
-                    ObjectId oldObjectId = trackingRefUpdate.getOldObjectId();
-                    ObjectId newObjectId = trackingRefUpdate.getNewObjectId();
-                    Iterable<RevCommit> commits = git.log().addRange(oldObjectId, newObjectId).call();
-
-                    // Only process current branch changes
-                    List<RevCommit> revCommits = new ArrayList<RevCommit>();
-
-                    for (RevCommit commit : commits) {
-                        revCommits.add(commit);
-                    }
-                    Collections.reverse(revCommits);
-                    ObjectId prevCommitId = oldObjectId;
-
-                    for (RevCommit commit : revCommits) {
-                        Commit jaceCommit = new Commit();
-                        jaceCommit.setMessage(commit.getFullMessage().toString());
-                        // Add these.
-                        jaceCommit.setAuthorName(commit.getAuthorIdent().getName());
-                        jaceCommit.setAuthorEmail(commit.getAuthorIdent().getEmailAddress());
-                        jaceCommit.setAuthorTimeZone(commit.getAuthorIdent().getTimeZone());
-                        jaceCommit.setAuthorTimeZoneOffSet(commit.getAuthorIdent().getTimeZoneOffset());
-                        jaceCommit.setAuthorDateOfChange(commit.getAuthorIdent().getWhen());
-
-                        // Diff the old and new revisions and iterate the diffs.
-                        DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(repository, prevCommitId))
-                            .setNewTree(resolveTreeIterator(repository, commit.toObjectId()));
-                        List<DiffEntry> diffEntries = diffCommand.call();
-
-                        for (DiffEntry diffEntry : diffEntries) {
-                            ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
-                            DiffFormatter diffFormatter = new DiffFormatter(diffOut);
-                            diffFormatter.setRepository(repository);
-                            diffFormatter.format(diffEntry);
-                            // Collect changed data and store it in db temporarily until analysis
-                            Diff diff = new Diff();
-                            diff.setOldPath(diffEntry.getOldPath());
-                            diff.setNewPath(diffEntry.getNewPath());
-                            diff.setParsedDiff(parseDiff(diffOut.toString())); // FIXME: encoding
-                            diff.setModificationType(ModificationType.valueOf(diffEntry.getChangeType().name()));
-                            diff.setCommit(jaceCommit);
-                            diffs.add(diff);
-                        }
-                        prevCommitId = commit.toObjectId();
-                    }
-                }
-            }
+            pullResult = pullCommand.call();
         } catch (Exception e) {
-            throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + localDirectory + "'", e);
+            throw new JaceRuntimeException("Failed to pull with rebase into directory ' " + git.getRepository().getDirectory() + "'", e);
         } finally {
-            repository.close();
+            git.getRepository().close();
+        }
+        LOG.info("GitServiceImpl.pullInternal: Returning pullResult.fetchResult: " + pullResult != null ? pullResult.getFetchResult() : "null");
+        return pullResult;
+    }
+
+
+    /**
+     * Resolves changes based on pullResult and oldHead ref of the repo.
+     *
+     * @param git
+     * @param pullResult
+     * @param oldHead
+     * @return
+     */
+    private List<Diff> resolveChanges(Git git, PullResult pullResult, Ref oldHead)  {
+        LOG.info("GitServiceImpl.resolveChanges() called");
+        List<Diff> diffs = new ArrayList<Diff>();
+
+        String fullBranch = resolveFullBranch(git.getRepository());
+
+        if (pullResult.getMergeResult().getMergeStatus() == MergeResult.MergeStatus.FAST_FORWARD) {
+            Ref newHead = pullResult.getFetchResult().getAdvertisedRef(fullBranch);
+            LOG.info("Old head Ref: " + oldHead.getName() + " objectId=" + oldHead.getObjectId() + " - New head Ref: Name=" + newHead.getName() + " objectId=" + newHead.getObjectId());
+            List<RevCommit> revCommits = resolveRevCommits(git, oldHead.getObjectId(), newHead.getObjectId());
+            diffs.addAll(resolveDiffs(git, oldHead.getObjectId(), revCommits));
         }
 
         return diffs;
+    }
+
+    /**
+     * Resolves Diffs from a list of RevCommits starting from 'startCommitId'.
+     * @param git
+     * @param startCommitId ObjectId to start diffing
+     * @param revCommits RevCommits to iterate
+     * @return
+     */
+    private List<Diff> resolveDiffs(Git git, ObjectId startCommitId, List<RevCommit> revCommits) {
+        LOG.info("GitServiceImpl.resolveDiffs() called. startCommitId=" + startCommitId);
+        List<Diff> diffs = new ArrayList<Diff>();
+
+        for (RevCommit commit : revCommits) {
+            LOG.info("GitServiceImpl.resolveDiffs: Creating new Commit");
+            Commit jaceCommit = new Commit();
+            jaceCommit.setMessage(commit.getFullMessage().toString());
+            // Add these.
+            jaceCommit.setAuthorName(commit.getAuthorIdent().getName());
+            jaceCommit.setAuthorEmail(commit.getAuthorIdent().getEmailAddress());
+            jaceCommit.setAuthorTimeZone(commit.getAuthorIdent().getTimeZone());
+            jaceCommit.setAuthorTimeZoneOffSet(commit.getAuthorIdent().getTimeZoneOffset());
+            jaceCommit.setAuthorDateOfChange(commit.getAuthorIdent().getWhen());
+            LOG.info("GitServiceImpl.resolveDiffs: Created new Commit: " + jaceCommit.toHumanReadable());
+
+            LOG.info("GitServiceImpl.resolveDiffs: Diffing old and new versions...");
+            // Diff the old and new revisions and iterate the diffs.
+            DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(git.getRepository(), startCommitId))
+                    .setNewTree(resolveTreeIterator(git.getRepository(), commit.toObjectId()));
+            try {
+                List<DiffEntry> diffEntries = diffCommand.call();
+                LOG.info("GItServiceImpl.resolveDiffs: There are " + diffEntries.size() + " diffs. Parsing them...");
+
+                diffs.addAll(parseDiffEntries(git, jaceCommit, diffEntries));
+                startCommitId = commit.toObjectId();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        return diffs;
+    }
+
+    private List<Diff> parseDiffEntries(Git git, Commit jaceCommit, List<DiffEntry> diffEntries) throws IOException {
+        LOG.info("GitServiceImpl.parseDiffEntries() called");
+        List<Diff> diffs = new ArrayList<Diff>();
+        for (DiffEntry diffEntry : diffEntries) {
+            LOG.info("GitServiceImpl.parseDiffEntries: Parsing diffEntry: " + diffEntry.toString());
+            ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
+            DiffFormatter diffFormatter = new DiffFormatter(diffOut);
+            diffFormatter.setRepository(git.getRepository());
+            diffFormatter.format(diffEntry);
+
+            LOG.info("GitServiceImpl.parseDIffEntries: Creating new J-ACE Diff");
+            // Collect changed data and store it in db temporarily until analysis
+            Diff diff = new Diff();
+            diff.setOldPath(diffEntry.getOldPath());
+            diff.setNewPath(diffEntry.getNewPath());
+            diff.setParsedDiff(parseDiff(diffOut.toString())); // FIXME: encoding
+            diff.setModificationType(ModificationType.valueOf(diffEntry.getChangeType().name()));
+            diff.setCommit(jaceCommit);
+            diffs.add(diff);
+        }
+        return diffs;
+    }
+
+    /**
+     * Resolves List of RevCommit objects in chronological order between the given two objectIds.
+     * @param git
+     * @param oldObjectId
+     * @param newObjectId
+     * @return
+     */
+    private List<RevCommit> resolveRevCommits(Git git, ObjectId oldObjectId, ObjectId newObjectId) {
+        LOG.info("GitServiceImpl.resolveRevCommits() called. oldObjectId=" + oldObjectId + " newObjectId=" + newObjectId);
+        Iterable<RevCommit> commits = null;
+        try {
+            commits = git.log().addRange(oldObjectId, newObjectId).call();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+
+        // Only process current branch changes
+        List<RevCommit> revCommits = new ArrayList<RevCommit>();
+
+        for (RevCommit commit : commits) {
+            revCommits.add(commit);
+        }
+        Collections.reverse(revCommits);
+        LOG.info("Returning " + revCommits.size() + " RevCommits");
+        return revCommits;
+    }
+
+    private String resolveFullBranch(Repository repository) {
+        try {
+            return repository.getFullBranch();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**
@@ -372,11 +492,21 @@ public class GitServiceImpl implements GitService {
         return repository;
     }
 
-    private AbstractTreeIterator resolveTreeIterator(Repository repository, ObjectId objectId) throws IOException {
+    /**
+     * Resolves TreeIterator for a given objectId
+     * @param repository
+     * @param objectId
+     * @return
+     */
+    private AbstractTreeIterator resolveTreeIterator(Repository repository, ObjectId objectId) {
         final CanonicalTreeParser treeParser = new CanonicalTreeParser();
         final ObjectReader objectReader = repository.newObjectReader();
         try {
-            treeParser.reset(objectReader, new RevWalk(repository).parseTree(objectId));
+            try {
+                treeParser.reset(objectReader, new RevWalk(repository).parseTree(objectId));
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
             return treeParser;
         } finally {
             objectReader.release();
