@@ -158,4 +158,15 @@ public class Commit extends AbstractDomainObject {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    @Transient
+    public String toHumanReadable() {
+        StringBuilder sb = new StringBuilder(1024);
+        sb.append("Commit ID=").append(this.commitId)
+                .append(" Message=").append(this.message)
+                .append(" Author=").append(this.author)
+                .append(" E-mail=").append(this.authorEmail)
+                .append(" Diffs=").append(this.diffs.size()).append("\r\n");
+        return sb.toString();
+    }
 }
