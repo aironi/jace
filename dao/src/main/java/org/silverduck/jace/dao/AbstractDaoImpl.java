@@ -9,7 +9,7 @@ import javax.persistence.PrePersist;
  */
 public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
 
-    @PersistenceContext(name = "jacePU", unitName = "jace-unit")
+    @PersistenceContext(unitName = "jace-unit")
     private EntityManager em;
 
     /**
