@@ -44,7 +44,7 @@ public abstract class BaseView extends GridLayout implements View {
                     + "<img alt=\"\" border=\"0\" src=\"https://www.paypalobjects.com/en_US/i/scr/pixel.gif\" width=\"1\" height=\"1\">\n"
                     + "</form>\n", ContentMode.HTML));
 
-        layout.addComponent(footerLayout);
+        //layout.addComponent(footerLayout);
         super.addComponent(layout);
         layout.setExpandRatio(getContentLayout(), 1);
     }
