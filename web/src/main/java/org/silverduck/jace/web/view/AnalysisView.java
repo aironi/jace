@@ -50,7 +50,7 @@ import java.util.TreeMap;
 /**
  * The root view of the application.
  */
-@CDIView
+@CDIView(AnalysisView.VIEW)
 public class AnalysisView extends BaseView implements View {
 
     public static final String ALL_FEATURES = "All Features";
@@ -85,8 +85,6 @@ public class AnalysisView extends BaseView implements View {
 
     private Component createAnalysisTab() {
         analysisTree = new Tree();
-        //analysisPanel = new Panel(AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
-        //analysisPanel.setContent(analysisTree);
         return analysisTree;
     }
 
@@ -149,7 +147,6 @@ public class AnalysisView extends BaseView implements View {
 
     private Component createReleaseTab() {
         releaseTree = new Tree();
-        //releasePanel.setContent(releaseTree);
         return releaseTree;
     }
 
