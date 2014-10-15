@@ -186,7 +186,7 @@ public class GitServiceImpl implements GitService {
             int newLineNumber = 0;
             for (String line : diffLines) {
 
-                if (line.contains(HUNK_IDENTIFIER)) {
+                if (line.startsWith(HUNK_IDENTIFIER) && line.endsWith(HUNK_IDENTIFIER)) {
                     // It's a hunk
                     hunk = new Hunk();
                     parsedDiff.addHunk(hunk);
