@@ -185,50 +185,9 @@ public class GitServiceImpl implements GitService {
             int oldLineNumber = 0;
             int newLineNumber = 0;
             for (String line : diffLines) {
-
                 if (line.startsWith(HUNK_IDENTIFIER) && line.endsWith(HUNK_IDENTIFIER)) {
-                    // It's a hunk
-                    hunk = new Hunk();
+                    hunk = parseHunk(line);
                     parsedDiff.addHunk(hunk);
-
-                    // A very fine implementation of
-                    // http://www.gnu.org/software/diffutils/manual/diffutils.html#Detailed-Unified
-                    Pattern pattern = Pattern.compile("-(\\d+) \\+(\\d+)");
-                    Matcher matcher = pattern.matcher(line);
-                    if (matcher.find()) {
-                        hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
-                        hunk.setOldLineCount(1);
-                        hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
-                        hunk.setNewLineCount(1);
-                    } else {
-                        pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+)");
-                        matcher = pattern.matcher(line);
-                        if (matcher.find()) {
-                            hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
-                            hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
-                            hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
-                            hunk.setNewLineCount(1);
-                        } else {
-                            pattern = Pattern.compile("-(\\d+) \\+(\\d+),(\\d+)");
-                            matcher = pattern.matcher(line);
-                            if (matcher.find()) {
-                                hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
-                                hunk.setOldLineCount(1);
-                                hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
-                                hunk.setNewLineCount(Integer.parseInt(matcher.group(3)));
-                            } else {
-                                pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+),(\\d+)");
-                                matcher = pattern.matcher(line);
-                                if (matcher.find()) {
-                                    hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
-                                    hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
-                                    hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
-                                    hunk.setNewLineCount(Integer.parseInt(matcher.group(4)));
-                                }
-                            }
-                        }
-                    }
-
                     oldLineNumber = newLineNumber = 0;
                 } else if (hunk != null) {
                     // Reading a hunk
@@ -236,11 +195,11 @@ public class GitServiceImpl implements GitService {
                         newLineNumber++;
                         oldLineNumber++;
                     } else if (line.startsWith("+")) {
+                        hunk.addAddedLine(new Line(hunk.getNewStartLine() + newLineNumber, line));
                         newLineNumber++;
-                        hunk.addAddedLine(new Line(hunk.getNewStartLine() + newLineNumber - 1, line));
                     } else if (line.startsWith("-")) {
+                        hunk.addRemovedLine(new Line(hunk.getOldStartLine() + oldLineNumber, line));
                         oldLineNumber++;
-                        hunk.addRemovedLine(new Line(hunk.getOldStartLine() + oldLineNumber - 1, line));
                     }
                 }
             }
@@ -250,6 +209,49 @@ public class GitServiceImpl implements GitService {
         }
 
         return parsedDiff;
+    }
+
+    private Hunk parseHunk(String line) {
+        Hunk hunk = new Hunk();
+        // A very fine implementation of
+        // http://www.gnu.org/software/diffutils/manual/diffutils.html#Detailed-Unified
+        // TODO: Refactor
+        Pattern pattern = Pattern.compile("-(\\d+) \\+(\\d+)");
+        Matcher matcher = pattern.matcher(line);
+        if (matcher.find()) {
+            hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
+            hunk.setOldLineCount(1);
+            hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
+            hunk.setNewLineCount(1);
+        } else {
+            pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+)");
+            matcher = pattern.matcher(line);
+            if (matcher.find()) {
+                hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
+                hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
+                hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
+                hunk.setNewLineCount(1);
+            } else {
+                pattern = Pattern.compile("-(\\d+) \\+(\\d+),(\\d+)");
+                matcher = pattern.matcher(line);
+                if (matcher.find()) {
+                    hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
+                    hunk.setOldLineCount(1);
+                    hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
+                    hunk.setNewLineCount(Integer.parseInt(matcher.group(3)));
+                } else {
+                    pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+),(\\d+)");
+                    matcher = pattern.matcher(line);
+                    if (matcher.find()) {
+                        hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
+                        hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
+                        hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
+                        hunk.setNewLineCount(Integer.parseInt(matcher.group(4)));
+                    }
+                }
+            }
+        }
+        return hunk;
     }
 
 
