@@ -49,7 +49,7 @@ public class ManageProjectsView extends BaseView {
 
     }
 
-    private void addNewButton(HorizontalLayout hl) {
+    private void addNewProjectButton(HorizontalLayout hl) {
         Locale locale = UI.getCurrent().getLocale();
         Button newButton = new Button(AppResources.getLocalizedString("label.newProject", locale));
 
@@ -252,12 +252,8 @@ public class ManageProjectsView extends BaseView {
         VerticalLayout vl = new VerticalLayout();
         HorizontalLayout hl = new HorizontalLayout();
 
-        vl.setSizeFull();
-
-        hl.setSizeFull();
-
         addProjectsTable(vl);
-        addNewButton(hl);
+        addNewProjectButton(hl);
 
         vl.addComponent(hl);
         super.getContentLayout().addComponent(vl);

@@ -119,7 +119,7 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     }
 
-    private void addNewButton(HorizontalLayout hl) {
+    private void addNewAnalysisSettingButton(HorizontalLayout hl) {
         Locale locale = UI.getCurrent().getLocale();
         Button newButton = new Button(AppResources.getLocalizedString("label.newAnalysis", locale));
 
@@ -252,13 +252,10 @@ public class ManageAnalysisSettingsView extends BaseView {
         VerticalLayout vl = new VerticalLayout();
         HorizontalLayout hl = new HorizontalLayout();
 
-        vl.setSizeFull();
-        hl.setSizeFull();
-
         super.getContentLayout().addComponent(vl);
 
         addAnalysisSettingTable(vl);
-        addNewButton(hl);
+        addNewAnalysisSettingButton(hl);
 
         vl.addComponent(hl);
     }
