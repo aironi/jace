@@ -2,18 +2,7 @@ package org.silverduck.jace.domain.vcs;
 
 import org.silverduck.jace.domain.AbstractDomainObject;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -46,7 +35,7 @@ public class Commit extends AbstractDomainObject {
     @Column(name = "AuthorTzOffset")
     private Integer authorTimeZoneOffSet;
 
-    @Column(name = "CommitId")
+    @Column(name = "CommitId", length = 2048)
     private String commitId;
 
     @OneToMany(mappedBy = "commit", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -56,7 +45,7 @@ public class Commit extends AbstractDomainObject {
     @Transient
     private String formattedTimeZoneOffset;
 
-    @Column(name = "Message", length=1024)
+    @Column(name = "Message", length = 2048)
     private String message;
 
     private void addDiff(Diff diff) {
