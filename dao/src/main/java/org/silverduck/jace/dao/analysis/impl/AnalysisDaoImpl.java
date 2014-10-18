@@ -98,7 +98,7 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     }
 
     @Override
-    public List<ChangedFeature> listChangedFeaturesByRelease(Long projectId, String release) {
+    public List<ChangedFeature> listChangedFeaturesByProjectAndRelease(Long projectId, String release) {
         Query query = getEntityManager().createNamedQuery("findChangedFeaturesByRelease", ChangedFeature.class);
         query.setParameter("releaseVersion", release);
         query.setParameter("projectRID", projectId);
@@ -107,15 +107,15 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
 
     @Override
     public List<String> listChangedFeaturesNamesByRelease(Long projectId, String release) {
-        Query query = getEntityManager().createNamedQuery("findFeatureNamesByReleaseVersion", ChangedFeature.class);
+        Query query = getEntityManager().createNamedQuery("findFeatureNamesByProjectAndRelease", ChangedFeature.class);
         query.setParameter("releaseVersion", release);
         query.setParameter("projectRID", projectId);
         return query.getResultList();
     }
 
     @Override
-    public List<Object[]> listScoredCommitsByRelease(Long projectId, String releaseVersion) {
-        Query query = getEntityManager().createNamedQuery("findScoredCommitsByReleaseVersion", ChangedFeature.class);
+    public List<Object[]> listScoredCommitsByProjectAndRelease(Long projectId, String releaseVersion) {
+        Query query = getEntityManager().createNamedQuery("findScoredCommitsByProjectAndRelease", ChangedFeature.class);
         query.setParameter("projectRID", projectId);
         query.setParameter("releaseVersion", releaseVersion);
         return query.getResultList();

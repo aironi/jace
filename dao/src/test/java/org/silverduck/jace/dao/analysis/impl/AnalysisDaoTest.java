@@ -187,7 +187,7 @@ public class AnalysisDaoTest extends EjbTestCase {
         newAnalysis.addChangedFeature(newCf2);
         getEntityManager().persist(newAnalysis);
 
-        List<ChangedFeature> list = analysisDao.listChangedFeaturesByRelease(project.getId(), "1.1");
+        List<ChangedFeature> list = analysisDao.listChangedFeaturesByProjectAndRelease(project.getId(), "1.1");
         Assert.assertEquals("Wrong amount of features returned", 2, list.size());
         Assert.assertTrue("newCf1 was not contained in list", list.contains(newCf1));
         Assert.assertTrue("newCf2 was not contained in list", list.contains(newCf2));

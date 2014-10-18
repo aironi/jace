@@ -85,7 +85,7 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      *            Release identifier
      * @return
      */
-    List<ChangedFeature> listChangedFeaturesByRelease(Long projectID, String release);
+    List<ChangedFeature> listChangedFeaturesByProjectAndRelease(Long projectID, String release);
 
     /**
      * Lists unique feature names for changed features in a release
@@ -106,7 +106,7 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      * @param releaseVersion
      * @return
      */
-    List<Object[]> listScoredCommitsByRelease(Long projectId, String releaseVersion);
+    List<Object[]> listScoredCommitsByProjectAndRelease(Long projectId, String releaseVersion);
 
     List<SLO> listSLOs(Long projectId);
 

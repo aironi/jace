@@ -290,39 +290,38 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     public List<ScoredCommit> listScoredCommitsByRelease(Long projectId, String releaseVersion) {
         // Get the directly changed feature from db and the initial score
-        Map<String, Long> commitScoreMap = new HashMap<String, Long>();
-        List<Object[]> commits = analysisDao.listScoredCommitsByRelease(projectId, releaseVersion);
+        //Map<String, Long> commitScoreMap = new HashMap<String, Long>();
+        List<ScoredCommit> scoredCommitList = new ArrayList<ScoredCommit>();
+        Map<String, ScoredCommit> commitIdScoredCommitMap = new HashMap<String, ScoredCommit>();
+        List<Object[]> commits = analysisDao.listScoredCommitsByProjectAndRelease(projectId, releaseVersion);
         for (Object[] commit : commits) {
-            Long score = (Long) commit[0];
+            Long score = (Long)commit[0];
             String commitId = (String) commit[1];
-            commitScoreMap.put(commitId, score);
+            ScoredCommit scoredCommit = new ScoredCommit(commitId, score);
+            scoredCommitList.add(scoredCommit);
+            commitIdScoredCommitMap.put(commitId, scoredCommit);
         }
 
         // Analyse all changed feature dependencies
-        List<ChangedFeature> changedFeatures = analysisDao.listChangedFeaturesByRelease(projectId, releaseVersion);
+        List<ChangedFeature> changedFeatures = analysisDao.listChangedFeaturesByProjectAndRelease(projectId, releaseVersion);
         for (ChangedFeature cf : changedFeatures) {
-            Long score = commitScoreMap.get(cf.getDiff().getCommit().getCommitId());
-
-            if (score != null) {
-                if (cf.getAnalysis().getAnalysisSetting().getGranularity() == Granularity.FILE) {
-                    Set<SLO> processed = new HashSet<SLO>();
-                    processed.add(cf.getSlo());
-                    score += calculateFileDependenciesScore(cf.getSlo(), processed, 1);
-                } else {
-                    // TODO: Implement method level granularity score calculation
+            if (cf.getAnalysis().getAnalysisSetting().getGranularity() == Granularity.FILE) {
+                Set<SLO> processed = new HashSet<SLO>();
+                processed.add(cf.getSlo());
+                Long score = calculateFileDependenciesScore(cf.getSlo(), processed, 1);
+                ScoredCommit scoredCommit = commitIdScoredCommitMap.get(cf.getDiff().getCommit().getCommitId());
+                if (scoredCommit != null) {
+                    scoredCommit.setScore(scoredCommit.getScore() + score);
                 }
-                commitScoreMap.put(cf.getDiff().getCommit().getCommitId(), score);
+            } else {
+                // TODO: Implement method level granularity score calculation
             }
         }
 
-        // Create a ordered ScoredCommit list...
-        List<ScoredCommit> list = new ArrayList<ScoredCommit>();
-        Iterator<Map.Entry<String, Long>> iterator = commitScoreMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Long> item = iterator.next();
-            list.add(new ScoredCommit(item.getKey(), item.getValue()));
-        }
+        return sortScoredCommitList(scoredCommitList);
+    }
 
+    private List<ScoredCommit> sortScoredCommitList(List<ScoredCommit> list) {
         Collections.sort(list, new Comparator<ScoredCommit>() {
             @Override
             public int compare(ScoredCommit o1, ScoredCommit o2) {
@@ -331,7 +330,6 @@ public class AnalysisServiceImpl implements AnalysisService {
                 return ctb.toComparison();
             }
         });
-
         return list;
     }
 
