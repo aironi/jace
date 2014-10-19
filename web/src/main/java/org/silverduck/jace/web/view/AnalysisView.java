@@ -7,20 +7,10 @@ import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.filter.Compare;
+import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
-import com.vaadin.ui.AbstractSelect;
-import com.vaadin.ui.Accordion;
-import com.vaadin.ui.Alignment;
-import com.vaadin.ui.ComboBox;
-import com.vaadin.ui.Component;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Panel;
-import com.vaadin.ui.TabSheet;
-import com.vaadin.ui.Table;
-import com.vaadin.ui.Tree;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.*;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,6 +21,7 @@ import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.analysis.impl.ScoredCommit;
+import org.silverduck.jace.web.component.LabelDisplayComponent;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -58,6 +49,9 @@ public class AnalysisView extends BaseView implements View {
     private static final Log LOG = LogFactory.getLog(AnalysisView.class);
 
     public static final String VIEW = "";
+    public static final String PROJECT_TYPE = "project";
+    public static final String RELEASE_TYPE = "release";
+    public static final String COMMIT_TYPE = "commit";
 
     @EJB
     private AnalysisDao analysisDao;
@@ -79,13 +73,20 @@ public class AnalysisView extends BaseView implements View {
 
     private Tree releaseTree;
 
+    private LabelDisplayComponent scoreComponent;
+    private LabelDisplayComponent commitIdComponent;
+    private GridLayout contentLayout;
+
     public AnalysisView() {
         super();
     }
 
     private Component createAnalysisTab() {
+        Panel panel = new Panel();
         analysisTree = new Tree();
-        return analysisTree;
+        panel.setContent(analysisTree);
+        return panel;
+
     }
 
     private Component createDetails() {
@@ -120,7 +121,7 @@ public class AnalysisView extends BaseView implements View {
 
         changedFeaturesTable.setImmediate(true);
         changedFeaturesTable.setSelectable(true);
-        changedFeaturesTable.setSizeFull();
+        changedFeaturesTable.setWidth(100, Unit.PERCENTAGE);
 
         featureSelect = new ComboBox(AppResources.getLocalizedString("label.analysisView.features", locale));
         featureSelect.setImmediate(true);
@@ -137,6 +138,7 @@ public class AnalysisView extends BaseView implements View {
             }
         });
 
+        detailsLayout.addComponent(createChangesPanel(locale));
         detailsLayout.addComponent(featureSelect);
 
         detailsLayout.addComponent(changedFeaturesTable);
@@ -145,9 +147,28 @@ public class AnalysisView extends BaseView implements View {
         return detailsPanel;
     }
 
+    private Panel createChangesPanel(Locale locale) {
+        Panel changesPanel = new Panel();
+        changesPanel.setWidth(100, Unit.PERCENTAGE);
+        VerticalLayout panelLayout = new VerticalLayout();
+        panelLayout.setMargin(true);
+        panelLayout.setSpacing(true);
+
+        commitIdComponent = new LabelDisplayComponent("label.analysisView.changesPanel.commitId");
+        panelLayout.addComponent(commitIdComponent);
+        scoreComponent = new LabelDisplayComponent("label.analysisView.changesPanel.score");
+        panelLayout.addComponent(scoreComponent);
+        changesPanel.setContent(panelLayout);
+        return changesPanel;
+    }
+
+
     private Component createReleaseTab() {
+        Panel releasePanel = new Panel();
         releaseTree = new Tree();
-        return releaseTree;
+        releasePanel.setContent(releaseTree);
+
+        return releasePanel;
     }
 
     @Override
@@ -158,16 +179,15 @@ public class AnalysisView extends BaseView implements View {
 
     @PostConstruct
     private void init() {
-        setSizeFull();
         setDefaultComponentAlignment(Alignment.TOP_CENTER);
 
-        VerticalLayout contentLayout = new VerticalLayout();
         contentLayout.setDefaultComponentAlignment(Alignment.TOP_CENTER);
         contentLayout.setSpacing(true);
         changedFeaturesContainer = JPAContainerFactory.makeJndi(ChangedFeature.class);
         changedFeaturesContainer.addContainerFilter(new Compare.Equal("analysis.releaseVersion", null));
         changedFeaturesContainer.applyFilters();
         changedFeaturesContainer.setFireContainerItemSetChangeEvents(true);
+
         changedFeaturesContainer.addNestedContainerProperty("feature.name");
         changedFeaturesContainer.addNestedContainerProperty("slo.path");
         changedFeaturesContainer.addNestedContainerProperty("slo.packageName");
@@ -182,8 +202,9 @@ public class AnalysisView extends BaseView implements View {
         // changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZone");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.formattedTimeZoneOffset");
 
+
         final TabSheet analysisTabs = new TabSheet();
-        analysisTabs.setSizeFull();
+       // analysisTabs.setSizeFull();
         analysisTabs.addTab(createReleaseTab(), AppResources.getLocalizedString("label.releases", UI.getCurrent().getLocale()));
         analysisTabs.addTab(createAnalysisTab(), AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
         analysisTabs.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener() {
@@ -196,20 +217,30 @@ public class AnalysisView extends BaseView implements View {
                 }
             }
         });
+        analysisTabs.setHeight("100%");
 
         HorizontalLayout hl = new HorizontalLayout();
-        hl.setWidth(100, Unit.PERCENTAGE);
-        hl.setHeight(80, Unit.PERCENTAGE);
+        hl.setSizeFull();
         hl.setSpacing(true);
 
         Component detailsPanel = createDetails();
+        detailsPanel.setHeight("100%");
+
         hl.addComponent(analysisTabs);
         hl.addComponent(detailsPanel);
         hl.setExpandRatio(analysisTabs, 3);
         hl.setExpandRatio(detailsPanel, 7);
 
+
         contentLayout.addComponent(hl);
-        super.getContentLayout().addComponent(contentLayout);
+    }
+
+    @Override
+    protected Layout getContentLayout() {
+        if (contentLayout == null) {
+            contentLayout = new GridLayout();
+        }
+        return contentLayout;
     }
 
     private void populateAnalysisTree() {
@@ -304,29 +335,29 @@ public class AnalysisView extends BaseView implements View {
         for (String featureName : featureNames) {
             featureSelect.addItem(featureName);
         }
+
     }
 
     private void populateDetailsForAnalysis(Long analysisId) {
-        changedFeaturesContainer.removeAllContainerFilters();
-        changedFeaturesContainer.addContainerFilter(new Compare.Equal("analysis.id", analysisId));
-        changedFeaturesContainer.applyFilters();
-        changedFeaturesContainer.refresh();
-        populateDetailsCommon();
+        populateChangedFeaturesByProperty("analysis.id", analysisId);
     }
 
-    private void populateDetailsForCommit(String commitId) {
-        changedFeaturesContainer.removeAllContainerFilters();
-        changedFeaturesContainer.addContainerFilter(new Compare.Equal("diff.commit.commitId", commitId));
-        changedFeaturesContainer.applyFilters();
-        changedFeaturesContainer.refresh();
-        populateDetailsCommon();
+    private void populateDetailsForCommit(ScoredCommit scoredCommit) {
+        populateChangedFeaturesByProperty("diff.commit.commitId", scoredCommit.getCommitId());
+        commitIdComponent.setValue(scoredCommit.getCommitId());
+        scoreComponent.setValue(scoredCommit.getScore().toString());
     }
 
     private void populateDetailsForRelease(String release) {
+        populateChangedFeaturesByProperty("analysis.releaseVersion", release);
+    }
+
+    private void populateChangedFeaturesByProperty(String propertyName, Object propertyValue) {
         changedFeaturesContainer.removeAllContainerFilters();
-        changedFeaturesContainer.addContainerFilter(new Compare.Equal("analysis.releaseVersion", release));
+        changedFeaturesContainer.addContainerFilter(new Compare.Equal(propertyName, propertyValue));
         changedFeaturesContainer.applyFilters();
         changedFeaturesContainer.refresh();
+        changedFeaturesContainer.sort(new String[]{"feature.name"}, new boolean[] {true});
         populateDetailsCommon();
     }
 
@@ -347,6 +378,7 @@ public class AnalysisView extends BaseView implements View {
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", String.class, null);
         hca.addContainerProperty("type", String.class, null);
+        hca.addContainerProperty("extra", Object.class, null);
 
         List<Analysis> analyses = analysisDao.listAllAnalyses();
         for (Analysis analysis : analyses) {
@@ -374,7 +406,7 @@ public class AnalysisView extends BaseView implements View {
             List<String> list = item.getValue();
             Object projectItem = hca.addItem();
             hca.getContainerProperty(projectItem, "caption").setValue(project.getName());
-            hca.getContainerProperty(projectItem, "type").setValue("project");
+            hca.getContainerProperty(projectItem, "type").setValue(PROJECT_TYPE);
             hca.getContainerProperty(projectItem, "id").setValue(project.getId().toString());
             Collections.sort(list);
             for (String release : list) {
@@ -382,7 +414,7 @@ public class AnalysisView extends BaseView implements View {
                 hca.setParent(releaseItem, projectItem);
                 hca.getContainerProperty(releaseItem, "caption").setValue(release);
                 hca.getContainerProperty(releaseItem, "id").setValue(release);
-                hca.getContainerProperty(releaseItem, "type").setValue("release");
+                hca.getContainerProperty(releaseItem, "type").setValue(RELEASE_TYPE);
                 if (release != null) {
                     for (ScoredCommit scoredCommit : releaseCommits.get(release)) {
                         Object commitItem = hca.addItem();
@@ -390,7 +422,8 @@ public class AnalysisView extends BaseView implements View {
                         String caption = scoredCommit.getCommitId() + " (Score: " + scoredCommit.getScore() + ")";
                         hca.getContainerProperty(commitItem, "caption").setValue(caption);
                         hca.getContainerProperty(commitItem, "id").setValue(scoredCommit.getCommitId());
-                        hca.getContainerProperty(commitItem, "type").setValue("commit");
+                        hca.getContainerProperty(commitItem, "type").setValue(COMMIT_TYPE);
+                        hca.getContainerProperty(commitItem, "extra").setValue(scoredCommit);
                         releaseTree.setChildrenAllowed(commitItem, false);
                     }
                 } else {
@@ -412,13 +445,19 @@ public class AnalysisView extends BaseView implements View {
                 if (item != null) {
                     Property idProperty = item.getItemProperty("id");
                     Property typeProperty = item.getItemProperty("type");
+                    Property extraProperty = item.getItemProperty("extra");
                     if (idProperty != null && typeProperty != null) {
                         String type = (String) typeProperty.getValue();
                         String key = (String) idProperty.getValue();
-                        if ("release".equals(type)) {
+
+                        if (RELEASE_TYPE.equals(type)) {
                             populateDetailsForRelease(key);
-                        } else if ("commit".equals(type)) {
-                            populateDetailsForCommit(key);
+                        } else if (COMMIT_TYPE.equals(type)) {
+                            ScoredCommit scoredCommit = null;
+                            if (extraProperty != null) {
+                                 scoredCommit = (ScoredCommit) extraProperty.getValue();
+                            }
+                            populateDetailsForCommit(scoredCommit);
                         }
                     }
                 }

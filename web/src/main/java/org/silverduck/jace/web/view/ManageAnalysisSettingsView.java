@@ -5,14 +5,7 @@ import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.cdi.CDIView;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.DefaultErrorHandler;
-import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.Table;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Window;
+import com.vaadin.ui.*;
 import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
@@ -43,13 +36,14 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     @EJB
     private ProjectService projectService;
+    private GridLayout contentLayout;
 
     public ManageAnalysisSettingsView() {
         super();
 
     }
 
-    private void addAnalysisSettingTable(VerticalLayout vl) {
+    private void addAnalysisSettingTable(Layout layout) {
         final Locale locale = UI.getCurrent().getLocale();
         analysisTable = new Table();
         analysisTable.setContainerDataSource(analysisSettingsJPAContainer);
@@ -115,7 +109,7 @@ public class ManageAnalysisSettingsView extends BaseView {
         analysisTable.addGeneratedColumn("Trigger", columnGenerator);
         analysisTable.addGeneratedColumn("InitialTrigger", columnGenerator);
 
-        vl.addComponent(analysisTable);
+        layout.addComponent(analysisTable);
 
     }
 
@@ -155,20 +149,20 @@ public class ManageAnalysisSettingsView extends BaseView {
         analysisPopup.setModal(true);
 
         // Layout
-        HorizontalLayout horizontalLayout = new HorizontalLayout();
-        horizontalLayout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
-        horizontalLayout.setSpacing(true);
-        horizontalLayout.setMargin(true);
-        analysisPopup.setContent(horizontalLayout);
-        VerticalLayout contentLayout = new VerticalLayout();
-        contentLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
-        horizontalLayout.addComponent(contentLayout);
+        HorizontalLayout popupLayout = new HorizontalLayout();
+        popupLayout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
+        popupLayout.setSpacing(true);
+        popupLayout.setMargin(true);
+        analysisPopup.setContent(popupLayout);
+        VerticalLayout formLayout = new VerticalLayout();
+        formLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
+        popupLayout.addComponent(formLayout);
 
         // Content
 
         final AnalysisSettingsComponent analysisSettingsComponent = new AnalysisSettingsComponent(
             projectService.findAllProjects());
-        contentLayout.addComponent(analysisSettingsComponent);
+        formLayout.addComponent(analysisSettingsComponent);
 
         Button submitButton = new Button(AppResources.getLocalizedString("label.submit", locale));
         submitButton.addClickListener(new Button.ClickListener() {
@@ -193,9 +187,9 @@ public class ManageAnalysisSettingsView extends BaseView {
                                         public void run() {
                                             analysisSettingsJPAContainer.refresh();
                                             Notification.show(AppResources.getLocalizedString(
-                                                "notification.analysisSettingAdded", UI.getCurrent().getLocale(),
-                                                settings.getProject().getName(), settings.getBranch()),
-                                                Notification.Type.TRAY_NOTIFICATION);
+                                                            "notification.analysisSettingAdded", UI.getCurrent().getLocale(),
+                                                            settings.getProject().getName(), settings.getBranch()),
+                                                    Notification.Type.TRAY_NOTIFICATION);
                                         }
                                     });
                                 }
@@ -203,14 +197,14 @@ public class ManageAnalysisSettingsView extends BaseView {
                                 Thread.currentThread().interrupt();
                             } catch (ExecutionException e) {
                                 Notification.show("Error occurred when adding Analysis Setting.\nCause: "
-                                    + ExceptionHelper.toHumanReadable(e));
+                                        + ExceptionHelper.toHumanReadable(e));
                             }
                         }
                     }.start();
                     analysisPopup.close();
                 } else {
                     Notification.show(AppResources.getLocalizedString("form.validationErrorsNotification", locale),
-                        Notification.Type.TRAY_NOTIFICATION);
+                            Notification.Type.TRAY_NOTIFICATION);
                 }
             }
         });
@@ -227,7 +221,7 @@ public class ManageAnalysisSettingsView extends BaseView {
         HorizontalLayout commandButtons = new HorizontalLayout();
         commandButtons.addComponent(submitButton);
         commandButtons.addComponent(cancelButton);
-        contentLayout.addComponent(commandButtons);
+        formLayout.addComponent(commandButtons);
 
         AnalysisSetting analysisSettings;
         if (analysisSettingsId == null) {
@@ -249,14 +243,19 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     @PostConstruct
     private void init() {
-        VerticalLayout vl = new VerticalLayout();
         HorizontalLayout hl = new HorizontalLayout();
 
-        super.getContentLayout().addComponent(vl);
-
-        addAnalysisSettingTable(vl);
+        addAnalysisSettingTable(contentLayout);
         addNewAnalysisSettingButton(hl);
 
-        vl.addComponent(hl);
+        contentLayout.addComponent(hl);
+    }
+
+    @Override
+    protected Layout getContentLayout() {
+        if (contentLayout == null) {
+            contentLayout = new GridLayout();
+        }
+        return contentLayout;
     }
 }

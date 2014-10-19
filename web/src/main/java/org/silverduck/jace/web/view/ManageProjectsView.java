@@ -5,14 +5,7 @@ import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.cdi.CDIView;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.DefaultErrorHandler;
-import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.Table;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Window;
+import com.vaadin.ui.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.exception.ExceptionHelper;
@@ -43,6 +36,7 @@ public class ManageProjectsView extends BaseView {
     private JPAContainer<Project> projectsContainer = JPAContainerFactory.makeJndi(Project.class);
 
     Table projectsTable;
+    private GridLayout contentLayout;
 
     public ManageProjectsView() {
         super();
@@ -63,7 +57,7 @@ public class ManageProjectsView extends BaseView {
 
     }
 
-    private void addProjectsTable(VerticalLayout layout) {
+    private void addProjectsTable(Layout layout) {
         final Locale locale = UI.getCurrent().getLocale();
         projectsContainer.setFireContainerItemSetChangeEvents(true);
         projectsContainer.addNestedContainerProperty("pluginConfiguration.pluginType");
@@ -149,19 +143,19 @@ public class ManageProjectsView extends BaseView {
         projectPopUp.setModal(true);
 
         // Layout
-        HorizontalLayout horizontalLayout = new HorizontalLayout();
-        horizontalLayout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
-        horizontalLayout.setSpacing(true);
-        horizontalLayout.setMargin(true);
-        projectPopUp.setContent(horizontalLayout);
-        VerticalLayout contentLayout = new VerticalLayout();
-        contentLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
-        horizontalLayout.addComponent(contentLayout);
+        HorizontalLayout popupLayout = new HorizontalLayout();
+        popupLayout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
+        popupLayout.setSpacing(true);
+        popupLayout.setMargin(true);
+        projectPopUp.setContent(popupLayout);
+        VerticalLayout formLayout = new VerticalLayout();
+        formLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
+        popupLayout.addComponent(formLayout);
 
         // Content
 
         final ProjectComponent projectComponent = new ProjectComponent();
-        contentLayout.addComponent(projectComponent);
+        formLayout.addComponent(projectComponent);
 
         Button submitButton = new Button(AppResources.getLocalizedString("label.submit", locale));
         submitButton.addClickListener(new Button.ClickListener() {
@@ -191,8 +185,8 @@ public class ManageProjectsView extends BaseView {
                                             projectsContainer.refresh();
                                             if (finalWasNew) {
                                                 Notification.show(AppResources.getLocalizedString(
-                                                    "notification.projectAdded", UI.getCurrent().getLocale(),
-                                                    project.getName()), Notification.Type.TRAY_NOTIFICATION);
+                                                        "notification.projectAdded", UI.getCurrent().getLocale(),
+                                                        project.getName()), Notification.Type.TRAY_NOTIFICATION);
                                             }
                                         }
                                     });
@@ -201,7 +195,7 @@ public class ManageProjectsView extends BaseView {
                                 Thread.currentThread().interrupt();
                             } catch (ExecutionException e) {
                                 Notification.show("Error", "An error occurred when adding project.\nCause: "
-                                    + ExceptionHelper.toHumanReadable(e), Notification.Type.ERROR_MESSAGE);
+                                        + ExceptionHelper.toHumanReadable(e), Notification.Type.ERROR_MESSAGE);
                             }
                         }
                     }.start();
@@ -210,7 +204,7 @@ public class ManageProjectsView extends BaseView {
 
                 } else {
                     Notification.show(AppResources.getLocalizedString("form.validationErrorsNotification", locale),
-                        Notification.Type.TRAY_NOTIFICATION);
+                            Notification.Type.TRAY_NOTIFICATION);
                 }
             }
         });
@@ -227,7 +221,7 @@ public class ManageProjectsView extends BaseView {
         HorizontalLayout commandButtons = new HorizontalLayout();
         commandButtons.addComponent(submitButton);
         commandButtons.addComponent(cancelButton);
-        contentLayout.addComponent(commandButtons);
+        formLayout.addComponent(commandButtons);
 
         Project project;
         if (projectId == null) {
@@ -249,14 +243,12 @@ public class ManageProjectsView extends BaseView {
 
     @PostConstruct
     private void init() {
-        VerticalLayout vl = new VerticalLayout();
         HorizontalLayout hl = new HorizontalLayout();
 
-        addProjectsTable(vl);
+        addProjectsTable(contentLayout);
         addNewProjectButton(hl);
 
-        vl.addComponent(hl);
-        super.getContentLayout().addComponent(vl);
+        contentLayout.addComponent(hl);
     }
 
     /*
@@ -268,5 +260,13 @@ public class ManageProjectsView extends BaseView {
 
     private void showNewProjectPopup() {
         createProjectPopup(null);
+    }
+
+    @Override
+    protected Layout getContentLayout() {
+        if (contentLayout == null) {
+            contentLayout = new GridLayout();
+        }
+        return contentLayout;
     }
 }
