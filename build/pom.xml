@@ -127,10 +127,18 @@
         </dependency>
 
         <!-- Derby DB !-->
+        <!--
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derbyclient</artifactId>
             <version>10.10.2.0</version>
+        </dependency>
+        -->
+        <!-- PostgreSQL -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.3-1102-jdbc4</version>
         </dependency>
 
     </dependencies>
