@@ -2,32 +2,22 @@ package org.silverduck.jace.services.analysis.impl;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
-import org.eclipse.jdt.core.dom.SimplePropertyDescriptor;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.silverduck.jace.common.xml.XmlUtils;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.analysis.slo.SLOImport;
-import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.feature.Feature;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.ReleaseInfo;
@@ -37,6 +27,8 @@ import org.silverduck.jace.domain.slo.JavaType;
 import org.silverduck.jace.domain.slo.SLO;
 import org.silverduck.jace.domain.slo.SLOStatus;
 import org.silverduck.jace.domain.slo.SLOType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
 import javax.xml.xpath.XPath;
@@ -66,13 +58,12 @@ import java.util.Set;
  * Initial Analysis implementation. Performs the initial analysis on the source tree and scans all of the found files.
  * 
  * Parses ".java"-files with ASTParser and creates appropriate SLO objects.
- * 
- * Parses other files... todo
- * 
+ *
+ * @author Iiro Hietala
  */
 public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
-    private static final Log LOG = LogFactory.getLog(InitialAnalysisFileVisitor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(InitialAnalysisFileVisitor.class);
 
     private final Analysis analysis;
 

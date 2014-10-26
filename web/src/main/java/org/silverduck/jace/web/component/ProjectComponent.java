@@ -1,8 +1,5 @@
 package org.silverduck.jace.web.component;
 
-import com.sun.net.ssl.HttpsURLConnection;
-import com.vaadin.data.fieldgroup.BeanFieldGroup;
-import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.data.fieldgroup.PropertyId;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.server.UserError;
@@ -10,21 +7,14 @@ import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
-import com.vaadin.ui.CustomComponent;
-import com.vaadin.ui.Field;
 import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
-import com.vaadin.ui.ListSelect;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.PasswordField;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpConnection;
 import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.project.Project;
@@ -33,9 +23,7 @@ import org.silverduck.jace.domain.vcs.PluginType;
 import org.silverduck.jace.web.vaadin.WorkingBeanFieldGroup;
 import sun.net.www.protocol.https.HttpsURLConnectionImpl;
 
-import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Locale;
 
 /**

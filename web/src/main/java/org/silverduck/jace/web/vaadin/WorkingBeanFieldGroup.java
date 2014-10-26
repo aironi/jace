@@ -1,25 +1,13 @@
 package org.silverduck.jace.web.vaadin;
 
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
-import com.vaadin.data.fieldgroup.Caption;
-import com.vaadin.data.fieldgroup.PropertyId;
 import com.vaadin.data.validator.BeanValidator;
-import com.vaadin.ui.DefaultFieldFactory;
 import com.vaadin.ui.Field;
-import com.vaadin.util.ReflectTools;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.silverduck.jace.domain.project.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.persistence.Embedded;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Workaround for Vaadin bug
@@ -27,7 +15,7 @@ import java.util.TreeMap;
  * Copied from: https://vaadin.com/old-forum/-/message_boards/view_message/3566802
  */
 public class WorkingBeanFieldGroup<T> extends BeanFieldGroup<T> {
-    private static final Log LOG = LogFactory.getLog(WorkingBeanFieldGroup.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WorkingBeanFieldGroup.class);
 
     public WorkingBeanFieldGroup(Class<T> beanType) {
         super(beanType);

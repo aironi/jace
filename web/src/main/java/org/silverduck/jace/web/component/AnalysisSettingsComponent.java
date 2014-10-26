@@ -1,38 +1,23 @@
 package org.silverduck.jace.web.component;
 
 import com.vaadin.data.Property;
-import com.vaadin.data.fieldgroup.BeanFieldGroup;
-import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.data.util.BeanItem;
-import com.vaadin.server.UserError;
 import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
-import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.analysis.Granularity;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.ProjectBranch;
-import org.silverduck.jace.domain.project.VersionFileType;
-import org.silverduck.jace.domain.vcs.PluginType;
-import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.web.vaadin.BeanComboBoxHelper;
 import org.silverduck.jace.web.vaadin.WorkingBeanFieldGroup;
-import sun.net.www.protocol.https.HttpsURLConnectionImpl;
-
-import javax.ejb.EJB;
-import java.net.URL;
-import java.util.Collection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Locale;
 
@@ -41,7 +26,7 @@ import java.util.Locale;
  */
 public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
 
-    private static final Log LOG = LogFactory.getLog(AnalysisSettingsComponent.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AnalysisSettingsComponent.class);
 
     // Used only to get edit working with comboboxes
     private AnalysisSetting analysisSetting;

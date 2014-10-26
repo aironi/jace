@@ -2,8 +2,6 @@ package org.silverduck.jace.services.vcs.impl;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
@@ -13,14 +11,12 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import org.eclipse.jgit.transport.FetchResult;
-import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -32,6 +28,8 @@ import org.silverduck.jace.domain.vcs.Line;
 import org.silverduck.jace.domain.vcs.ModificationType;
 import org.silverduck.jace.domain.vcs.ParsedDiff;
 import org.silverduck.jace.services.vcs.GitService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ejb.Stateless;
 import java.io.ByteArrayOutputStream;
@@ -55,7 +53,7 @@ import java.util.regex.Pattern;
 @Stateless(name = "GitServiceEJB")
 public class GitServiceImpl implements GitService {
 
-    private static final Log LOG = LogFactory.getLog(GitServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GitServiceImpl.class);
 
     private static final String REF_HEAD = "HEAD";
     public static final String HUNK_IDENTIFIER = "@@";
@@ -314,7 +312,7 @@ public class GitServiceImpl implements GitService {
         } finally {
             git.getRepository().close();
         }
-        LOG.info("GitServiceImpl.fetchInternal: Returning fetchResult.fetchResult: " + fetchResult != null ? fetchResult : "null");
+        LOG.info("GitServiceImpl.fetchInternal: Returning fetchResult.fetchResult: {}", fetchResult != null ? fetchResult : "null");
         return fetchResult;
     }
 
@@ -345,7 +343,7 @@ public class GitServiceImpl implements GitService {
         } finally {
             git.getRepository().close();
         }
-        LOG.info("GitServiceImpl.pullInternal: Returning pullResult.fetchResult: " + pullResult != null ? pullResult.getFetchResult() : "null");
+        LOG.info("GitServiceImpl.pullInternal: Returning pullResult.fetchResult: {}", pullResult != null ? pullResult.getFetchResult() : "null");
         return pullResult;
     }
 

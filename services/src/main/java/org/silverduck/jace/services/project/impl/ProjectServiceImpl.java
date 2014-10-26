@@ -1,8 +1,5 @@
 package org.silverduck.jace.services.project.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.apache.commons.io.FileUtils;
 import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.properties.JaceProperties;
@@ -12,11 +9,13 @@ import org.silverduck.jace.domain.project.ProjectBranch;
 import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.vcs.GitService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ejb.AsyncResult;
 import javax.ejb.Asynchronous;
 import javax.ejb.EJB;
-import javax.ejb.Schedule;
+
 import javax.ejb.Stateless;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -34,7 +33,7 @@ import java.util.concurrent.Future;
 @Stateless(name = "ProjectPollingServiceEJB")
 public class ProjectServiceImpl implements ProjectService {
 
-    Log LOG = LogFactory.getLog(ProjectServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ProjectServiceImpl.class);
 
     @Inject
     Event<AddingProjectCompleteEvent> addingProjectCompleteEvent;

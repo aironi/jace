@@ -1,7 +1,7 @@
 package org.silverduck.jace.common.localization;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -13,7 +13,7 @@ import java.util.ResourceBundle;
  */
 public class AppResources {
 
-    private static final Log LOG = LogFactory.getLog(AppResources.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AppResources.class);
 
     /**
      * Returns a localized version of a string from the uiResources resource bundle with given locale

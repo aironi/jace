@@ -5,12 +5,12 @@ import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.ui.AbstractSelect;
 import com.vaadin.ui.ComboBox;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.project.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -23,7 +23,7 @@ import java.util.Locale;
  */
 public class BeanComboBoxHelper {
 
-    private static final Log LOG = LogFactory.getLog(BeanComboBoxHelper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BeanComboBoxHelper.class);
 
     /**
      * Create a ComboBox with a Bean items

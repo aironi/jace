@@ -6,13 +6,13 @@ import com.vaadin.cdi.CDIView;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.DefaultErrorHandler;
 import com.vaadin.ui.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.web.component.ProjectComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 @CDIView(ManageProjectsView.VIEW)
 public class ManageProjectsView extends BaseView {
 
-    private static final Log LOG = LogFactory.getLog(ManageProjectsView.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ManageProjectsView.class);
 
     public static final String VIEW = "ManageProjectsView";
 

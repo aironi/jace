@@ -7,13 +7,10 @@ import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.filter.Compare;
-import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.ui.*;
 import org.apache.commons.lang3.builder.CompareToBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.localization.AppResources;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.domain.analysis.Analysis;
@@ -22,6 +19,8 @@ import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.analysis.impl.ScoredCommit;
 import org.silverduck.jace.web.component.LabelDisplayComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -46,7 +45,7 @@ public class AnalysisView extends BaseView implements View {
 
     public static final String ALL_FEATURES = "All Features";
 
-    private static final Log LOG = LogFactory.getLog(AnalysisView.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AnalysisView.class);
 
     public static final String VIEW = "";
     public static final String PROJECT_TYPE = "project";
