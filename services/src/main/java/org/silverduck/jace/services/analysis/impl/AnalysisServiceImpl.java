@@ -2,8 +2,6 @@ package org.silverduck.jace.services.analysis.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.dao.analysis.AnalysisSettingDao;
@@ -19,6 +17,8 @@ import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.domain.vcs.Hunk;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.ProjectService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ejb.AsyncResult;
 import javax.ejb.Asynchronous;
@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 @Stateless(name = "AnalysisServiceEJB")
 public class AnalysisServiceImpl implements AnalysisService {
 
-    private static final Log LOG = LogFactory.getLog(AnalysisServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AnalysisServiceImpl.class);
 
     @EJB
     private AnalysisDao analysisDao;
@@ -81,7 +81,7 @@ public class AnalysisServiceImpl implements AnalysisService {
                 if (dependency != null) {
                     slo.addDependency(dependency);
                     dependency.setAnalysis(analysis);
-                    LOG.fatal("Adding dependency for SLO " + slo.getQualifiedClassName() + " to -> "
+                    LOG.debug("Adding dependency for SLO " + slo.getQualifiedClassName() + " to -> "
                         + dependency.getQualifiedClassName());
                 }
             }
@@ -184,6 +184,8 @@ public class AnalysisServiceImpl implements AnalysisService {
             // Analyse all modified/added files and generate new SLOs
             analyseSLOs(setting, analysis, modifiedFiles);
 
+            analyseDependencies(analysis);
+
             // Iterate the added files set
             Iterator<Map.Entry<String, Diff>> iterator = addedFiles.entrySet().iterator();
             while (iterator.hasNext()) {
@@ -218,16 +220,34 @@ public class AnalysisServiceImpl implements AnalysisService {
     protected Long calculateFileDependenciesScore(SLO slo, Set<SLO> processed, int depth) {
         Long score = 0L;
 
-        List<SLO> dependsOn = slo.getDependsOn();
-        score += (dependsOn.size() / depth); // direct dependencies multiplier = 1, for each level divide by depth
+        List<SLO> dependantOf = slo.getDependantOf();
+
+        if (LOG.isDebugEnabled()) {
+            List<String> paths = new ArrayList<String>();
+            for (SLO dependency : dependantOf) {
+                paths.add(dependency.getPath());
+            }
+
+            LOG.debug("The SLO '" + slo.getPath() + "' is dependant of following classes: " + StringUtils.join(paths, ", "));
+        }
+        score += (dependantOf.size() / depth); // direct dependencies multiplier = 1, for each level divide by depth
+
+        LOG.debug("Calculated score of '" + score + "' for dependency '" + slo.getPath() + "' at depth " + depth);
 
         if (!processed.contains(slo)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Adding SLO '" + slo.getPath() + "' to set of processed dependencies");
+            }
             processed.add(slo);
-            for (SLO dependency : dependsOn) {
+            for (SLO dependency : dependantOf) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Calculating dependencies score for dependency " + dependency.getPath());
+                }
                 score += calculateFileDependenciesScore(dependency, processed, depth + 1);
             }
         }
 
+        LOG.debug("Returning score '" + score + "' for SLO '" + slo.getPath() + "' at depth " + depth);
         return score;
     }
 
@@ -300,7 +320,9 @@ public class AnalysisServiceImpl implements AnalysisService {
             ScoredCommit scoredCommit = new ScoredCommit(commitId, score);
             scoredCommitList.add(scoredCommit);
             commitIdScoredCommitMap.put(commitId, scoredCommit);
+            LOG.debug("Found scored commit with id '" + commitId + "' and score '" + score);
         }
+
 
         // Analyse all changed feature dependencies
         List<ChangedFeature> changedFeatures = analysisDao.listChangedFeaturesByProjectAndRelease(projectId, releaseVersion);
@@ -311,6 +333,11 @@ public class AnalysisServiceImpl implements AnalysisService {
                 Long score = calculateFileDependenciesScore(cf.getSlo(), processed, 1);
                 ScoredCommit scoredCommit = commitIdScoredCommitMap.get(cf.getDiff().getCommit().getCommitId());
                 if (scoredCommit != null) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Adding dependencies score of amount '" + score +
+                                "' for commitId '" + scoredCommit.getCommitId() +
+                                "' with existing score of '" + scoredCommit.getScore() + "'");
+                    }
                     scoredCommit.setScore(scoredCommit.getScore() + score);
                 }
             } else {
