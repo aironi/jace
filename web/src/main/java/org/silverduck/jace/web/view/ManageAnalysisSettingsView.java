@@ -29,13 +29,14 @@ public class ManageAnalysisSettingsView extends BaseView {
     @EJB
     private AnalysisService analysisService;
 
+    @EJB
+    private ProjectService projectService;
+
     private JPAContainer<AnalysisSetting> analysisSettingsJPAContainer = JPAContainerFactory
         .makeJndi(AnalysisSetting.class);
 
-    Table analysisTable;
+    private Table analysisTable;
 
-    @EJB
-    private ProjectService projectService;
     private GridLayout contentLayout;
 
     public ManageAnalysisSettingsView() {
