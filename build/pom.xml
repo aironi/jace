@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.silverduck.jace</groupId>
     <artifactId>build</artifactId>
-    <version>0.3</version>
+    <version>${jace.version}</version>
     <packaging>pom</packaging>
     <name>Jace Build</name>
 
@@ -31,7 +31,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <eclipselink.version>2.5.1</eclipselink.version>
-        <jace.version>0.2</jace.version>
+        <jace.version>0.3</jace.version>
     </properties>
 
     <modules>
