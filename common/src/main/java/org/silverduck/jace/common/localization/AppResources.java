@@ -9,7 +9,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 /**
- * Created by Iiro on 29.12.2013.
+ * Created by Iiro Hietala on 29.12.2013.
  */
 public class AppResources {
 

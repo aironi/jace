@@ -1,9 +1,13 @@
 package org.silverduck.jace.common.xml;
 
+/**
+ * An utility class for XML related functions
+ */
 public class XmlUtils {
 
     /**
-     * A dirty method for removing namespaces from a given Xml String. Only to be used when namespaces ARE NOT KNOWN beforehand. Copied from
+     * Removes the namespace information from a given XML String.
+     * This method should be used only when the namespace information is not known beforehand. Copied from
      * http://stackoverflow.com/questions/4661154/how-do-i-remove-namespaces-from-xml-using-java-dom
      * 
      * @param xmlString

@@ -1,7 +1,7 @@
 package org.silverduck.jace.common.localization;
 
 /**
- * Simplistic interface for Localized Enumerations
+ * A simple interface for Localized Enumerations
  */
 public interface LocalizedEnum {
     /**
