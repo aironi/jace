@@ -2,18 +2,7 @@ package org.silverduck.jace.services.analysis.impl;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.PackageDeclaration;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.*;
 import org.silverduck.jace.common.xml.XmlUtils;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
@@ -164,7 +153,16 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                 return true;
             }
 
+            public boolean visit(EnumDeclaration node) {
+                if (node.isPackageMemberTypeDeclaration()) {
+                    slo.setClassName(node.getName().toString());
+                    slo.setQualifiedClassName(slo.getPackageName() + "." + slo.getClassName());
+                }
+
+                return true;
+            }
             public boolean visit(TypeDeclaration node) {
+
                 if (node.isPackageMemberTypeDeclaration()) {
                     slo.setClassName(node.getName().toString());
                     slo.setQualifiedClassName(slo.getPackageName() + "." + slo.getClassName());

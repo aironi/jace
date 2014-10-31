@@ -76,6 +76,8 @@ public class AnalysisServiceImpl implements AnalysisService {
             qualifiedSlos.put(slo.getQualifiedClassName(), slo);
         }
         for (SLO slo : analysis.getSlos()) {
+            slo.clearDependsOnList();
+
             for (SLOImport sloImport : slo.getSloImports()) {
                 SLO dependency = qualifiedSlos.get(sloImport.getQualifiedClassName());
                 if (dependency != null) {
@@ -119,10 +121,10 @@ public class AnalysisServiceImpl implements AnalysisService {
                     Pattern pattern = Pattern.compile(commitPattern);
                     Matcher matcher = pattern.matcher(diff.getCommit().getMessage());
                     if (matcher.find()) {
-                        diff.getCommit().setCommitId(matcher.group());
+                        diff.getCommit().setCommitId(StringUtils.left(matcher.group(), 4090));
                     } else {
                         // TODO: Consider making this configurable, not everyone likes to see such things
-                        diff.getCommit().setCommitId(diff.getCommit().getMessage());
+                        diff.getCommit().setCommitId(StringUtils.left(diff.getCommit().getMessage(), 4090));
                     }
 
                 }
@@ -222,17 +224,17 @@ public class AnalysisServiceImpl implements AnalysisService {
 
         List<SLO> dependantOf = slo.getDependantOf();
 
-        if (LOG.isDebugEnabled()) {
+        if (LOG.isTraceEnabled()) {
             List<String> paths = new ArrayList<String>();
             for (SLO dependency : dependantOf) {
                 paths.add(dependency.getPath());
             }
 
-            LOG.debug("The SLO '" + slo.getPath() + "' is dependant of following classes: " + StringUtils.join(paths, ", "));
+            LOG.trace("The SLO '" + slo.getPath() + "' is dependant of following classes: " + StringUtils.join(paths, ", "));
         }
         score += (dependantOf.size() / depth); // direct dependencies multiplier = 1, for each level divide by depth
 
-        LOG.debug("Calculated score of '" + score + "' for dependency '" + slo.getPath() + "' at depth " + depth);
+        LOG.trace("Calculated score of '" + score + "' for dependency '" + slo.getPath() + "' at depth " + depth);
 
         if (!processed.contains(slo)) {
             if (LOG.isDebugEnabled()) {
@@ -241,13 +243,13 @@ public class AnalysisServiceImpl implements AnalysisService {
             processed.add(slo);
             for (SLO dependency : dependantOf) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Calculating dependencies score for dependency " + dependency.getPath());
+                    LOG.trace("Calculating dependencies score for dependency " + dependency.getPath());
                 }
                 score += calculateFileDependenciesScore(dependency, processed, depth + 1);
             }
         }
 
-        LOG.debug("Returning score '" + score + "' for SLO '" + slo.getPath() + "' at depth " + depth);
+        LOG.trace("Returning score '" + score + "' for SLO '" + slo.getPath() + "' at depth " + depth);
         return score;
     }
 
@@ -310,7 +312,6 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     public List<ScoredCommit> listScoredCommitsByRelease(Long projectId, String releaseVersion) {
         // Get the directly changed feature from db and the initial score
-        //Map<String, Long> commitScoreMap = new HashMap<String, Long>();
         List<ScoredCommit> scoredCommitList = new ArrayList<ScoredCommit>();
         Map<String, ScoredCommit> commitIdScoredCommitMap = new HashMap<String, ScoredCommit>();
         List<Object[]> commits = analysisDao.listScoredCommitsByProjectAndRelease(projectId, releaseVersion);
@@ -393,5 +394,15 @@ public class AnalysisServiceImpl implements AnalysisService {
     public Future<Boolean> updateAnalysisSetting(AnalysisSetting setting) {
         analysisSettingDao.update(setting);
         return new AsyncResult<Boolean>(Boolean.TRUE);
+    }
+
+    @Override
+    public List<Analysis> listAllAnalyses() {
+        return analysisDao.listAllAnalyses();
+    }
+
+    @Override
+    public List<String> listAllReleases(Long projectId) {
+        return analysisDao.listAllReleases(projectId);
     }
 }

@@ -6,7 +6,6 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
-import org.silverduck.jace.domain.vcs.Commit;
 
 import java.util.List;
 
