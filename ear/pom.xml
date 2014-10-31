@@ -48,6 +48,13 @@
             <type>war</type>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.silverduck.jace</groupId>
+            <artifactId>ws</artifactId>
+            <version>${project.version}</version>
+            <type>war</type>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -57,7 +64,7 @@
                 <version>2.9</version>
 
                 <configuration>
-                    <defaultLibBundleDir>lib</defaultLibBundleDir>
+                    <defaultLibBundleDir>/lib</defaultLibBundleDir>
                     <version>7</version>
                     <modules>
                         <jarModule>
@@ -80,6 +87,11 @@
                             <groupId>org.silverduck.jace</groupId>
                             <artifactId>web</artifactId>
                             <contextRoot>/</contextRoot>
+                        </webModule>
+                        <webModule>
+                            <groupId>org.silverduck.jace</groupId>
+                            <artifactId>ws</artifactId>
+                            <contextRoot>/rest</contextRoot>
                         </webModule>
                     </modules>
                     <displayName>J-Ace</displayName>
