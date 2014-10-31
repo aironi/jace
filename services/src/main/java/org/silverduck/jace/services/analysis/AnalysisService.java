@@ -46,4 +46,18 @@ public interface AnalysisService {
     void triggerAnalysis(Long analysisSettingId);
 
     java.util.concurrent.Future<Boolean> updateAnalysisSetting(AnalysisSetting setting);
+
+    /**
+     * Lists all analyses.
+     *
+     * @return
+     */
+    List<Analysis> listAllAnalyses();
+
+    /**
+     * Lists all analysed releases
+     *
+     * @return
+     */
+    List<String> listAllReleases(Long projectId);
 }
