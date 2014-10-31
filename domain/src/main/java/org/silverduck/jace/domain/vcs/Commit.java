@@ -35,7 +35,7 @@ public class Commit extends AbstractDomainObject {
     @Column(name = "AuthorTzOffset")
     private Integer authorTimeZoneOffSet;
 
-    @Column(name = "CommitId", length = 2048)
+    @Column(name = "CommitId", length = 4096)
     private String commitId;
 
     @OneToMany(mappedBy = "commit", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -45,7 +45,7 @@ public class Commit extends AbstractDomainObject {
     @Transient
     private String formattedTimeZoneOffset;
 
-    @Column(name = "Message", length = 2048)
+    @Column(name = "Message", length = 4096)
     private String message;
 
     private void addDiff(Diff diff) {
