@@ -18,6 +18,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.List;
 @Table(name = "Project")
 @NamedQueries({ @NamedQuery(name = "findAllProjects", query = "SELECT p from Project p"),
         @NamedQuery(name = "findProjectById", query = "SELECT p from Project p WHERE p.id = :id") })
+@XmlRootElement
 public class Project extends AbstractDomainObject {
 
     public static Project newProject() {

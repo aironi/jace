@@ -1,8 +1,11 @@
 package org.silverduck.jace.services.analysis.impl;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * Created by ihietala on 30.6.2014.
  */
+@XmlRootElement
 public class ScoredCommit {
 
     private String commitId;
