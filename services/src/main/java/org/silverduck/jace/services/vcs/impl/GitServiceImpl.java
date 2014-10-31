@@ -128,10 +128,11 @@ public class GitServiceImpl implements GitService {
             }
             // Writer out = new StringWriter();
             // cloneCommand.setProgressMonitor(new TextProgressMonitor(out));
+            LOG.info("cloneRepo({}, {}, {}, ***) called. Cloning...", cloneUrl, localDirectory, userName);
             Git call = cloneCommand.call();
 
             call.close();
-            LOG.info("cloneRepo(): Clone OK: " + cloneUrl);
+            LOG.info("cloneRepo(): Clone OK: {}", cloneUrl);
         } catch (GitAPIException e) {
             throw new JaceRuntimeException("Failed to clone a remote git repository from URI '" + cloneUrl
                 + "' into directory ' " + localDirectory + "'", e);
@@ -386,7 +387,7 @@ public class GitServiceImpl implements GitService {
         for (RevCommit commit : revCommits) {
             LOG.info("GitServiceImpl.resolveDiffs: Creating new Commit");
             Commit jaceCommit = new Commit();
-            jaceCommit.setMessage(commit.getFullMessage().toString());
+            jaceCommit.setMessage(StringUtils.left(commit.getFullMessage().toString(), 4090));
             // Add these.
             jaceCommit.setAuthorName(commit.getAuthorIdent().getName());
             jaceCommit.setAuthorEmail(commit.getAuthorIdent().getEmailAddress());
