@@ -5,20 +5,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.slo.SLOImport;
 import org.silverduck.jace.domain.feature.Feature;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,10 +16,26 @@ import java.util.List;
 @Entity
 @Table(name = "SLO")
 @NamedQueries({
-        @NamedQuery(name = "findByPath", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID ORDER BY s.created DESC"),
-        @NamedQuery(name = "findByQualifiedClassName", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE s.qualifiedClassName = :qualifiedClassName AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT AND p.id = :projectRID ORDER BY s.created DESC"),
-        @NamedQuery(name = "listSLOs", query = "SELECT s FROM SLO s JOIN s.analysis.project p WHERE p.id = :projectRID AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT"),
-        @NamedQuery(name = "updateStatus", query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids") })
+        @NamedQuery(name = "findByPath",
+                query = "SELECT s FROM SLO s JOIN s.analysis.project p " +
+                        "WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT " +
+                        "AND p.id = :projectRID " +
+                        "ORDER BY s.created DESC"),
+        @NamedQuery(name = "findByQualifiedClassName",
+                query = "SELECT s FROM SLO s " +
+                        "JOIN s.analysis.project p " +
+                        "WHERE s.qualifiedClassName = :qualifiedClassName " +
+                        "AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT " +
+                        "AND p.id = :projectRID " +
+                        "ORDER BY s.created DESC"),
+        @NamedQuery(name = "listSLOs",
+                query = "SELECT s FROM SLO s " +
+                        "JOIN s.analysis.project p " +
+                        "WHERE p.id = :projectRID " +
+                        "AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT"),
+        @NamedQuery(name = "updateStatus",
+                query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids")
+})
 public class SLO extends AbstractDomainObject {
     /*
      * Add Imports that this SLO uses Add fully qualified type helper construct a 'ripple' collection (where this SLO is
@@ -100,9 +103,9 @@ public class SLO extends AbstractDomainObject {
         this.sloStatus = SLOStatus.CURRENT;
     }
 
-    public void addDependency(SLO slo) {
-        if (!this.getDependsOn().contains(slo)) {
-            this.getDependsOn().add(slo);
+    public void addDependency(SLO dependency) {
+        if (!this.getDependsOn().contains(dependency)) {
+            this.getDependsOn().add(dependency);
             this.getDependantOf().add(this);
         }
     }
@@ -248,5 +251,13 @@ public class SLO extends AbstractDomainObject {
 
     public void setSloType(SLOType sloType) {
         this.sloType = sloType;
+    }
+
+    @Transient
+    public void clearDependsOnList() {
+        List<SLO> dependsOn = new ArrayList<SLO>(getDependsOn());
+        for (SLO slo : dependsOn) {
+            slo.removeDependency(slo);
+        }
     }
 }
