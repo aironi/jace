@@ -5,9 +5,8 @@
     <persistence-unit name="jace-unit" transaction-type="JTA">
 
         <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-        <jta-data-source>jdbc/jaceDs</jta-data-source>
+        <non-jta-data-source>jdbc/jaceDs</non-jta-data-source>
 
-        <jar-file>../../../domain/target/classes</jar-file>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
 
         <!-- Properties -->
