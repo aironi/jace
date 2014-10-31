@@ -1,5 +1,7 @@
 package org.silverduck.jace.web.view;
 
+import com.hs18.vaadin.addon.graph.GraphJSComponent;
+import com.hs18.vaadin.addon.graph.listener.GraphJsLeftClickListener;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.cdi.CDIView;
@@ -7,15 +9,20 @@ import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.filter.Compare;
+import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
+import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.silverduck.jace.common.localization.AppResources;
-import org.silverduck.jace.dao.analysis.AnalysisDao;
+
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.slo.SLOType;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.analysis.impl.ScoredCommit;
 import org.silverduck.jace.web.component.LabelDisplayComponent;
@@ -53,9 +60,6 @@ public class AnalysisView extends BaseView implements View {
     public static final String COMMIT_TYPE = "commit";
 
     @EJB
-    private AnalysisDao analysisDao;
-
-    @EJB
     private AnalysisService analysisService;
 
     private Tree analysisTree;
@@ -75,6 +79,8 @@ public class AnalysisView extends BaseView implements View {
     private LabelDisplayComponent scoreComponent;
     private LabelDisplayComponent commitIdComponent;
     private GridLayout contentLayout;
+    private GraphJSComponent graphComponent;
+    private Window dependencyWindow;
 
     public AnalysisView() {
         super();
@@ -94,33 +100,7 @@ public class AnalysisView extends BaseView implements View {
         Locale locale = UI.getCurrent().getLocale();
         Panel detailsPanel = new Panel(AppResources.getLocalizedString("label.analysisView.changedFeatures", locale));
 
-        changedFeaturesTable = new Table();
-        changedFeaturesTable.setContainerDataSource(changedFeaturesContainer);
 
-        changedFeaturesTable.setVisibleColumns("feature.name", "slo.path", "slo.packageName", "slo.className",
-            "diff.modificationType", "diff.commit.commitId", "diff.commit.message", "diff.commit.authorName",
-            "diff.commit.authorEmail", "diff.commit.authorDateOfChange",
-            // "diff.commit.authorTimeZone",
-            "diff.commit.formattedTimeZoneOffset", "created");
-
-        changedFeaturesTable.setColumnHeaders(
-            AppResources.getLocalizedString("label.changedFeatureTable.featureName", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.sloPath", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.sloPackageName", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.sloClassName", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.modificationType", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.commitId", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.commitMessage", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.authorName", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.authorEmail", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.dateOfChange", locale),
-            // AppResources.getLocalizedString("label.changedFeatureTable.timeZone", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.timeZoneOffSet", locale),
-            AppResources.getLocalizedString("label.changedFeatureTable.created", locale));
-
-        changedFeaturesTable.setImmediate(true);
-        changedFeaturesTable.setSelectable(true);
-        changedFeaturesTable.setWidth(100, Unit.PERCENTAGE);
 
         featureSelect = new ComboBox(AppResources.getLocalizedString("label.analysisView.features", locale));
         featureSelect.setImmediate(true);
@@ -137,16 +117,142 @@ public class AnalysisView extends BaseView implements View {
             }
         });
 
-        detailsLayout.addComponent(createChangesPanel(locale));
+        createChangesPanel(detailsLayout);
         detailsLayout.addComponent(featureSelect);
 
-        detailsLayout.addComponent(changedFeaturesTable);
+        createChangedFeaturesTable(detailsLayout);
+        createGraph(detailsLayout);
+
         detailsPanel.setContent(detailsLayout);
 
         return detailsPanel;
     }
 
-    private Panel createChangesPanel(Locale locale) {
+    private void createChangedFeaturesTable(Layout layout) {
+        Locale locale = UI.getCurrent().getLocale();
+        changedFeaturesTable = new Table();
+        changedFeaturesTable.setContainerDataSource(changedFeaturesContainer);
+
+        changedFeaturesTable.setVisibleColumns("feature.name", "slo.path", "slo.packageName", "slo.className",
+                "diff.modificationType", "diff.commit.commitId", "diff.commit.message", "diff.commit.authorName",
+                "diff.commit.authorEmail", "diff.commit.authorDateOfChange",
+                // "diff.commit.authorTimeZone",
+                "diff.commit.formattedTimeZoneOffset", "created");
+        changedFeaturesTable.setColumnReorderingAllowed(true);
+        changedFeaturesTable.setColumnHeaders(
+                AppResources.getLocalizedString("label.changedFeatureTable.featureName", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.sloPath", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.sloPackageName", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.sloClassName", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.modificationType", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.commitId", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.commitMessage", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.authorName", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.authorEmail", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.dateOfChange", locale),
+                // AppResources.getLocalizedString("label.changedFeatureTable.timeZone", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.timeZoneOffSet", locale),
+                AppResources.getLocalizedString("label.changedFeatureTable.created", locale));
+
+        changedFeaturesTable.addItemClickListener(new ItemClickEvent.ItemClickListener() {
+            @Override
+            public void itemClick(ItemClickEvent event) {
+                ChangedFeature cf = changedFeaturesContainer.getItem(event.getItemId()).getEntity();
+                if (cf.getSlo().getSloType() == SLOType.SOURCE) {
+                    showDependencyPopup(cf);
+                }
+            }
+        });
+        changedFeaturesTable.setImmediate(true);
+        changedFeaturesTable.setSelectable(true);
+        changedFeaturesTable.setWidth(100, Unit.PERCENTAGE);
+        layout.addComponent(changedFeaturesTable);
+    }
+
+    private void showDependencyPopup(ChangedFeature changedFeature) {
+        if (dependencyWindow == null) {
+            dependencyWindow = new Window();
+            VerticalLayout layout = new VerticalLayout();
+            layout.setSizeFull();
+            layout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
+            graphComponent = new GraphJSComponent();
+            graphComponent.setNodesSize(120, 50);
+            graphComponent.setImmediate(true);
+            String lhtml = "<div id='graph' class='graph' ></div>";//add style='overflow:scroll' if required
+            Label graphLabel = new Label(lhtml, ContentMode.HTML);
+            layout.addComponent(graphLabel);
+            layout.addComponent(graphComponent);
+            dependencyWindow.setContent(layout);
+            dependencyWindow.setResizable(true);
+            dependencyWindow.setModal(true);
+            dependencyWindow.setWidth(500, Unit.PIXELS);
+            dependencyWindow.setHeight(400, Unit.PIXELS);
+        }
+        dependencyWindow.setCaption("Classes that depend on " + changedFeature.getSlo().getClassName());
+        populateGraph(changedFeature);
+        getUI().getCurrent().addWindow(dependencyWindow);
+    }
+
+    private void populateGraph(ChangedFeature changedFeature) {
+        graphComponent.clear();
+        Set<SLO> procesed = new HashSet<>();
+        populateGraph(changedFeature.getSlo(), procesed, null, 1);
+        graphComponent.refresh();
+    }
+
+    protected void populateGraph(SLO slo, Set<SLO> processed, SLO parent, Integer level) {
+        if (!processed.contains(slo)) {
+            processed.add(slo);
+            LOG.debug("Populating graph for {} that is a dependency for {} classes", slo.getClassName(), slo.getDependantOf().size());
+
+            try {
+                String parentId = null;
+                if (parent != null) {
+                    parentId = parent.getId().toString() + "_" + new Integer(level-1).toString();
+                }
+                LOG.debug("Adding node with id {} and name {} at level {} with parent {}", slo.getId(), slo.getClassName(), level, parentId);
+                String nodeId = slo.getId().toString() + "_" + level.toString();
+                String title = slo.getClassName();
+                if (title == null) {
+                    int i = slo.getPath().lastIndexOf("/");
+                    if (i != -1) {
+                        title = slo.getPath().substring(i+1);
+                    } else {
+                        title = "Unknown - " + nodeId;
+                    }
+                }
+                graphComponent.addNode(nodeId, title, level.toString(), null, parentId);
+                graphComponent.getNodeProperties(nodeId).put("title", title);
+                String color;
+                switch (level) {
+                    case 1: color = "#0099cc"; break;
+                    case 2: color = "#32add6"; break;
+                    case 3: color = "#7fcce5"; break;
+                    case 4: color = "#b2e0ef"; break;
+                    case 5: color = "#e5f4f9"; break;
+                    default: color = "#ffffff"; break;
+                }
+                graphComponent.getNodeProperties(nodeId).put("fill", color);
+
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to render graph", e);
+            }
+
+            for (SLO dependency : slo.getDependantOf()) {
+                populateGraph(dependency, processed, slo, level + 1);
+            }
+        }
+    }
+
+    private void createGraph(Layout layout) {
+
+
+       // layout.addComponent(graphLabel);
+       // layout.addComponent(graphComponent);
+
+    }
+
+    private void createChangesPanel(Layout layout) {
         Panel changesPanel = new Panel();
         changesPanel.setWidth(100, Unit.PERCENTAGE);
         VerticalLayout panelLayout = new VerticalLayout();
@@ -158,7 +264,7 @@ public class AnalysisView extends BaseView implements View {
         scoreComponent = new LabelDisplayComponent("label.analysisView.changesPanel.score");
         panelLayout.addComponent(scoreComponent);
         changesPanel.setContent(panelLayout);
-        return changesPanel;
+        layout.addComponent(changesPanel);
     }
 
 
@@ -182,6 +288,45 @@ public class AnalysisView extends BaseView implements View {
 
         contentLayout.setDefaultComponentAlignment(Alignment.TOP_CENTER);
         contentLayout.setSpacing(true);
+        createChangedFeaturesContainer();
+
+        final TabSheet analysisTabs = createTabs();
+
+        HorizontalLayout rootLayout = new HorizontalLayout();
+        rootLayout.setSizeFull();
+        rootLayout.setSpacing(true);
+
+        Component detailsPanel = createDetails();
+        detailsPanel.setHeight("100%");
+
+        rootLayout.addComponent(analysisTabs);
+        rootLayout.addComponent(detailsPanel);
+        rootLayout.setExpandRatio(analysisTabs, 3);
+        rootLayout.setExpandRatio(detailsPanel, 7);
+
+        contentLayout.addComponent(rootLayout);
+    }
+
+    private TabSheet createTabs() {
+        final TabSheet analysisTabs = new TabSheet();
+        // analysisTabs.setSizeFull();
+        analysisTabs.addTab(createReleaseTab(), AppResources.getLocalizedString("label.releases", UI.getCurrent().getLocale()));
+        analysisTabs.addTab(createAnalysisTab(), AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
+        analysisTabs.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener() {
+            @Override
+            public void selectedTabChange(TabSheet.SelectedTabChangeEvent event) {
+                if (event.getTabSheet().getSelectedTab().equals(analysisTree)) {
+                    populateAnalysisTree();
+                } else if (event.getTabSheet().getSelectedTab().equals(releaseTree)) {
+                    populateReleaseTree();
+                }
+            }
+        });
+        analysisTabs.setHeight("100%");
+        return analysisTabs;
+    }
+
+    private void createChangedFeaturesContainer() {
         changedFeaturesContainer = JPAContainerFactory.makeJndi(ChangedFeature.class);
         changedFeaturesContainer.addContainerFilter(new Compare.Equal("analysis.releaseVersion", null));
         changedFeaturesContainer.applyFilters();
@@ -200,38 +345,6 @@ public class AnalysisView extends BaseView implements View {
         // TODO: The table doesn't know how to show this field
         // changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorTimeZone");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.formattedTimeZoneOffset");
-
-
-        final TabSheet analysisTabs = new TabSheet();
-       // analysisTabs.setSizeFull();
-        analysisTabs.addTab(createReleaseTab(), AppResources.getLocalizedString("label.releases", UI.getCurrent().getLocale()));
-        analysisTabs.addTab(createAnalysisTab(), AppResources.getLocalizedString("label.analyses", UI.getCurrent().getLocale()));
-        analysisTabs.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener() {
-            @Override
-            public void selectedTabChange(TabSheet.SelectedTabChangeEvent event) {
-                if (event.getTabSheet().getSelectedTab().equals(analysisTree)) {
-                    populateAnalysisTree();
-                } else if (event.getTabSheet().getSelectedTab().equals(releaseTree)) {
-                    populateReleaseTree();
-                }
-            }
-        });
-        analysisTabs.setHeight("100%");
-
-        HorizontalLayout hl = new HorizontalLayout();
-        hl.setSizeFull();
-        hl.setSpacing(true);
-
-        Component detailsPanel = createDetails();
-        detailsPanel.setHeight("100%");
-
-        hl.addComponent(analysisTabs);
-        hl.addComponent(detailsPanel);
-        hl.setExpandRatio(analysisTabs, 3);
-        hl.setExpandRatio(detailsPanel, 7);
-
-
-        contentLayout.addComponent(hl);
     }
 
     @Override
@@ -257,7 +370,7 @@ public class AnalysisView extends BaseView implements View {
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", Long.class, null);
 
-        List<Analysis> analyses = analysisDao.listAllAnalyses();
+        List<Analysis> analyses = analysisService.listAllAnalyses();
         for (Analysis analysis : analyses) {
             List<Analysis> list = projectAnalyses.get(analysis.getProject());
             if (list == null) {
@@ -379,11 +492,11 @@ public class AnalysisView extends BaseView implements View {
         hca.addContainerProperty("type", String.class, null);
         hca.addContainerProperty("extra", Object.class, null);
 
-        List<Analysis> analyses = analysisDao.listAllAnalyses();
+        List<Analysis> analyses = analysisService.listAllAnalyses();
         for (Analysis analysis : analyses) {
             List<String> list = projectReleases.get(analysis.getProject());
             if (list == null) {
-                list = analysisDao.listAllReleases(analysis.getProject().getId());
+                list = analysisService.listAllReleases(analysis.getProject().getId());
                 projectReleases.put(analysis.getProject(), list);
                 for (String release : list) {
                     if (release != null) {

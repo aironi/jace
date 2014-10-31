@@ -97,6 +97,12 @@
             <version>${vaadin.version}</version>
         </dependency>
 
+        <!-- Experimental graph addon -->
+        <dependency>
+            <groupId>com.hs18.vaadin.addon</groupId>
+            <artifactId>graph</artifactId>
+            <version>0.0.7</version>
+        </dependency>
 
         <!-- CDI Model View Presenter add-on. Not in use. If project grows larger, consider it. -->
         <!--
