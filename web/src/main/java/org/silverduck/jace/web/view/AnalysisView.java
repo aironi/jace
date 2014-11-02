@@ -1,7 +1,6 @@
 package org.silverduck.jace.web.view;
 
 import com.hs18.vaadin.addon.graph.GraphJSComponent;
-import com.hs18.vaadin.addon.graph.listener.GraphJsLeftClickListener;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.cdi.CDIView;
@@ -14,7 +13,7 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.*;
-import org.apache.commons.lang3.StringUtils;
+import com.vaadin.ui.themes.BaseTheme;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.silverduck.jace.common.localization.AppResources;
 
@@ -32,17 +31,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * The root view of the application.
@@ -58,6 +47,8 @@ public class AnalysisView extends BaseView implements View {
     public static final String PROJECT_TYPE = "project";
     public static final String RELEASE_TYPE = "release";
     public static final String COMMIT_TYPE = "commit";
+    public static final String FEATURE_NAME_FILTER = "feature.name";
+    public static final int FEATURE_COLUMNS = 12;
 
     @EJB
     private AnalysisService analysisService;
@@ -68,11 +59,7 @@ public class AnalysisView extends BaseView implements View {
 
     private Table changedFeaturesTable;
 
-    Accordion detailsAccordion;
-
     private VerticalLayout detailsLayout;
-
-    private ComboBox featureSelect;
 
     private Tree releaseTree;
 
@@ -81,6 +68,7 @@ public class AnalysisView extends BaseView implements View {
     private GridLayout contentLayout;
     private GraphJSComponent graphComponent;
     private Window dependencyWindow;
+    private GridLayout changedFeaturesGrid;
 
     public AnalysisView() {
         super();
@@ -101,24 +89,11 @@ public class AnalysisView extends BaseView implements View {
         Panel detailsPanel = new Panel(AppResources.getLocalizedString("label.analysisView.changedFeatures", locale));
 
 
-
-        featureSelect = new ComboBox(AppResources.getLocalizedString("label.analysisView.features", locale));
-        featureSelect.setImmediate(true);
-        featureSelect.addValueChangeListener(new Property.ValueChangeListener() {
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                changedFeaturesContainer.removeContainerFilters("feature.name");
-                if (event.getProperty() != null && event.getProperty().getValue() != null) {
-                    String value = event.getProperty().getValue().toString();
-                    if (!ALL_FEATURES.equals(value)) {
-                        changedFeaturesContainer.addContainerFilter("feature.name", value, false, false);
-                    }
-                }
-            }
-        });
-
+        changedFeaturesGrid = new GridLayout();
+        changedFeaturesGrid.setSizeFull();
         createChangesPanel(detailsLayout);
-        detailsLayout.addComponent(featureSelect);
+
+        detailsLayout.addComponent(changedFeaturesGrid);
 
         createChangedFeaturesTable(detailsLayout);
         createGraph(detailsLayout);
@@ -185,8 +160,8 @@ public class AnalysisView extends BaseView implements View {
             dependencyWindow.setContent(layout);
             dependencyWindow.setResizable(true);
             dependencyWindow.setModal(true);
-            dependencyWindow.setWidth(500, Unit.PIXELS);
-            dependencyWindow.setHeight(400, Unit.PIXELS);
+            dependencyWindow.setWidth(800, Unit.PIXELS);
+            dependencyWindow.setHeight(600, Unit.PIXELS);
         }
         dependencyWindow.setCaption("Classes that depend on " + changedFeature.getSlo().getClassName());
         populateGraph(changedFeature);
@@ -195,8 +170,8 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateGraph(ChangedFeature changedFeature) {
         graphComponent.clear();
-        Set<SLO> procesed = new HashSet<>();
-        populateGraph(changedFeature.getSlo(), procesed, null, 1);
+        Set<SLO> processed = new HashSet<>();
+        populateGraph(changedFeature.getSlo(), processed, null, 1);
         graphComponent.refresh();
     }
 
@@ -208,7 +183,7 @@ public class AnalysisView extends BaseView implements View {
             try {
                 String parentId = null;
                 if (parent != null) {
-                    parentId = parent.getId().toString() + "_" + new Integer(level-1).toString();
+                    parentId = parent.getId().toString() + "_" + new Integer(level - 1).toString();
                 }
                 LOG.debug("Adding node with id {} and name {} at level {} with parent {}", slo.getId(), slo.getClassName(), level, parentId);
                 String nodeId = slo.getId().toString() + "_" + level.toString();
@@ -216,26 +191,16 @@ public class AnalysisView extends BaseView implements View {
                 if (title == null) {
                     int i = slo.getPath().lastIndexOf("/");
                     if (i != -1) {
-                        title = slo.getPath().substring(i+1);
+                        title = slo.getPath().substring(i + 1);
                     } else {
                         title = "Unknown - " + nodeId;
                     }
                 }
                 graphComponent.addNode(nodeId, title, level.toString(), null, parentId);
                 graphComponent.getNodeProperties(nodeId).put("title", title);
-                String color;
-                switch (level) {
-                    case 1: color = "#0099cc"; break;
-                    case 2: color = "#32add6"; break;
-                    case 3: color = "#7fcce5"; break;
-                    case 4: color = "#b2e0ef"; break;
-                    case 5: color = "#e5f4f9"; break;
-                    default: color = "#ffffff"; break;
-                }
-                graphComponent.getNodeProperties(nodeId).put("fill", color);
-
+                setGraphNodeColor(level, nodeId);
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to render graph", e);
+                throw new IllegalStateException("Failed to create graph", e);
             }
 
             for (SLO dependency : slo.getDependantOf()) {
@@ -244,11 +209,36 @@ public class AnalysisView extends BaseView implements View {
         }
     }
 
+    private void setGraphNodeColor(Integer level, String nodeId) throws Exception {
+        String color;
+        switch (level) {
+            case 1:
+                color = "#0099cc";
+                break;
+            case 2:
+                color = "#32add6";
+                break;
+            case 3:
+                color = "#7fcce5";
+                break;
+            case 4:
+                color = "#b2e0ef";
+                break;
+            case 5:
+                color = "#e5f4f9";
+                break;
+            default:
+                color = "#ffffff";
+                break;
+        }
+        graphComponent.getNodeProperties(nodeId).put("fill", color);
+    }
+
     private void createGraph(Layout layout) {
 
 
-       // layout.addComponent(graphLabel);
-       // layout.addComponent(graphComponent);
+        // layout.addComponent(graphLabel);
+        // layout.addComponent(graphComponent);
 
     }
 
@@ -359,14 +349,14 @@ public class AnalysisView extends BaseView implements View {
         // TODO: Investigate if it is possible to implement with JPAContainer.
         HierarchicalContainer hca = new HierarchicalContainer();
         SortedMap<Project, List<Analysis>> projectAnalyses = new TreeMap<Project, List<Analysis>>(
-            new Comparator<Project>() {
-                @Override
-                public int compare(Project o1, Project o2) {
-                    CompareToBuilder ctb = new CompareToBuilder();
-                    ctb.append(o1.getName(), o2.getName());
-                    return ctb.build();
-                }
-            });
+                new Comparator<Project>() {
+                    @Override
+                    public int compare(Project o1, Project o2) {
+                        CompareToBuilder ctb = new CompareToBuilder();
+                        ctb.append(o1.getName(), o2.getName());
+                        return ctb.build();
+                    }
+                });
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", Long.class, null);
 
@@ -402,7 +392,7 @@ public class AnalysisView extends BaseView implements View {
                     caption += " (Initial)";
                 }
                 caption += " - "
-                    + AppResources.getLocalizedString(analysis.getAnalysisStatus().getResourceKey(), UI.getCurrent()
+                        + AppResources.getLocalizedString(analysis.getAnalysisStatus().getResourceKey(), UI.getCurrent()
                         .getLocale());
                 hca.getContainerProperty(aItem, "caption").setValue(caption);
                 hca.getContainerProperty(aItem, "id").setValue(analysis.getId());
@@ -436,18 +426,54 @@ public class AnalysisView extends BaseView implements View {
 
     }
 
-    private void populateDetailsCommon() {
-        featureSelect.removeAllItems();
-        Set<String> featureNames = new HashSet<String>();
+    private void populateChangedFeaturesGrid() {
+        changedFeaturesGrid.removeAllComponents();
+        Set<String> featureNames = new TreeSet<String>(new Comparator<String>() {
+            @Override
+            public int compare(String string1, String string2) {
+                if (string1.equals(ALL_FEATURES)) {
+                    return -1;
+                } else {
+                    return string1.compareTo(string2);
+                }
+            }
+        });
         for (Object id : changedFeaturesContainer.getItemIds()) {
             featureNames.add(changedFeaturesContainer.getItem(id).getEntity().getFeature().getName());
         }
 
-        featureSelect.addItem(ALL_FEATURES);
-        for (String featureName : featureNames) {
-            featureSelect.addItem(featureName);
+        featureNames.add(ALL_FEATURES);
+        int amountOfFeatures = featureNames.size();
+        int cols = FEATURE_COLUMNS;
+        int rows = amountOfFeatures / cols ;
+        if (rows == 0) {
+            rows++;
         }
 
+        changedFeaturesGrid.setColumns(cols);
+        changedFeaturesGrid.setRows(rows);
+
+        Iterator<String> iterator = featureNames.iterator();
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols && iterator.hasNext(); col++) {
+                String feature = iterator.next();
+                Button featureButton = new Button();
+                featureButton.setStyleName(BaseTheme.BUTTON_LINK);
+                featureButton.setCaption(feature);
+                featureButton.addClickListener(new Button.ClickListener() {
+                    @Override
+                    public void buttonClick(Button.ClickEvent event) {
+                        changedFeaturesContainer.removeContainerFilters(FEATURE_NAME_FILTER);
+                        String feature = event.getButton().getCaption();
+                        if (!ALL_FEATURES.equals(feature)) {
+                            changedFeaturesContainer.addContainerFilter(FEATURE_NAME_FILTER, feature, false, false);
+                        }
+                        changedFeaturesContainer.applyFilters();
+                    }
+                });
+                changedFeaturesGrid.addComponent(featureButton, col, row);
+            }
+        }
     }
 
     private void populateDetailsForAnalysis(Long analysisId) {
@@ -469,8 +495,8 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesContainer.addContainerFilter(new Compare.Equal(propertyName, propertyValue));
         changedFeaturesContainer.applyFilters();
         changedFeaturesContainer.refresh();
-        changedFeaturesContainer.sort(new String[]{"feature.name"}, new boolean[] {true});
-        populateDetailsCommon();
+        changedFeaturesContainer.sort(new String[]{FEATURE_NAME_FILTER}, new boolean[]{true});
+        populateChangedFeaturesGrid();
     }
 
     private void populateReleaseTree() {
@@ -479,14 +505,14 @@ public class AnalysisView extends BaseView implements View {
         SortedMap<String, List<ScoredCommit>> releaseCommits = new TreeMap<String, List<ScoredCommit>>();
 
         SortedMap<Project, List<String>> projectReleases = new TreeMap<Project, List<String>>(
-            new Comparator<Project>() {
-                @Override
-                public int compare(Project o1, Project o2) {
-                    CompareToBuilder ctb = new CompareToBuilder();
-                    ctb.append(o1.getName(), o2.getName());
-                    return ctb.build();
-                }
-            });
+                new Comparator<Project>() {
+                    @Override
+                    public int compare(Project o1, Project o2) {
+                        CompareToBuilder ctb = new CompareToBuilder();
+                        ctb.append(o1.getName(), o2.getName());
+                        return ctb.build();
+                    }
+                });
         hca.addContainerProperty("caption", String.class, "");
         hca.addContainerProperty("id", String.class, null);
         hca.addContainerProperty("type", String.class, null);
@@ -501,7 +527,7 @@ public class AnalysisView extends BaseView implements View {
                 for (String release : list) {
                     if (release != null) {
                         List<ScoredCommit> commits = analysisService.listScoredCommitsByRelease(analysis.getProject()
-                            .getId(), release);
+                                .getId(), release);
                         if (commits == null) {
                             commits = new ArrayList<>();
                         }
@@ -567,7 +593,7 @@ public class AnalysisView extends BaseView implements View {
                         } else if (COMMIT_TYPE.equals(type)) {
                             ScoredCommit scoredCommit = null;
                             if (extraProperty != null) {
-                                 scoredCommit = (ScoredCommit) extraProperty.getValue();
+                                scoredCommit = (ScoredCommit) extraProperty.getValue();
                             }
                             populateDetailsForCommit(scoredCommit);
                         }
