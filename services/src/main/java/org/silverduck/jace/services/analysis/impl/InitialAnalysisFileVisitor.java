@@ -8,6 +8,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.analysis.slo.SLOImport;
 import org.silverduck.jace.domain.feature.Feature;
+import org.silverduck.jace.domain.feature.FeatureMapping;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.ReleaseInfo;
 import org.silverduck.jace.domain.slo.JavaMethod;
@@ -95,23 +96,6 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         }
     }
 
-    private void processFeature(String featureName, SLO slo) {
-        if (!features.contains((featureName))) {
-            features.add(featureName);
-            Feature feature = new Feature();
-            feature.setName(featureName);
-            analysis.getProject().addFeature(feature);
-            slo.setFeature(feature);
-        } else {
-            for (Feature feature : analysis.getProject().getFeatures()) {
-                if (feature.getName().equals(featureName)) {
-                    slo.setFeature(feature);
-                    break;
-                }
-            }
-        }
-    }
-
     private void processJavaFile(Path file, String relativePath) throws IOException {
         LOG.debug("Processing file: " + file.getFileName().toString());
         final SLO slo = new SLO(relativePath, SLOType.SOURCE);
@@ -133,10 +117,18 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             public boolean visit(PackageDeclaration node) {
                 slo.setPackageName(node.getName().toString());
 
-                if (setting.getAutomaticFeatureMapping()) {
+                String featureName = null;
+                for (FeatureMapping featureMapping : analysis.getProject().getFeatureMappings()) {
+                    if (featureMapping.appliesTo(slo)) {
+                        featureName = featureMapping.getFeatureName();
+                        LOG.debug("Found a FeatureMapping that matches the SLO {}. Setting feature name to {}", slo.getPath(), featureName);
+                    }
+                }
 
+                if (featureName == null && setting.getAutomaticFeatureMapping()) {
+                    LOG.debug("Couldn't find a feature mapping for SLO {}. Resolving automatically.", slo.getPath());
                     String[] packageParts = slo.getPackageName().split("\\.");
-                    String featureName;
+
                     if (packageParts.length > 0) {
                         int index;
                         if ("impl".equals(packageParts[packageParts.length - 1])) {
@@ -148,6 +140,10 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                     } else {
                         featureName = slo.getPackageName();
                     }
+
+                }
+
+                if (featureName != null) {
                     processFeature(featureName, slo);
                 }
                 return true;
@@ -287,6 +283,23 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         getAnalysis().addSlo(slo);
     }
 
+    private void processFeature(String featureName, SLO slo) {
+        if (!features.contains((featureName))) {
+            features.add(featureName);
+            Feature feature = new Feature();
+            feature.setName(featureName);
+            analysis.getProject().addFeature(feature);
+            slo.setFeature(feature);
+        } else {
+            for (Feature feature : analysis.getProject().getFeatures()) {
+                if (feature.getName().equals(featureName)) {
+                    slo.setFeature(feature);
+                    break;
+                }
+            }
+        }
+    }
+
     private void processReleaseFile(Path file) {
         ReleaseInfo releaseInfo = getSetting().getProject().getReleaseInfo();
         String release = null;
@@ -349,17 +362,25 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         if (fileName.endsWith(".java")) {
             processJavaFile(file, relativePath);
         } else {
-            SLO slo = new SLO();
-            slo.setSloStatus(SLOStatus.CURRENT);
-            slo.setPath(relativePath);
-            slo.setSloType(SLOType.OTHER_FILE);
-            String featureName = file.getParent().getFileName().toString();
+            SLO slo = new SLO(relativePath, SLOType.OTHER_FILE);
+            String featureName = null;
+            for (FeatureMapping featureMapping : analysis.getProject().getFeatureMappings()) {
+                if (featureMapping.appliesTo(slo)) {
+                    featureName = featureMapping.getFeatureName();
+                    LOG.debug("Found a FeatureMapping that matches the SLO {}. Setting feature name to {}", slo.getPath(), featureName);
+                }
+            }
+            if (featureName == null && setting.getAutomaticFeatureMapping()) {
+                featureName = file.getParent().getFileName().toString();
+            }
             List<String> nonFeatures = Arrays.asList(new String[] { "META-INF", "WEB-INF" }); // stupid functionality,
                                                                                               // replace it with
                                                                                               // configurable one
-            // Skip non-features
+            // Skip non-features completely
             if (!nonFeatures.contains(featureName)) {
-                processFeature(featureName, slo);
+                if (featureName != null) {
+                    processFeature(featureName, slo);
+                }
                 analysis.addSlo(slo);
             }
         }

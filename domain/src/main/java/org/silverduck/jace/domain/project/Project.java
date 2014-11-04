@@ -5,6 +5,7 @@ import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.feature.Feature;
+import org.silverduck.jace.domain.feature.FeatureMapping;
 import org.silverduck.jace.domain.vcs.PluginConfiguration;
 import org.silverduck.jace.domain.vcs.PluginType;
 
@@ -45,7 +46,7 @@ public class Project extends AbstractDomainObject {
         p.getPluginConfiguration().setPassword("");
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
         p.getReleaseInfo().setPathToVersionFile("/build/pom.xml");
-        p.getReleaseInfo().setPattern("/project/version");
+        p.getReleaseInfo().setPattern("/project/properties/jace.version");
         /*
          * p.setName(""); p.getPluginConfiguration().setPluginType(PluginType.GIT);
          * p.getPluginConfiguration().setCloneUrl(""); p.getPluginConfiguration().setLocalDirectory("");
@@ -66,6 +67,10 @@ public class Project extends AbstractDomainObject {
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Feature> features = new ArrayList<Feature>();
+
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<FeatureMapping> featureMappings = new ArrayList<FeatureMapping>();
+
 
     // unique = true, since the project name is used as the clone dir under working dir.
     @Column(name = "Name", unique = true)
@@ -109,6 +114,14 @@ public class Project extends AbstractDomainObject {
             feature.setProject(this);
         }
     }
+
+    public void addFeatureMapping(FeatureMapping featureMapping) {
+        if (!featureMappings.contains(featureMapping)) {
+            featureMappings.add(featureMapping);
+            featureMapping.setProject(this);
+        }
+    }
+
 
     public List<Analysis> getAnalyses() {
         return Collections.unmodifiableList(analyses);
@@ -174,6 +187,14 @@ public class Project extends AbstractDomainObject {
         }
     }
 
+    public void removeFeatureMapping(FeatureMapping featureMapping) {
+        if (featureMappings.contains(featureMapping)) {
+            featureMappings.remove(featureMapping);
+            featureMapping.setProject(null);
+        }
+    }
+
+
     public void setName(String name) {
         this.name = name;
     }
@@ -184,5 +205,13 @@ public class Project extends AbstractDomainObject {
 
     public void setReleaseInfo(ReleaseInfo releaseInfo) {
         this.releaseInfo = releaseInfo;
+    }
+
+    public List<FeatureMapping> getFeatureMappings() {
+        return Collections.unmodifiableList(featureMappings);
+    }
+
+    public void setFeatureMappings(List<FeatureMapping> featureMappings) {
+        this.featureMappings = featureMappings;
     }
 }

@@ -154,7 +154,18 @@ public class ManageProjectsView extends BaseView {
 
         // Content
 
-        final ProjectComponent projectComponent = new ProjectComponent();
+        Project project;
+        if (projectId == null) {
+            projectPopUp.setCaption(AppResources.getLocalizedString("caption.newProject", locale));
+            project = Project.newProject();
+        } else {
+            projectPopUp.setCaption(AppResources.getLocalizedString("caption.editProject", locale));
+            project = projectService.findProjectById(projectId);
+        }
+
+
+        final ProjectComponent projectComponent = new ProjectComponent(project);
+        projectComponent.setProjectService(projectService);
         formLayout.addComponent(projectComponent);
 
         Button submitButton = new Button(AppResources.getLocalizedString("label.submit", locale));
@@ -222,17 +233,9 @@ public class ManageProjectsView extends BaseView {
         commandButtons.addComponent(submitButton);
         commandButtons.addComponent(cancelButton);
         formLayout.addComponent(commandButtons);
-
-        Project project;
-        if (projectId == null) {
-            projectPopUp.setCaption(AppResources.getLocalizedString("caption.newProject", locale));
-            project = Project.newProject();
-        } else {
-            projectPopUp.setCaption(AppResources.getLocalizedString("caption.editProject", locale));
-            project = projectService.findProjectById(projectId);
-        }
-
-        projectComponent.edit(project, projectId == null);
+        projectPopUp.setWidth(800, Unit.PIXELS);
+        projectPopUp.setHeight(600, Unit.PIXELS);
+        projectComponent.edit(projectId == null);
         getUI().addWindow(projectPopUp);
     }
 

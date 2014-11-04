@@ -1,15 +1,13 @@
 package org.silverduck.jace.domain.feature;
 
 import org.silverduck.jace.domain.AbstractDomainObject;
+import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.slo.SLOType;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Iiro Hietala on 17.5.2014.
@@ -18,6 +16,10 @@ import javax.persistence.Table;
 @Table(name = "FeatureMapping")
 public class FeatureMapping extends AbstractDomainObject {
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ProjectRID")
+    private Project project;
+
     @Column(name = "MappingType")
     @Enumerated(EnumType.STRING)
     private MappingType mappingType;
@@ -25,9 +27,8 @@ public class FeatureMapping extends AbstractDomainObject {
     @Column(name = "sourcePattern")
     private String sourcePattern;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "FeatureRID")
-    private Feature targetFeature;
+    @Column(name = "FeatureName")
+    private String featureName;
 
     public MappingType getMappingType() {
         return mappingType;
@@ -35,10 +36,6 @@ public class FeatureMapping extends AbstractDomainObject {
 
     public String getSourcePattern() {
         return sourcePattern;
-    }
-
-    public Feature getTargetFeature() {
-        return targetFeature;
     }
 
     public void setMappingType(MappingType mappingType) {
@@ -49,7 +46,56 @@ public class FeatureMapping extends AbstractDomainObject {
         this.sourcePattern = sourcePattern;
     }
 
-    public void setTargetFeature(Feature targetFeature) {
-        this.targetFeature = targetFeature;
+
+    public String getFeatureName() {
+        return featureName;
+    }
+
+    public void setFeatureName(String featureName) {
+        this.featureName = featureName;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
+
+    @Transient
+    public boolean appliesTo(SLO slo) {
+        Pattern pattern = Pattern.compile(sourcePattern);
+        switch (mappingType) {
+            case PACKAGE_NAME:
+                if (slo.getSloType() == SLOType.SOURCE) {
+                    Matcher matcher = pattern.matcher(slo.getPackageName());
+                    return matcher.find();
+                }
+                break;
+            case CONTAINING_DIRECTORY_NAME:
+                Integer index = slo.getPath().lastIndexOf('/');
+                if (index > 0) {
+                    String dir = slo.getPath().substring(0, index);
+                    return pattern.matcher(dir).find();
+                }
+            case FILE_NAME:
+                index = slo.getPath().lastIndexOf('/');
+                if (index != -1) {
+                    String file = slo.getPath().substring(index + 1);
+                    return pattern.matcher(file).find();
+                }
+                break;
+        }
+        return false;
+    }
+
+    public static FeatureMapping newFeatureMapping() {
+        FeatureMapping featureMapping = new FeatureMapping();
+        featureMapping.setFeatureName("");
+        featureMapping.setSourcePattern("");
+        featureMapping.setMappingType(MappingType.PACKAGE_NAME);
+        return featureMapping;
     }
 }
+

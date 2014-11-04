@@ -27,8 +27,8 @@ public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
     }
 
     @Override
-    public Object find(Class<?> clazz, Long id) {
-        return em.find(clazz, id);
+    public T find(Class<?> clazz, Long id) {
+        return (T) em.find(clazz, id);
     }
 
     protected EntityManager getEntityManager() {

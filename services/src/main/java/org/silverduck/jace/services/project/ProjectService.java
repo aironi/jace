@@ -1,5 +1,6 @@
 package org.silverduck.jace.services.project;
 
+import org.silverduck.jace.domain.feature.FeatureMapping;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.vcs.Diff;
 
@@ -86,4 +87,5 @@ public interface ProjectService {
      * @return
      */
     java.util.concurrent.Future<Boolean> updateProject(Project project);
+
 }

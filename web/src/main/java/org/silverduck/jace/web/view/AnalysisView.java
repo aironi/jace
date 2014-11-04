@@ -48,7 +48,7 @@ public class AnalysisView extends BaseView implements View {
     public static final String RELEASE_TYPE = "release";
     public static final String COMMIT_TYPE = "commit";
     public static final String FEATURE_NAME_FILTER = "feature.name";
-    public static final int FEATURE_COLUMNS = 12;
+    public static final int FEATURE_COLUMNS = 6;
 
     @EJB
     private AnalysisService analysisService;
@@ -85,22 +85,20 @@ public class AnalysisView extends BaseView implements View {
     private Component createDetails() {
         detailsLayout = new VerticalLayout();
 
+        createChangesPanel(detailsLayout);
+        createChangedFeaturesGrid(detailsLayout);
+        createChangedFeaturesTable(detailsLayout);
+
         Locale locale = UI.getCurrent().getLocale();
         Panel detailsPanel = new Panel(AppResources.getLocalizedString("label.analysisView.changedFeatures", locale));
+        detailsPanel.setContent(detailsLayout);
+        return detailsPanel;
+    }
 
-
+    private void createChangedFeaturesGrid(Layout layout) {
         changedFeaturesGrid = new GridLayout();
         changedFeaturesGrid.setSizeFull();
-        createChangesPanel(detailsLayout);
-
-        detailsLayout.addComponent(changedFeaturesGrid);
-
-        createChangedFeaturesTable(detailsLayout);
-        createGraph(detailsLayout);
-
-        detailsPanel.setContent(detailsLayout);
-
-        return detailsPanel;
+        layout.addComponent(changedFeaturesGrid);
     }
 
     private void createChangedFeaturesTable(Layout layout) {
@@ -150,6 +148,7 @@ public class AnalysisView extends BaseView implements View {
             VerticalLayout layout = new VerticalLayout();
             layout.setSizeFull();
             layout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
+            Panel panel = new Panel();
             graphComponent = new GraphJSComponent();
             graphComponent.setNodesSize(120, 50);
             graphComponent.setImmediate(true);
@@ -157,7 +156,8 @@ public class AnalysisView extends BaseView implements View {
             Label graphLabel = new Label(lhtml, ContentMode.HTML);
             layout.addComponent(graphLabel);
             layout.addComponent(graphComponent);
-            dependencyWindow.setContent(layout);
+            panel.setContent(layout);
+            dependencyWindow.setContent(panel);
             dependencyWindow.setResizable(true);
             dependencyWindow.setModal(true);
             dependencyWindow.setWidth(800, Unit.PIXELS);
@@ -232,14 +232,6 @@ public class AnalysisView extends BaseView implements View {
                 break;
         }
         graphComponent.getNodeProperties(nodeId).put("fill", color);
-    }
-
-    private void createGraph(Layout layout) {
-
-
-        // layout.addComponent(graphLabel);
-        // layout.addComponent(graphComponent);
-
     }
 
     private void createChangesPanel(Layout layout) {

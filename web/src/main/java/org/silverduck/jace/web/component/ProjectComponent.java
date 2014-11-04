@@ -2,24 +2,16 @@ package org.silverduck.jace.web.component;
 
 import com.vaadin.data.fieldgroup.PropertyId;
 import com.vaadin.data.util.BeanItem;
+import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.server.UserError;
-import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.ComboBox;
-import com.vaadin.ui.Component;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Label;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.PasswordField;
-import com.vaadin.ui.TabSheet;
-import com.vaadin.ui.TextField;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.*;
 import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.localization.AppResources;
+import org.silverduck.jace.domain.feature.FeatureMapping;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.VersionFileType;
 import org.silverduck.jace.domain.vcs.PluginType;
+import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.web.vaadin.WorkingBeanFieldGroup;
 import sun.net.www.protocol.https.HttpsURLConnectionImpl;
 
@@ -30,6 +22,10 @@ import java.util.Locale;
  * @author Iiro Hietala 14.5.2014.
  */
 public class ProjectComponent extends BaseComponent<Project> {
+
+    private Project project;
+
+    BeanItemContainer<FeatureMapping> featureMappingContainer;
 
     private TextField cloneUrl;
 
@@ -52,7 +48,12 @@ public class ProjectComponent extends BaseComponent<Project> {
 
     private TextField versionPattern;
 
-    public ProjectComponent() {
+    private ProjectService projectService;
+
+
+    public ProjectComponent(Project project) {
+        this.project = project;
+        featureMappingContainer = new BeanItemContainer<FeatureMapping>(FeatureMapping.class, project.getFeatureMappings());
         Locale locale = UI.getCurrent().getLocale();
 
         TabSheet tabSheet = new TabSheet();
@@ -65,7 +66,10 @@ public class ProjectComponent extends BaseComponent<Project> {
             AppResources.getLocalizedString("label.projectForm.featureMappingTab", locale));
 
         setCompositionRoot(tabSheet);
+    }
 
+    public void setProjectService(ProjectService projectService) {
+        this.projectService = projectService;
     }
 
     @Override
@@ -137,7 +141,126 @@ public class ProjectComponent extends BaseComponent<Project> {
     }
 
     private Component createFeatureMappingLayout() {
-        return null;
+
+        final Locale locale = UI.getCurrent().getLocale();
+        final VerticalLayout featureMappingLayout = new VerticalLayout();
+        featureMappingLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
+        featureMappingLayout.setSizeFull();
+
+
+        final Table featureMappingTable = new Table();
+        featureMappingTable.setWidth(100, Unit.PERCENTAGE);
+        featureMappingTable.setImmediate(true);
+        featureMappingTable.setContainerDataSource(featureMappingContainer);
+        featureMappingTable.setVisibleColumns("mappingType", "sourcePattern", "featureName");
+        featureMappingTable.setColumnHeaders("Type", "Pattern", "To Feature");
+
+        Table.ColumnGenerator columnGenerator = new Table.ColumnGenerator() {
+            @Override
+            public Object generateCell(Table source, final Object itemId, Object columnId) {
+                final FeatureMapping bean = (FeatureMapping) itemId;
+                if ("Edit".equals(columnId)) {
+                    Button editButton = new Button(AppResources.getLocalizedString("label.edit", locale));
+                    editButton.addClickListener(new Button.ClickListener() {
+                        @Override
+                        public void buttonClick(Button.ClickEvent event) {
+                            showFeatureMappingPopup(bean);
+                        }
+                    });
+                    return editButton;
+                } else if ("Remove".equals(columnId)) {
+                    Button removeButton = new Button(AppResources.getLocalizedString("label.remove", locale));
+                    removeButton.addClickListener(new Button.ClickListener() {
+                        @Override
+                        public void buttonClick(Button.ClickEvent event) {
+                            project.removeFeatureMapping(bean);
+                        }
+                    });
+                    return removeButton;
+                }
+                return null;
+            }
+        };
+
+        featureMappingTable.addGeneratedColumn("Edit", columnGenerator);
+        featureMappingTable.addGeneratedColumn("Remove", columnGenerator);
+
+        Button addButton = new Button("New");
+        addButton.addClickListener(new Button.ClickListener() {
+            @Override
+            public void buttonClick(Button.ClickEvent event) {
+                showFeatureMappingPopup(null);
+            }
+        });
+        HorizontalLayout buttonsLayout = new HorizontalLayout();
+        buttonsLayout.addComponent(addButton);
+        featureMappingLayout.addComponent(featureMappingTable);
+        featureMappingLayout.addComponent(buttonsLayout);
+        return featureMappingLayout;
+    }
+
+    private void showFeatureMappingPopup(FeatureMapping featureMapping) {
+        final Locale locale = UI.getCurrent().getLocale();
+        final Window featureMappingWindow = new Window();
+
+        final FeatureMappingComponent featureMappingComponent = new FeatureMappingComponent();
+        featureMappingComponent.setFeatures(project.getFeatures());
+        if (featureMapping == null) {
+            featureMappingWindow.setCaption(AppResources.getLocalizedString("caption.newFeatureMapping", locale));
+            featureMapping = FeatureMapping.newFeatureMapping();
+            featureMapping.setProject(project);
+        } else {
+            featureMappingWindow.setCaption(AppResources.getLocalizedString("caption.editFeatureMapping", locale));
+        }
+
+        featureMappingComponent.edit(featureMapping);
+
+        Button submitButton = new Button(AppResources.getLocalizedString("label.submit", locale));
+        submitButton.addClickListener(new Button.ClickListener() {
+            public void buttonClick(Button.ClickEvent event) {
+                if (featureMappingComponent.isValid()) {
+                    final FeatureMapping featureMapping = featureMappingComponent.commit();
+                    featureMappingContainer.addBean(featureMapping);
+                    if (featureMapping.getId() == null) {
+                        project.addFeatureMapping(featureMapping);
+                    }
+
+                    featureMappingWindow.close();
+
+                } else {
+                    Notification.show(AppResources.getLocalizedString("form.validationErrorsNotification", locale),
+                            Notification.Type.TRAY_NOTIFICATION);
+                }
+            }
+        });
+
+        Button cancelButton = new Button(AppResources.getLocalizedString("label.cancel", locale));
+        cancelButton.addClickListener(new Button.ClickListener() {
+
+            @Override
+            public void buttonClick(Button.ClickEvent event) {
+                featureMappingComponent.discard();
+                featureMappingWindow.close();
+            }
+        });
+        HorizontalLayout commandButtons = new HorizontalLayout();
+        commandButtons.addComponent(submitButton);
+        commandButtons.addComponent(cancelButton);
+        FormLayout formLayout = new FormLayout();
+        formLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
+        formLayout.addComponent(featureMappingComponent);
+        formLayout.addComponent(commandButtons);
+
+        HorizontalLayout popupLayout = new HorizontalLayout();
+        popupLayout.setDefaultComponentAlignment(Alignment.MIDDLE_CENTER);
+        popupLayout.setSpacing(true);
+        popupLayout.setMargin(true);
+        popupLayout.addComponent(formLayout);
+
+        featureMappingWindow.setContent(popupLayout);
+        featureMappingWindow.setModal(true);
+
+        getUI().addWindow(featureMappingWindow);
     }
 
     private Component createReleaseInfoLayout() {
@@ -173,8 +296,9 @@ public class ProjectComponent extends BaseComponent<Project> {
      * @param project
      *            Project to Edit
      */
-    public void edit(final Project project, boolean isNew) {
+    public void edit(boolean isNew) {
         super.edit(project);
+
         if (!isNew) {
             // Once created, these may no longer be changed.
             name.setReadOnly(true);

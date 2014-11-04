@@ -10,7 +10,8 @@ public enum MappingType implements LocalizedEnum {
 
     CONTAINING_DIRECTORY_NAME("mappingType.directoryName"),
 
-    PATTERN_IN_FILE("mappingType.patternInFile");
+    FILE_NAME("mappingType.fileName");
+
 
     private final String resourceKey;
 
