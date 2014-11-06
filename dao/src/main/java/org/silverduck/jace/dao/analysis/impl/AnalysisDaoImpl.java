@@ -16,7 +16,9 @@ import javax.persistence.Query;
 import java.util.List;
 
 /**
- * Analysis related database operations Created by Iiro Hietala on 18.5.2014.
+ * Analysis related database operations
+ *
+ * Created by Iiro Hietala on 18.5.2014.
  */
 @Stateless(name = "AnalysisDaoEJB")
 @TransactionManagement(TransactionManagementType.CONTAINER)

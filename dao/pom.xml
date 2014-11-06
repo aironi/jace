@@ -11,7 +11,7 @@
     <artifactId>dao</artifactId>
     <packaging>ejb</packaging>
 
-    <name>Jace Data Access</name>
+    <name>J-Ace Data Access</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

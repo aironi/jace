@@ -9,10 +9,10 @@ import java.util.List;
 public class ExceptionHelper {
     /**
      * A simple Exception cause-walker that picks up the messages from Exceptions and makes a string out of them in
-     * similar fashion as Stack Trace is shown.
+     * similar fashion as Stack Trace is printed.
      * 
      * @param t
-     *            Trowable
+     *            Throwable
      * @return String
      */
     public static String toHumanReadable(Throwable t) {

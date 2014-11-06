@@ -10,7 +10,7 @@
     <groupId>org.silverduck.jace</groupId>
     <artifactId>ws</artifactId>
     <packaging>war</packaging>
-    <name>Jace Web Services</name>
+    <name>J-Ace Web Services</name>
 
     <repositories>
         <repository>

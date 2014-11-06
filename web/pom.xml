@@ -13,7 +13,7 @@
     <artifactId>web</artifactId>
     <packaging>war</packaging>
 
-    <name>Jace Vaadin 7 Web Application</name>
+    <name>J-Ace Vaadin 7 Web Application</name>
 
 
     <properties>

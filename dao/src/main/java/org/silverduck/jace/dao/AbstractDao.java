@@ -4,49 +4,51 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.project.Project;
 
 /**
+ * This interface defines the basic CRUD operations for an entity.
+ *
  * @author Iiro Hietala 17.5.2014.
  */
 public interface AbstractDao<T> {
     /**
-     * Add (persist) entity into DB
+     * Add an entity into database
      * 
      * @param t
-     *            Entity to persist for the first time
+     *            An entity to persist for the first time
      */
     void add(T t);
 
     /**
-     * Finds using EntityManager
+     * Find an entity with given type and identifier
      * 
      * @param clazz
-     *            Entity Class
+     *            The type of the entity Class
      * @param id
      *            ID to find
      * @return
      */
-    Object find(Class<?> clazz, Long id);
+    Object find(Class<T> clazz, Long id);
 
     /**
-     * Refresh an Entity from DB
+     * Refresh an Entity from the database
      * 
      * @param t
-     *            Entity to refresh
+     *            The entity to refresh
      */
     void refresh(T t);
 
     /**
-     * Remove an Entity from DB
+     * Remove an Entity from the database
      * 
      * @param t
-     *            Entity to Remove
+     *            Th entity to Remove
      */
     void remove(T t);
 
     /**
-     * Update an Entity into DB
+     * Update an Entity into database
      * 
      * @param t
-     *            Entity to update
+     *            The entity to update
      * @return
      */
     T update(T t);

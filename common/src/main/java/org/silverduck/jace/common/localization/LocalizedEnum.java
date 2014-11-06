@@ -5,7 +5,7 @@ package org.silverduck.jace.common.localization;
  */
 public interface LocalizedEnum {
     /**
-     * Returns the resource key associated for a enumeration value.
+     * Returns the resource key associated for an enumeration value.
      * 
      * @return
      */

@@ -126,8 +126,6 @@ public class GitServiceImpl implements GitService {
                     passWord);
                 cloneCommand.setCredentialsProvider(credProv);
             }
-            // Writer out = new StringWriter();
-            // cloneCommand.setProgressMonitor(new TextProgressMonitor(out));
             LOG.info("cloneRepo({}, {}, {}, ***) called. Cloning...", cloneUrl, localDirectory, userName);
             Git call = cloneCommand.call();
 
@@ -140,7 +138,7 @@ public class GitServiceImpl implements GitService {
     }
 
     /**
-     * List all REMOTE branches for a local repository
+     * List all remote branches for a local repository
      * 
      * @param localDirectory
      *            Local directory with existing git repository
@@ -210,37 +208,38 @@ public class GitServiceImpl implements GitService {
         return parsedDiff;
     }
 
+    private Matcher getMatcher(String pattern, String input) {
+        Pattern p = Pattern.compile(pattern);
+        return p.matcher(input);
+    }
+
     private Hunk parseHunk(String line) {
         Hunk hunk = new Hunk();
         // A very fine implementation of
         // http://www.gnu.org/software/diffutils/manual/diffutils.html#Detailed-Unified
-        // TODO: Refactor
-        Pattern pattern = Pattern.compile("-(\\d+) \\+(\\d+)");
-        Matcher matcher = pattern.matcher(line);
+
+        Matcher matcher = getMatcher("-(\\d+) \\+(\\d+)", line);
         if (matcher.find()) {
             hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
             hunk.setOldLineCount(1);
             hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
             hunk.setNewLineCount(1);
         } else {
-            pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+)");
-            matcher = pattern.matcher(line);
+            matcher = getMatcher("-(\\d+),(\\d+) \\+(\\d+)", line);
             if (matcher.find()) {
                 hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
                 hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
                 hunk.setNewStartLine(Integer.parseInt(matcher.group(3)));
                 hunk.setNewLineCount(1);
             } else {
-                pattern = Pattern.compile("-(\\d+) \\+(\\d+),(\\d+)");
-                matcher = pattern.matcher(line);
+                matcher = getMatcher("-(\\d+),(\\d+) \\+(\\d+)", line);
                 if (matcher.find()) {
                     hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
                     hunk.setOldLineCount(1);
                     hunk.setNewStartLine(Integer.parseInt(matcher.group(2)));
                     hunk.setNewLineCount(Integer.parseInt(matcher.group(3)));
                 } else {
-                    pattern = Pattern.compile("-(\\d+),(\\d+) \\+(\\d+),(\\d+)");
-                    matcher = pattern.matcher(line);
+                    matcher = getMatcher("-(\\d+),(\\d+) \\+(\\d+),(\\d+)", line);
                     if (matcher.find()) {
                         hunk.setOldStartLine(Integer.parseInt(matcher.group(1)));
                         hunk.setOldLineCount(Integer.parseInt(matcher.group(2)));
@@ -275,46 +274,6 @@ public class GitServiceImpl implements GitService {
         }
 
         return resolveChanges(git, pullResult, oldHead);
-    }
-
-    private MergeResult mergeInternal(Git git, FetchResult fetchResult) {
-        throw new IllegalStateException("Not implemented");
-        /*
-        LOG.info("GitServiceImpl.mergeInternal() called");
-        MergeCommand mergeCommand = git.merge();
-        mergeCommand.include("HEAD^");
-        mergeCommand.setFastForward(MergeCommand.FastForwardMode.NO_FF);
-        mergeCommand.setStrategy(MergeStrategy.THEIRS);
-        try {
-            return mergeCommand.call();
-        } catch (GitAPIException e) {
-            throw new IllegalStateException(e);
-        }
-        */
-    }
-
-    private FetchResult fetchInternal(Git git, String username, String password) {
-        LOG.info("GitServiceImpl.fetchInternal() called");
-
-        FetchResult fetchResult = null;
-        try {
-
-            FetchCommand fetchCommand = git.fetch();
-
-            if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(password)) {
-                UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(username,
-                        password);
-                fetchCommand.setCredentialsProvider(credProv);
-            }
-
-            fetchResult = fetchCommand.call();
-        } catch (Exception e) {
-            throw new JaceRuntimeException("Failed to fetch into directory ' " + git.getRepository().getDirectory() + "'", e);
-        } finally {
-            git.getRepository().close();
-        }
-        LOG.info("GitServiceImpl.fetchInternal: Returning fetchResult.fetchResult: {}", fetchResult != null ? fetchResult : "null");
-        return fetchResult;
     }
 
     /**
@@ -381,22 +340,15 @@ public class GitServiceImpl implements GitService {
      * @return
      */
     private List<Diff> resolveDiffs(Git git, ObjectId startCommitId, List<RevCommit> revCommits) {
-        LOG.info("GitServiceImpl.resolveDiffs() called. startCommitId=" + startCommitId);
+        LOG.info("GitServiceImpl.resolveDiffs() called. startCommitId={}", startCommitId);
         List<Diff> diffs = new ArrayList<Diff>();
 
         for (RevCommit commit : revCommits) {
-            LOG.info("GitServiceImpl.resolveDiffs: Creating new Commit");
-            Commit jaceCommit = new Commit();
-            jaceCommit.setMessage(StringUtils.left(commit.getFullMessage().toString(), 4090));
-            // Add these.
-            jaceCommit.setAuthorName(commit.getAuthorIdent().getName());
-            jaceCommit.setAuthorEmail(commit.getAuthorIdent().getEmailAddress());
-            jaceCommit.setAuthorTimeZone(commit.getAuthorIdent().getTimeZone());
-            jaceCommit.setAuthorTimeZoneOffSet(commit.getAuthorIdent().getTimeZoneOffset());
-            jaceCommit.setAuthorDateOfChange(commit.getAuthorIdent().getWhen());
-            LOG.info("GitServiceImpl.resolveDiffs: Created new Commit: " + jaceCommit.toHumanReadable());
+            Commit jaceCommit = createCommit(commit);
+            LOG.debug("GitServiceImpl.resolveDiffs: Created new Commit: " + jaceCommit.toHumanReadable());
 
-            LOG.info("GitServiceImpl.resolveDiffs: Diffing old and new versions...");
+            LOG.debug("GitServiceImpl.resolveDiffs: Diffing old and new versions...");
+
             // Diff the old and new revisions and iterate the diffs.
             DiffCommand diffCommand = git.diff().setOldTree(resolveTreeIterator(git.getRepository(), startCommitId))
                     .setNewTree(resolveTreeIterator(git.getRepository(), commit.toObjectId()));
@@ -411,6 +363,17 @@ public class GitServiceImpl implements GitService {
             }
         }
         return diffs;
+    }
+
+    private Commit createCommit(RevCommit commit) {
+        Commit jaceCommit = new Commit();
+        jaceCommit.setMessage(StringUtils.left(commit.getFullMessage().toString(), 4090));
+        jaceCommit.setAuthorName(commit.getAuthorIdent().getName());
+        jaceCommit.setAuthorEmail(commit.getAuthorIdent().getEmailAddress());
+        jaceCommit.setAuthorTimeZone(commit.getAuthorIdent().getTimeZone());
+        jaceCommit.setAuthorTimeZoneOffSet(commit.getAuthorIdent().getTimeZoneOffset());
+        jaceCommit.setAuthorDateOfChange(commit.getAuthorIdent().getWhen());
+        return jaceCommit;
     }
 
     private List<Diff> parseDiffEntries(Git git, Commit jaceCommit, List<DiffEntry> diffEntries) throws IOException {

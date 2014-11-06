@@ -18,7 +18,7 @@ import java.util.List;
 public class ProjectDaoImpl extends AbstractDaoImpl<Project> implements ProjectDao {
 
     @Override
-    public List<Project> findAllProjects() {
+    public List<Project> listAllProjects() {
         Query query = getEntityManager().createNamedQuery("findAllProjects");
         return query.getResultList();
     }

@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Represents a feature mapping from a pattern to a given feature name.
  * Created by Iiro Hietala on 17.5.2014.
  */
 @Entity

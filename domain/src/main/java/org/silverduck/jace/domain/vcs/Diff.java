@@ -13,7 +13,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * A object representing a single diff in repository.
+ * The Diff object represents a single diff of a file.
  */
 @Entity
 @Table(name = "Diff")

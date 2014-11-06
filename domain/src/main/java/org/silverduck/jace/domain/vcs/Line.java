@@ -10,6 +10,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
+ * Represents a line in source code that relates to a Hunk.
+ *
  * Created by Iiro Hietala on 23.5.2014.
  */
 @Entity

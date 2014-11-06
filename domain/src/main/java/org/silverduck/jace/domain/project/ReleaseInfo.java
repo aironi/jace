@@ -6,6 +6,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 
 /**
+ * Configuration options for determining the release version of a project
+ *
  * @author Iiro Hietala 13.5.2014.
  */
 @Embeddable

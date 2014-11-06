@@ -24,8 +24,9 @@ import java.util.Set;
 import org.silverduck.jace.domain.slo.SLO;
 
 /**
- * Represents an analysis that is performed on a repository. Contains the SLOs (Software Life-Cycle Objects) that are
- * found under the repository.
+ * Represents an analysis that is performed on a repository.
+ * Contains the SLOs (Software Life-Cycle Objects) and ChangedFeatures that are
+ * identified in an analysis.
  */
 @Entity
 @Table(name = "Analysis")
@@ -47,7 +48,6 @@ public class Analysis extends AbstractDomainObject {
     @OneToMany(mappedBy = "analysis", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ChangedFeature> changedFeatures = new ArrayList<ChangedFeature>();
 
-    // Initial Analysis, i.e. the root of all analyses. TODO: Rename to baseAnalysis
     @Column(name = "InitialAnalysis")
     private Boolean initialAnalysis;
 

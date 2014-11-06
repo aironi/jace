@@ -6,6 +6,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.feature.Feature;
 import org.silverduck.jace.domain.feature.FeatureMapping;
+import org.silverduck.jace.domain.feature.MappingType;
 import org.silverduck.jace.domain.vcs.PluginConfiguration;
 import org.silverduck.jace.domain.vcs.PluginType;
 
@@ -35,6 +36,7 @@ import java.util.List;
 public class Project extends AbstractDomainObject {
 
     public static Project newProject() {
+        // TODO: Remove these before 1.0
         Project p = new Project();
 
         p.setName("J-Ace");
@@ -47,6 +49,26 @@ public class Project extends AbstractDomainObject {
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
         p.getReleaseInfo().setPathToVersionFile("/build/pom.xml");
         p.getReleaseInfo().setPattern("/project/properties/jace.version");
+
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services\\.analysis.*)","Business Logic - Analysis");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services.vcs.*)","Business Logic - VCS");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services.project.*)","Business Logic - Project");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.vcs.*)","Business Entities - VCS");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.analysis.*)","Business Entities - Analysis");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.project.*)","Business Entities - Project");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.feature.*)","Business Entities - Feature");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.slo.*)","Business Entities - SLO");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.vcs.*)","Business Entities - Other");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao.vcs.*)","Data Access - VCS");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao.analysis.*)","Data Access - Analysis");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao.project.*)","Data Accesss - Project");
+        addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/dao\\/.*)","Data Access - Other");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace\\.common.*)","Common Library");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace.web.*)","User Interface");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace.rest.*)","RESTful Web Services");
+        addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/build\\/.*)","J-Ace Project Definition");
+        addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/web\\/.*)","User Interface");
+
         /*
          * p.setName(""); p.getPluginConfiguration().setPluginType(PluginType.GIT);
          * p.getPluginConfiguration().setCloneUrl(""); p.getPluginConfiguration().setLocalDirectory("");
@@ -54,6 +76,14 @@ public class Project extends AbstractDomainObject {
          * p.getReleaseInfo().setPattern("");
          */
         return p;
+    }
+
+    private static void addFeatureMapping(Project p, MappingType mappingType, String pattern, String featureName) {
+        FeatureMapping mapping = new FeatureMapping();
+        mapping.setMappingType(mappingType);
+        mapping.setSourcePattern(pattern);
+        mapping.setFeatureName(featureName);
+        p.addFeatureMapping(mapping);
     }
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)

@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * The AnalysisFileVisitor analyses all of the files that are defined in the constructor.
+ *
  * Created by Iiro Hietala on 27.5.2014.
  */
 public class AnalysisFileVisitor extends InitialAnalysisFileVisitor {

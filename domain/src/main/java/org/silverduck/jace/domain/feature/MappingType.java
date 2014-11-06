@@ -3,6 +3,8 @@ package org.silverduck.jace.domain.feature;
 import org.silverduck.jace.common.localization.LocalizedEnum;
 
 /**
+ * Represents the possible mapping types.
+ *
  * Created by Iiro Hietala on 17.5.2014.
  */
 public enum MappingType implements LocalizedEnum {

@@ -9,7 +9,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * A branch in a project
+ * A branch in software repository of a project
  */
 @Entity
 @Table(name = "ProjectBranch")

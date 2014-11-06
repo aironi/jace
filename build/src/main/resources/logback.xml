@@ -11,7 +11,4 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger name="org.silverduck.jace.services.analysis.AnalysisServiceImpl" level="DEBUBG"/>
-    <logger name="org.silverduck.jace.services.vcs.GitServiceImpl" level="DEBUBG"/>
-
 </configuration>

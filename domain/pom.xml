@@ -12,7 +12,7 @@
     <groupId>org.silverduck.jace</groupId>
     <artifactId>domain</artifactId>
     <packaging>jar</packaging>
-    <name>Jace Domain</name>
+    <name>J-Ace Domain</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

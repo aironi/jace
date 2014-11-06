@@ -23,8 +23,6 @@ public class FeatureMappingComponent extends BaseComponent<FeatureMapping> {
     private TextField patternField;
     private TextField featureField;
 
-//    private ComboBox featureField;
-
     private List<Feature> features;
 
     public FeatureMappingComponent() {
@@ -56,10 +54,6 @@ public class FeatureMappingComponent extends BaseComponent<FeatureMapping> {
         patternField = new TextField(AppResources.getLocalizedString("label.featureMappingComponent.pattern", locale));
         patternField.setWidth(100, Unit.PERCENTAGE);
 
-        /*
-        featureField = BeanComboBoxHelper.createComboBox("label.featureMappingComponent.featureName", locale, Feature.class, "name",
-                features);
-        */
         featureField = new TextField(AppResources.getLocalizedString("label.featureMappingComponent.featureName", locale));
         featureField.setWidth(100, Unit.PERCENTAGE);
         FormLayout form = new FormLayout();

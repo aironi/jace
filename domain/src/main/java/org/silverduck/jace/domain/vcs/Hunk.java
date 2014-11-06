@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Represents a Hunk that has similar data as GNU Unified Diff.
+ *
  * Created by Iiro Hietala on 23.5.2014.
  */
 @Entity

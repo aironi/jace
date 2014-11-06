@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
+ * Represents a Commit in a VCS. Contains common information that is stored in a Commit.
+ *
  * Created by Iiro Hietala on 23.5.2014.
  */
 @Entity
@@ -41,12 +43,11 @@ public class Commit extends AbstractDomainObject {
     @OneToMany(mappedBy = "commit", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Diff> diffs = new ArrayList<Diff>();
 
-    // Dummy field for Vaadin ....
-    @Transient
-    private String formattedTimeZoneOffset;
-
     @Column(name = "Message", length = 4096)
     private String message;
+
+    @Transient
+    private String formattedTimeZoneOffset;
 
     private void addDiff(Diff diff) {
         if (!diffs.contains(diff)) {

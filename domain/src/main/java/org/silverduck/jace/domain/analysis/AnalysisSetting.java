@@ -17,6 +17,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 /**
+ * Represents the configuration options that are used when performing an analysis.
  * @author Iiro Hietala 16.5.2014.
  */
 @Entity

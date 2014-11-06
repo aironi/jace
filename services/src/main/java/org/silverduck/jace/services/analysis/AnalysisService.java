@@ -17,14 +17,38 @@ import java.util.List;
  */
 public interface AnalysisService {
 
+    /**
+     * Add a new analysis setting
+     * @param setting Setting to add
+     * @return A Future Boolean that completes once the setting has been added.
+     */
     java.util.concurrent.Future<Boolean> addAnalysisSetting(AnalysisSetting setting);
 
+    /**
+     * Analyse a project for a given analysis setting id
+     * @param analysisSettingId The analysisSettingId that defines the analysis to be performed
+     * @return A Future Boolean that completes once the analysis has been performed
+     */
     java.util.concurrent.Future<Boolean> analyseProject(Long analysisSettingId);
 
-    List<AnalysisSetting> findAllAnalysisSettings();
+    /**
+     * Returns all analysis settings
+     * @return
+     */
+    List<AnalysisSetting> listAllAnalysisSettings();
 
+    /**
+     * Finds an analysis with given id.
+     * @param id The identifier of the analysis to be searched
+     * @return Returns the analysis, or null if analysis may not be found
+     */
     Analysis findAnalysisById(Long id);
 
+    /**
+     * Finds an analysis setting with given id.
+     * @param id
+     * @return Returns the analysis setting, or null if the analysis setting may not be found.
+     */
     AnalysisSetting findAnalysisSettingById(Long id);
 
     /**
@@ -36,6 +60,10 @@ public interface AnalysisService {
 
     List<ScoredCommit> listScoredCommitsByRelease(Long projectId, String releaseVersion);
 
+    /**
+     * Removes an analysis setting and all related information.
+     * @param id ID of the analysis setting to remove
+     */
     void removeAnalysisSettingById(Long id);
 
     /**
@@ -45,6 +73,11 @@ public interface AnalysisService {
      */
     void triggerAnalysis(Long analysisSettingId);
 
+    /**
+     * Update an analysis setting
+     * @param setting
+     * @return
+     */
     java.util.concurrent.Future<Boolean> updateAnalysisSetting(AnalysisSetting setting);
 
     /**

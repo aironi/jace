@@ -10,7 +10,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * Object to store a import for SLO during first-phase of analysis
+ * An object that represents an import to other module.
  */
 @Entity
 @Table(name = "SLOImport")

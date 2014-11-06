@@ -18,12 +18,12 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      * Finds a method by given line number. If an entity is not found returns null.
      * 
      * @param slo
-     *            SLO A Software Life-Cycle Object to search for the method
+     *            A Software Life-Cycle Object to search for the method
      * @param lineNumber
      *            A line-number in file where to look what method resides at that point
      * @return JavaMethod containing the change, or null if no method may be found.
      */
-    JavaMethod findMethodByLineNumber(SLO sLO, Integer lineNumber);
+    JavaMethod findMethodByLineNumber(SLO slo, Integer lineNumber);
 
     /**
      * Attempts to find a SLO by given path. If an entity is not found returns null.
@@ -68,10 +68,15 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      */
     List<String> listAllReleases(Long projectId);
 
+    /**
+     * List analyses with a specific analysisSettingId
+     * @param analysisSettingId The analysisSettingId to fetch analyses for
+     * @return
+     */
     List<Analysis> listAnalysesBySetting(Long analysisSettingId);
 
     /**
-     * Lists Changed Features by Project
+     * Lists the Changed Features by Project
      * 
      * @return
      */

@@ -11,7 +11,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Software Life-cycle Object Represents a source file, resource, etc.
+ * A Software Life-cycle Object, SLO. A SLO amy represent a source file, a resource, or any other
+ * file that is analysed.
+ *
+ * The SLOs with SLOType.SOURCE hold a special meaning as they may contain dependencies.
  */
 @Entity
 @Table(name = "SLO")
@@ -37,10 +40,6 @@ import java.util.List;
                 query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids")
 })
 public class SLO extends AbstractDomainObject {
-    /*
-     * Add Imports that this SLO uses Add fully qualified type helper construct a 'ripple' collection (where this SLO is
-     * used) -> needs another phase after analysing the SLOs (analyseDependencies to AnalysisService)
-     */
     @ManyToOne
     @JoinColumn(name = "AnalysisRID")
     private Analysis analysis;
@@ -62,9 +61,6 @@ public class SLO extends AbstractDomainObject {
     @JoinColumn(name = "childRID")
     private SLO extending;
 
-    /**
-     * This file releates to this feature on file level
-     */
     @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "FeatureRID")
     private Feature feature;
@@ -136,23 +132,14 @@ public class SLO extends AbstractDomainObject {
         return dependantOf;
     }
 
-    /**
-     * File level dependencies for ripple-effects
-     */
     public List<SLO> getDependsOn() {
         return dependsOn;
     }
 
-    /**
-     * This SLO is super class of these SLOs
-     */
     public List<SLO> getExtendedBy() {
         return extendedBy;
     }
 
-    /**
-     * This SLO is extending superclass
-     */
     public SLO getExtending() {
         return extending;
     }

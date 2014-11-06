@@ -1,7 +1,7 @@
 package org.silverduck.jace.domain.vcs;
 
 /**
- * Reflects the git ChangeType directly
+ * Defines the possible types for a change.
  */
 public enum ModificationType {
     ADD,

@@ -3,7 +3,7 @@ package org.silverduck.jace.common.exception;
 import java.io.IOException;
 
 /**
- * A generic runtime exception for J-Ace that indicates a fatal system condition.
+ * A generic runtime exception for J-Ace that indicates an unexpected condition.
  * @author Iiro Hietala
  */
 public class JaceRuntimeException extends RuntimeException {

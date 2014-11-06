@@ -3,6 +3,8 @@ package org.silverduck.jace.domain.vcs;
 import org.silverduck.jace.common.localization.LocalizedEnum;
 
 /**
+ * Defines all of the supported VCS plugin types.
+ *
  * @author Iiro Hietala 13.5.2014.
  */
 public enum PluginType implements LocalizedEnum {

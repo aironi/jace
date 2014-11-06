@@ -75,16 +75,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         projectDao.add(project);
-        // The event-system does NOT work with Vaadin 7.1.5
-        // Error:
-        // Caused by: java.lang.IllegalStateException: CDI listener identified, but there is no active UI available.
-        // at com.vaadin.cdi.internal.UIScopedContext.get(UIScopedContext.java:100)
 
-        // http://dev.vaadin.com/ticket/12393
-        //
-
-        // AddingProjectCompleteEvent event = new AddingProjectCompleteEvent(project);
-        // addingProjectCompleteEvent.fire(event);
         return new AsyncResult<Boolean>(Boolean.TRUE);
 
     }
@@ -96,7 +87,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public List<Project> findAllProjects() {
-        return projectDao.findAllProjects();
+        return projectDao.listAllProjects();
     }
 
     @Override
@@ -121,9 +112,6 @@ public class ProjectServiceImpl implements ProjectService {
                 project.addBranch(new ProjectBranch(project, branch));
             }
             updateProject(project);
-            // Vaadin doesn't support this yet... http://dev.vaadin.com/ticket/12393
-            // PullingCompleteEvent event = new PullingCompleteEvent(project);
-            // pullingCompleteEvent.fire(event);
             break;
         default:
             throw new RuntimeException("Non-supported plugin was configured for a project '" + project.getName()
@@ -138,7 +126,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     // @Schedule(minute = "5")
     public void pullProjects() {
-        List<Project> projects = projectDao.findAllProjects();
+        List<Project> projects = projectDao.listAllProjects();
         for (Project project : projects) {
             projectPollingService.pullProject(project);
         }

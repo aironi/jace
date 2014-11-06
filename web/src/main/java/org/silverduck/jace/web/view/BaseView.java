@@ -12,8 +12,6 @@ import javax.annotation.PostConstruct;
  */
 public abstract class BaseView extends GridLayout implements View {
 
-    private GridLayout contentLayout;
-
     protected abstract Layout getContentLayout();
 
     @PostConstruct

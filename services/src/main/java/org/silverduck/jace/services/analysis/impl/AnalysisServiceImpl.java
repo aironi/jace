@@ -254,7 +254,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
-    public List<AnalysisSetting> findAllAnalysisSettings() {
+    public List<AnalysisSetting> listAllAnalysisSettings() {
         return analysisSettingDao.findAllAnalysisSettings();
     }
 
@@ -300,7 +300,6 @@ public class AnalysisServiceImpl implements AnalysisService {
             analyseDependencies(analysis);
 
             analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
-            // analysisDao.update(analysis);
         } catch (IOException e) {
             analysis.setAnalysisStatus(AnalysisStatus.ERROR);
             analysisDao.update(analysis);
@@ -311,7 +310,7 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     @Override
     public List<ScoredCommit> listScoredCommitsByRelease(Long projectId, String releaseVersion) {
-        // Get the directly changed feature from db and the initial score
+        // Get the directly changed features from db and the initial score with a query
         List<ScoredCommit> scoredCommitList = new ArrayList<ScoredCommit>();
         Map<String, ScoredCommit> commitIdScoredCommitMap = new HashMap<String, ScoredCommit>();
         List<Object[]> commits = analysisDao.listScoredCommitsByProjectAndRelease(projectId, releaseVersion);
@@ -324,8 +323,7 @@ public class AnalysisServiceImpl implements AnalysisService {
             LOG.debug("Found scored commit with id '" + commitId + "' and score '" + score);
         }
 
-
-        // Analyse all changed feature dependencies
+        // Analyse all dependencies of the changed features
         List<ChangedFeature> changedFeatures = analysisDao.listChangedFeaturesByProjectAndRelease(projectId, releaseVersion);
         for (ChangedFeature cf : changedFeatures) {
             if (cf.getAnalysis().getAnalysisSetting().getGranularity() == Granularity.FILE) {

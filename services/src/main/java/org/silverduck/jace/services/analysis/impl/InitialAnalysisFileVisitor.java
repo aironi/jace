@@ -45,7 +45,7 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * Initial Analysis implementation. Performs the initial analysis on the source tree and scans all of the found files.
+ * The InitialAnalysisFileVisitor performs the initial analysis on the source tree and scans all of the found files.
  * 
  * Parses ".java"-files with ASTParser and creates appropriate SLO objects.
  *
@@ -54,6 +54,7 @@ import java.util.Set;
 public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
     private static final Logger LOG = LoggerFactory.getLogger(InitialAnalysisFileVisitor.class);
+    public static final String GIT_DIR = ".git";
 
     private final Analysis analysis;
 
@@ -88,7 +89,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
         LOG.debug("preVisitDirectory: '" + dir.getFileName() + "'");
 
-        if (".git".equals(dir.getFileName().toString())) {
+        if (GIT_DIR.equals(dir.getFileName().toString())) {
             LOG.debug("Skipping git dir!");
             return FileVisitResult.SKIP_SUBTREE;
         } else {
@@ -115,8 +116,21 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             Map<String, String> variables = new HashMap<String, String>();
 
             public boolean visit(PackageDeclaration node) {
+                return analysePackageName(node);
+            }
+
+            private boolean analysePackageName(PackageDeclaration node) {
                 slo.setPackageName(node.getName().toString());
 
+                String featureName = determineFeatureName();
+
+                if (featureName != null) {
+                    processFeature(featureName, slo);
+                }
+                return true;
+            }
+
+            private String determineFeatureName() {
                 String featureName = null;
                 for (FeatureMapping featureMapping : analysis.getProject().getFeatureMappings()) {
                     if (featureMapping.appliesTo(slo)) {
@@ -142,11 +156,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                     }
 
                 }
-
-                if (featureName != null) {
-                    processFeature(featureName, slo);
-                }
-                return true;
+                return featureName;
             }
 
             public boolean visit(EnumDeclaration node) {
@@ -193,24 +203,21 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             }
 
             public boolean visit(VariableDeclarationFragment node) {
-
-                // if (currentMethod != null) {
                 String name = node.getName().toString();
 
                 String type = null;
                 try {
                     type = BeanUtils.getProperty(node.getParent(), "type");
                 } catch (IllegalAccessException e) {
-                    // Bummer
+
                 } catch (InvocationTargetException e) {
-                    // Bummer
+
                 } catch (NoSuchMethodException e) {
-                    // Bummer
+
                 }
 
                 String fullyQualifiedType = resolveQualifiedType(type);
                 variables.put(name, fullyQualifiedType);
-                // }
 
                 return true;
             }
@@ -234,7 +241,6 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             @Override
             public boolean visit(MethodDeclaration node) {
                 LOG.debug("visit(MethodDeclaration): Visiting JavaMethod " + node.getName());
-                // variables = new HashMap<String, String>();
 
                 currentMethod = new JavaMethod();
                 currentMethod.setName(node.getName().toString());
@@ -263,12 +269,15 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             }
 
             private String resolveQualifiedType(String type) {
-                String fullyQualifiedType;
-                if (type.contains(".")) {
-                    fullyQualifiedType = type;
-                } else {
-                    fullyQualifiedType = imports.get(type);
+                String fullyQualifiedType = null;
+                if (type != null) {
+                    if (type.contains(".")) {
+                        fullyQualifiedType = type;
+                    } else {
+                        fullyQualifiedType = imports.get(type);
+                    }
                 }
+
                 if (fullyQualifiedType == null) {
                     fullyQualifiedType = type; // Couldn't resolve. Perhaps imports are used with .* wildcard.
                                                // FIXME: This might introduce a Fatal issue with type resolving that is
@@ -359,6 +368,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         if (project.getReleaseInfo().getPathToVersionFile().equals(relativePath)) {
             processReleaseFile(file);
         }
+
         if (fileName.endsWith(".java")) {
             processJavaFile(file, relativePath);
         } else {
@@ -373,7 +383,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             if (featureName == null && setting.getAutomaticFeatureMapping()) {
                 featureName = file.getParent().getFileName().toString();
             }
-            List<String> nonFeatures = Arrays.asList(new String[] { "META-INF", "WEB-INF" }); // stupid functionality,
+            List<String> nonFeatures = Arrays.asList(new String[] { "META-INF", "WEB-INF" }); // TODO: stupid functionality,
                                                                                               // replace it with
                                                                                               // configurable one
             // Skip non-features completely
@@ -389,7 +399,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
     @Override
     public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-        LOG.debug("visitFileFailed: " + file.getFileName());
+        LOG.error("visitFileFailed: " + file.getFileName());
         return FileVisitResult.CONTINUE;
     }
 };

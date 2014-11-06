@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Represents a software feature
+ * Represents a named feature related to a project.
  */
 @Entity
 @Table(name = "Feature")
@@ -28,7 +28,6 @@ public class Feature extends AbstractDomainObject {
 
     @Column(name = "name")
     private String name;
-
 
     @ManyToOne
     @JoinColumn(name = "ProjectRID")
@@ -41,8 +40,6 @@ public class Feature extends AbstractDomainObject {
         }
     }
 
-
-
     public List<SLO> getSlos() {
         return Collections.unmodifiableList(slos);
     }
@@ -50,8 +47,6 @@ public class Feature extends AbstractDomainObject {
     public String getName() {
         return name;
     }
-
-
 
     public Project getProject() {
         return project;
@@ -63,8 +58,6 @@ public class Feature extends AbstractDomainObject {
             slo.setFeature(null);
         }
     }
-
-
 
     public void setName(String name) {
         this.name = name;

@@ -12,8 +12,17 @@ import java.util.List;
  */
 public interface ProjectDao extends AbstractDao<Project> {
 
-    List<Project> findAllProjects();
+    /**
+     * Lists all projects
+     * @return
+     */
+    List<Project> listAllProjects();
 
+    /**
+     * Finds a project by specific ID. Returns null no project is found.
+     * @param projectId
+     * @return
+     */
     Project findProjectById(Long projectId);
 
 }

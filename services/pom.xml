@@ -10,7 +10,7 @@
     <groupId>org.silverduck.jace</groupId>
     <artifactId>services</artifactId>
     <packaging>ejb</packaging>
-    <name>Jace Services</name>
+    <name>J-Ace Services</name>
 
     <repositories>
         <repository>

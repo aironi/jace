@@ -4,7 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
 /**
- * Represetns a JavaType (i.e. ParameterType, VariableType, etc.)
+ * Represents a JavaType (i.e. ParameterType, VariableType, etc.)
  * 
  */
 @Embeddable

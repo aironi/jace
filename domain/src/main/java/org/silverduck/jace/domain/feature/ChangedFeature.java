@@ -88,10 +88,6 @@ public class ChangedFeature extends AbstractDomainObject {
         this.diff = diff;
     }
 
-    private void calculateScore() {
-
-    }
-
     public Analysis getAnalysis() {
         return analysis;
     }

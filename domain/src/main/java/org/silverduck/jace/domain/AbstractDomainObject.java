@@ -13,7 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * Base class for all domain objects in the project. Contains mandatory fields for all domain objects.
+ * Base class for all domain objects in the project.
+ * Contains the mandatory fields for all domain objects.
  */
 @MappedSuperclass
 public abstract class AbstractDomainObject implements Serializable {

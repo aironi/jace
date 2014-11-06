@@ -11,5 +11,5 @@ import java.util.List;
  */
 @Local
 public interface GitService extends Plugin {
-    // Nothing git-specific yet. Good.
+
 }

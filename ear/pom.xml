@@ -10,7 +10,7 @@
     <groupId>org.silverduck.jace</groupId>
     <artifactId>jace-ear</artifactId>
     <packaging>ear</packaging>
-    <name>Jace EAR</name>
+    <name>J-Ace EAR</name>
 
     <dependencies>
         <dependency>

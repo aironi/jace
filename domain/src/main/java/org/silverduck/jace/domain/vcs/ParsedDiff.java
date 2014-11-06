@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a parsed diff between two files (contents only)
+ * The ParsedDiff contains the lsit of Hunks that relate to a Diff.
  */
 @Entity
 @Table(name = "ParsedDiff")

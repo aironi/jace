@@ -28,7 +28,6 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnalysisSettingsComponent.class);
 
-    // Used only to get edit working with comboboxes
     private AnalysisSetting analysisSetting;
 
     private CheckBox automaticFeatureMappingField;
@@ -117,10 +116,8 @@ public class AnalysisSettingsComponent extends BaseComponent<AnalysisSetting> {
     public void setReadOnly(boolean readOnly) {
         projectField.setReadOnly(readOnly);
         branchField.setReadOnly(readOnly);
-        // TODO: Always set Granurality read only until method level granularity is implemented
+        // TODO: Always set Granularity read only until method level granularity is implemented
         granularityField.setReadOnly(true);
-        // TODO: Always disable autoFeatureMapping until manual feature mapping is implemented
-        automaticFeatureMappingField.setReadOnly(true);
         enabledField.setReadOnly(readOnly);
     }
 

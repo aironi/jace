@@ -10,6 +10,7 @@ import javax.persistence.Enumerated;
 import javax.validation.constraints.NotNull;
 
 /**
+ * Defines a plugin configuration that may be used to connect to a VS system.
  * @author Iiro Hietala 13.5.2014.
  */
 
