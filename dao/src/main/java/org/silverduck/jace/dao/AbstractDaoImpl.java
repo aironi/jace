@@ -38,6 +38,8 @@ public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
     }
 
     public T update(T entity) {
-        return em.merge(entity);
+        T stored = em.merge(entity);
+        em.flush();
+        return stored;
     }
 }

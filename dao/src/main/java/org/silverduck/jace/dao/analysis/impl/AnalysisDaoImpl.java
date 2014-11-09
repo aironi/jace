@@ -132,18 +132,29 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
 
     @Override
     public void updateSlosAsDeleted(List<Long> deletedSloIDs) {
-        Query query = getEntityManager().createNamedQuery("updateStatus", SLO.class);
-        query.setParameter("ids", deletedSloIDs);
-        query.setParameter("status", SLOStatus.DELETED);
-        query.executeUpdate();
+        updateSlos(deletedSloIDs, SLOStatus.DELETED);
     }
 
     @Override
     public void updateSlosAsOld(List<Long> oldSloIDs) {
+        updateSlos(oldSloIDs, SLOStatus.OLD);
+    }
+
+    private void updateSlos(List<Long> sloIDs, SLOStatus status) {
         Query query = getEntityManager().createNamedQuery("updateStatus", SLO.class);
-        query.setParameter("ids", oldSloIDs);
-        query.setParameter("status", SLOStatus.OLD);
+        query.setParameter("ids", sloIDs);
+        query.setParameter("status", status);
         query.executeUpdate();
+    }
+
+    @Override
+    public void clearDependencies(Long id) {
+        List<SLO> slos = listSLOs(id);
+        for (SLO slo : slos) {
+            slo.clearDependsOnList();
+            slo.clearDependantOfList();
+            getEntityManager().merge(slo);
+        }
     }
 
 }

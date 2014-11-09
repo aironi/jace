@@ -37,7 +37,9 @@ import java.util.List;
                         "WHERE p.id = :projectRID " +
                         "AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT"),
         @NamedQuery(name = "updateStatus",
-                query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids")
+                query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids"),
+        @NamedQuery(name = "delete",
+                query = "DELETE FROM SLO WHERE id in :ids")
 })
 public class SLO extends AbstractDomainObject {
     @ManyToOne
@@ -102,7 +104,7 @@ public class SLO extends AbstractDomainObject {
     public void addDependency(SLO dependency) {
         if (!this.getDependsOn().contains(dependency)) {
             this.getDependsOn().add(dependency);
-            this.getDependantOf().add(this);
+            dependency.getDependantOf().add(this);
         }
     }
 
@@ -177,10 +179,8 @@ public class SLO extends AbstractDomainObject {
     }
 
     public void removeDependency(SLO slo) {
-        if (this.getDependsOn().contains(slo)) {
-            this.getDependsOn().remove(slo);
-            this.getDependantOf().remove(this);
-        }
+        this.getDependsOn().remove(slo);
+        slo.getDependantOf().remove(this);
     }
 
     public void removeMethod(JavaMethod method) {
@@ -244,6 +244,14 @@ public class SLO extends AbstractDomainObject {
     public void clearDependsOnList() {
         List<SLO> dependsOn = new ArrayList<SLO>(getDependsOn());
         for (SLO slo : dependsOn) {
+            slo.removeDependency(slo);
+        }
+    }
+
+    @Transient
+    public void clearDependantOfList() {
+        List<SLO> dependantOf = new ArrayList<SLO>(getDependantOf());
+        for (SLO slo : dependantOf) {
             slo.removeDependency(slo);
         }
     }

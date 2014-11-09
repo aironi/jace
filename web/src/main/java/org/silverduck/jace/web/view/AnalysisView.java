@@ -21,6 +21,7 @@ import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.slo.SLOStatus;
 import org.silverduck.jace.domain.slo.SLOType;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.analysis.impl.ScoredCommit;
@@ -49,26 +50,24 @@ public class AnalysisView extends BaseView implements View {
     public static final String COMMIT_TYPE = "commit";
     public static final String FEATURE_NAME_FILTER = "feature.name";
     public static final int FEATURE_COLUMNS = 6;
+    private static final int MAX_DEP_LEVELS = 9;
 
     @EJB
     private AnalysisService analysisService;
 
-    private Tree analysisTree;
-
     private JPAContainer<ChangedFeature> changedFeaturesContainer;
 
-    private Table changedFeaturesTable;
-
-    private VerticalLayout detailsLayout;
-
+    private GridLayout contentLayout;
+    private Tree analysisTree;
     private Tree releaseTree;
-
+    private VerticalLayout detailsLayout;
+    private VerticalLayout dependencyLevelsLayout;
     private LabelDisplayComponent scoreComponent;
     private LabelDisplayComponent commitIdComponent;
-    private GridLayout contentLayout;
-    private GraphJSComponent graphComponent;
-    private Window dependencyWindow;
     private GridLayout changedFeaturesGrid;
+    private Table changedFeaturesTable;
+    private Window dependencyWindow;
+    private GraphJSComponent graphComponent;
 
     public AnalysisView() {
         super();
@@ -156,6 +155,7 @@ public class AnalysisView extends BaseView implements View {
             Label graphLabel = new Label(lhtml, ContentMode.HTML);
             layout.addComponent(graphLabel);
             layout.addComponent(graphComponent);
+            layout.setComponentAlignment(graphComponent, Alignment.MIDDLE_CENTER);
             panel.setContent(layout);
             dependencyWindow.setContent(panel);
             dependencyWindow.setResizable(true);
@@ -170,41 +170,39 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateGraph(ChangedFeature changedFeature) {
         graphComponent.clear();
-        Set<SLO> processed = new HashSet<>();
-        populateGraph(changedFeature.getSlo(), processed, null, 1);
+        populateGraph(changedFeature.getSlo(), null, 1);
         graphComponent.refresh();
     }
 
-    protected void populateGraph(SLO slo, Set<SLO> processed, SLO parent, Integer level) {
-        if (!processed.contains(slo)) {
-            processed.add(slo);
-            LOG.debug("Populating graph for {} that is a dependency for {} classes", slo.getClassName(), slo.getDependantOf().size());
+    protected void populateGraph(SLO slo, String parentId, Integer level) {
+        LOG.debug("Populating graph for {} ({}, {}) that is a dependency for {} classes", slo.getClassName(), slo.getId(), slo.getSloStatus(), slo.getDependantOf().size());
 
-            try {
-                String parentId = null;
-                if (parent != null) {
-                    parentId = parent.getId().toString() + "_" + new Integer(level - 1).toString();
+        String nodeId = slo.getId().toString();
+        if (parentId != null) {
+            nodeId += "_" + parentId.toString();
+        }
+
+        try {
+            LOG.debug("Adding node with id {} and name {} at level {} with parent {}", slo.getId(), slo.getClassName(), level, parentId);
+            String title = slo.getClassName();
+            if (title == null) {
+                int i = slo.getPath().lastIndexOf("/");
+                if (i != -1) {
+                    title = slo.getPath().substring(i + 1);
+                } else {
+                    title = "Unknown - " + nodeId;
                 }
-                LOG.debug("Adding node with id {} and name {} at level {} with parent {}", slo.getId(), slo.getClassName(), level, parentId);
-                String nodeId = slo.getId().toString() + "_" + level.toString();
-                String title = slo.getClassName();
-                if (title == null) {
-                    int i = slo.getPath().lastIndexOf("/");
-                    if (i != -1) {
-                        title = slo.getPath().substring(i + 1);
-                    } else {
-                        title = "Unknown - " + nodeId;
-                    }
-                }
-                graphComponent.addNode(nodeId, title, level.toString(), null, parentId);
-                graphComponent.getNodeProperties(nodeId).put("title", title);
-                setGraphNodeColor(level, nodeId);
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to create graph", e);
             }
+            graphComponent.addNode(nodeId, title, level.toString(), null, parentId);
+            graphComponent.getNodeProperties(nodeId).put("title", title);
+            setGraphNodeColor(level, nodeId);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create graph", e);
+        }
 
-            for (SLO dependency : slo.getDependantOf()) {
-                populateGraph(dependency, processed, slo, level + 1);
+        for (SLO dependency : slo.getDependantOf()) {
+            if (dependency.getSloStatus() == SLOStatus.CURRENT) {
+                populateGraph(dependency, nodeId, level + 1);
             }
         }
     }
@@ -235,17 +233,20 @@ public class AnalysisView extends BaseView implements View {
     }
 
     private void createChangesPanel(Layout layout) {
+        commitIdComponent = new LabelDisplayComponent("label.analysisView.changesPanel.commitId");
+        scoreComponent = new LabelDisplayComponent("label.analysisView.changesPanel.score");
+        dependencyLevelsLayout = new VerticalLayout();
+
+        VerticalLayout detailsLayout = new VerticalLayout();
+        detailsLayout.setMargin(true);
+        detailsLayout.setSpacing(true);
+        detailsLayout.addComponent(commitIdComponent);
+        detailsLayout.addComponent(scoreComponent);
+        detailsLayout.addComponent(dependencyLevelsLayout);
+
         Panel changesPanel = new Panel();
         changesPanel.setWidth(100, Unit.PERCENTAGE);
-        VerticalLayout panelLayout = new VerticalLayout();
-        panelLayout.setMargin(true);
-        panelLayout.setSpacing(true);
-
-        commitIdComponent = new LabelDisplayComponent("label.analysisView.changesPanel.commitId");
-        panelLayout.addComponent(commitIdComponent);
-        scoreComponent = new LabelDisplayComponent("label.analysisView.changesPanel.score");
-        panelLayout.addComponent(scoreComponent);
-        changesPanel.setContent(panelLayout);
+        changesPanel.setContent(detailsLayout);
         layout.addComponent(changesPanel);
     }
 
@@ -473,9 +474,27 @@ public class AnalysisView extends BaseView implements View {
     }
 
     private void populateDetailsForCommit(ScoredCommit scoredCommit) {
-        populateChangedFeaturesByProperty("diff.commit.commitId", scoredCommit.getCommitId());
+        Map<String, Object> params = new HashMap();
+        params.put("diff.commit.commitId", scoredCommit.getCommitId());
+        params.put("analysis.releaseVersion", scoredCommit.getReleaseVersion());
+        populateChangedFeaturesByProperty(params);
+        populateDetailsPanel(scoredCommit);
+    }
+
+    private void populateDetailsPanel(ScoredCommit scoredCommit) {
         commitIdComponent.setValue(scoredCommit.getCommitId());
         scoreComponent.setValue(scoredCommit.getScore().toString());
+        dependencyLevelsLayout.removeAllComponents();
+        LabelDisplayComponent baseLevelLabel = new LabelDisplayComponent("label.analysisView.changesPanel.dependencies.baseLevel");
+        baseLevelLabel.setValue(scoredCommit.getDirectChanges().toString());
+        dependencyLevelsLayout.addComponent(baseLevelLabel);
+        if (scoredCommit.getDependenciesPerLevel() != null) {
+            for (int i = 0; i < Math.min(scoredCommit.getDependenciesPerLevel().size(), MAX_DEP_LEVELS); i++) {
+                LabelDisplayComponent labelDisplayComponent = new LabelDisplayComponent("label.analysisView.changesPanel.dependencies.level." + (i + 1));
+                labelDisplayComponent.setValue(scoredCommit.getDependenciesPerLevel().get(i).toString());
+                dependencyLevelsLayout.addComponent(labelDisplayComponent);
+            }
+        }
     }
 
     private void populateDetailsForRelease(String release) {
@@ -483,8 +502,15 @@ public class AnalysisView extends BaseView implements View {
     }
 
     private void populateChangedFeaturesByProperty(String propertyName, Object propertyValue) {
+        populateChangedFeaturesByProperty(Collections.singletonMap(propertyName, propertyValue));
+    }
+
+    private void populateChangedFeaturesByProperty(Map<String, Object> propertyNameValueMap) {
         changedFeaturesContainer.removeAllContainerFilters();
-        changedFeaturesContainer.addContainerFilter(new Compare.Equal(propertyName, propertyValue));
+        for (Map.Entry<String, Object> entry : propertyNameValueMap.entrySet()) {
+            changedFeaturesContainer.addContainerFilter(new Compare.Equal(entry.getKey(), entry.getValue()));
+        }
+
         changedFeaturesContainer.applyFilters();
         changedFeaturesContainer.refresh();
         changedFeaturesContainer.sort(new String[]{FEATURE_NAME_FILTER}, new boolean[]{true});

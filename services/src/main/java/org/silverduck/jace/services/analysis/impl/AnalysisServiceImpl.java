@@ -2,6 +2,7 @@ package org.silverduck.jace.services.analysis.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.tuple.Pair;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.dao.analysis.AnalysisSettingDao;
@@ -13,6 +14,7 @@ import org.silverduck.jace.domain.analysis.slo.SLOImport;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
+import org.silverduck.jace.domain.slo.SLOStatus;
 import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.domain.vcs.Hunk;
 import org.silverduck.jace.services.analysis.AnalysisService;
@@ -27,15 +29,7 @@ import javax.ejb.Stateless;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,21 +64,22 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     private void analyseDependencies(Analysis analysis) {
 
+        analysisDao.clearDependencies(analysis.getProject().getId());
         List<SLO> slos = analysisDao.listSLOs(analysis.getProject().getId());
         Map<String, SLO> qualifiedSlos = new HashMap<String, SLO>(slos.size());
         for (SLO slo : slos) {
             qualifiedSlos.put(slo.getQualifiedClassName(), slo);
         }
         for (SLO slo : analysis.getSlos()) {
-            slo.clearDependsOnList();
-
-            for (SLOImport sloImport : slo.getSloImports()) {
-                SLO dependency = qualifiedSlos.get(sloImport.getQualifiedClassName());
-                if (dependency != null) {
-                    slo.addDependency(dependency);
-                    dependency.setAnalysis(analysis);
-                    LOG.debug("Adding dependency for SLO " + slo.getQualifiedClassName() + " to -> "
-                        + dependency.getQualifiedClassName());
+            if (slo.getSloStatus() == SLOStatus.CURRENT) {
+                for (SLOImport sloImport : slo.getSloImports()) {
+                    SLO dependency = qualifiedSlos.get(sloImport.getQualifiedClassName());
+                    if (dependency != null) {
+                        slo.addDependency(dependency);
+                        dependency.setAnalysis(analysis);
+                        LOG.debug("Adding dependency for SLO {} ({}, {}) to -> {} ({}, {})",  slo.getQualifiedClassName(), slo.getSloStatus(), slo.getAnalysis().getId(),
+                                dependency.getQualifiedClassName(), dependency.getSloStatus(), dependency.getAnalysis().getId());
+                    }
                 }
             }
             // Clear first-phase stuff
@@ -103,11 +98,7 @@ public class AnalysisServiceImpl implements AnalysisService {
         List<Diff> diffs = projectService.pullProject(setting.getProject());
 
         if (diffs.size() > 0) {
-            Analysis analysis = new Analysis();
-            analysis.setProject(setting.getProject());
-            analysis.setAnalysisStatus(AnalysisStatus.ANALYSING);
-            analysis.setAnalysisSetting(setting);
-            analysisDao.add(analysis);
+            Analysis analysis = createNewAnalysis(setting);
 
             Map<String, Diff> addedFiles = new HashMap<String, Diff>();
             List<String> modifiedFiles = new ArrayList<String>();
@@ -116,18 +107,10 @@ public class AnalysisServiceImpl implements AnalysisService {
 
             for (Diff diff : diffs) {
                 diff.setProject(setting.getProject());
-                String commitPattern = setting.getProject().getPluginConfiguration().getCommitIdPattern();
-                if (!StringUtils.isEmpty(commitPattern)) {
-                    Pattern pattern = Pattern.compile(commitPattern);
-                    Matcher matcher = pattern.matcher(diff.getCommit().getMessage());
-                    if (matcher.find()) {
-                        diff.getCommit().setCommitId(StringUtils.left(matcher.group(), 4090));
-                    } else {
-                        // TODO: Consider making this configurable, not everyone likes to see such things
-                        diff.getCommit().setCommitId(StringUtils.left(diff.getCommit().getMessage(), 4090));
-                    }
-
-                }
+                String commitIdPattern = setting.getProject().getPluginConfiguration().getCommitIdPattern();
+                String commitMessage = diff.getCommit().getMessage();
+                String commitId = parseCommitId(commitIdPattern, commitMessage);
+                diff.getCommit().setCommitId(commitId);
 
                 String path = diff.getOldPath();
                 if (!path.startsWith("/")) {
@@ -207,6 +190,31 @@ public class AnalysisServiceImpl implements AnalysisService {
         return new AsyncResult<Boolean>(true);
     }
 
+    private String parseCommitId(String commitPattern, String message) {
+        if (!StringUtils.isEmpty(commitPattern)) {
+            Pattern pattern = Pattern.compile(commitPattern);
+            Matcher matcher = pattern.matcher(message);
+            if (matcher.find()) {
+                return StringUtils.left(matcher.group(), 4090);
+            } else {
+                // TODO: Consider making this configurable, not everyone likes to see such things
+                return StringUtils.left(message, 4090);
+            }
+
+        }
+
+        return "";
+    }
+
+    private Analysis createNewAnalysis(AnalysisSetting setting) {
+        Analysis analysis = new Analysis();
+        analysis.setProject(setting.getProject());
+        analysis.setAnalysisStatus(AnalysisStatus.ANALYSING);
+        analysis.setAnalysisSetting(setting);
+        analysisDao.add(analysis);
+        return analysis;
+    }
+
     private void analyseSLOs(AnalysisSetting setting, Analysis analysis, List<String> modifiedFiles) {
         // Walk all files in the tree and analyse them
 
@@ -219,39 +227,7 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
     }
 
-    protected Long calculateFileDependenciesScore(SLO slo, Set<SLO> processed, int depth) {
-        Long score = 0L;
 
-        List<SLO> dependantOf = slo.getDependantOf();
-
-        if (LOG.isTraceEnabled()) {
-            List<String> paths = new ArrayList<String>();
-            for (SLO dependency : dependantOf) {
-                paths.add(dependency.getPath());
-            }
-
-            LOG.trace("The SLO '" + slo.getPath() + "' is dependant of following classes: " + StringUtils.join(paths, ", "));
-        }
-        score += (dependantOf.size() / depth); // direct dependencies multiplier = 1, for each level divide by depth
-
-        LOG.trace("Calculated score of '" + score + "' for dependency '" + slo.getPath() + "' at depth " + depth);
-
-        if (!processed.contains(slo)) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Adding SLO '" + slo.getPath() + "' to set of processed dependencies");
-            }
-            processed.add(slo);
-            for (SLO dependency : dependantOf) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.trace("Calculating dependencies score for dependency " + dependency.getPath());
-                }
-                score += calculateFileDependenciesScore(dependency, processed, depth + 1);
-            }
-        }
-
-        LOG.trace("Returning score '" + score + "' for SLO '" + slo.getPath() + "' at depth " + depth);
-        return score;
-    }
 
     @Override
     public List<AnalysisSetting> listAllAnalysisSettings() {
@@ -317,19 +293,19 @@ public class AnalysisServiceImpl implements AnalysisService {
         for (Object[] commit : commits) {
             Long score = (Long)commit[0];
             String commitId = (String) commit[1];
-            ScoredCommit scoredCommit = new ScoredCommit(commitId, score);
+            ScoredCommit scoredCommit = new ScoredCommit(releaseVersion, commitId, score);
             scoredCommitList.add(scoredCommit);
             commitIdScoredCommitMap.put(commitId, scoredCommit);
             LOG.debug("Found scored commit with id '" + commitId + "' and score '" + score);
         }
 
         // Analyse all dependencies of the changed features
+        DependencyCalculator calculator = new DependencyCalculator();
         List<ChangedFeature> changedFeatures = analysisDao.listChangedFeaturesByProjectAndRelease(projectId, releaseVersion);
         for (ChangedFeature cf : changedFeatures) {
             if (cf.getAnalysis().getAnalysisSetting().getGranularity() == Granularity.FILE) {
-                Set<SLO> processed = new HashSet<SLO>();
-                processed.add(cf.getSlo());
-                Long score = calculateFileDependenciesScore(cf.getSlo(), processed, 1);
+                Long score = calculator.calculateScore(cf.getSlo());
+                List<Integer> deps = calculator.calculateDependencies(cf.getSlo());
                 ScoredCommit scoredCommit = commitIdScoredCommitMap.get(cf.getDiff().getCommit().getCommitId());
                 if (scoredCommit != null) {
                     if (LOG.isDebugEnabled()) {
@@ -338,6 +314,8 @@ public class AnalysisServiceImpl implements AnalysisService {
                                 "' with existing score of '" + scoredCommit.getScore() + "'");
                     }
                     scoredCommit.setScore(scoredCommit.getScore() + score);
+                    scoredCommit.setDirectChanges(scoredCommit.getDirectChanges() + 1);
+                    addDependendenciesToScoredCommit(scoredCommit, deps);
                 }
             } else {
                 // TODO: Implement method level granularity score calculation
@@ -345,6 +323,24 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
 
         return sortScoredCommitList(scoredCommitList);
+    }
+
+    private void addDependendenciesToScoredCommit(ScoredCommit scoredCommit, List<Integer> deps) {
+        List<Integer> dependenciesPerLevel = scoredCommit.getDependenciesPerLevel();
+        if (dependenciesPerLevel != null) {
+            for (int i = 0; i < dependenciesPerLevel.size(); i++) {
+                if (i < deps.size()) {
+                    Integer currentAmount = dependenciesPerLevel.get(i);
+                    dependenciesPerLevel.set(i, currentAmount + deps.get(i));
+                }
+            }
+
+            if (dependenciesPerLevel.size() < deps.size()) {
+                for (int i = dependenciesPerLevel.size(); i < deps.size(); i++) {
+                    dependenciesPerLevel.add(deps.get(i));
+                }
+            }
+        }
     }
 
     private List<ScoredCommit> sortScoredCommitList(List<ScoredCommit> list) {
@@ -385,6 +381,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     public void triggerAnalysis(Long analysisSettingId) {
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
         analysisService.analyseProject(analysisSettingId);
+
     }
 
     @Override
@@ -402,5 +399,108 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     public List<String> listAllReleases(Long projectId) {
         return analysisDao.listAllReleases(projectId);
+    }
+
+    private class DependencyCalculator {
+        private Set<SLO> processed = new HashSet<SLO>();
+
+
+        /**
+         * Calculates the total amount of dependencies per level
+         * @param slo SLO to calculate dependencies for
+         * @return An list cotainind the amount of dependencies per level.
+         * The size of the list indicates the amount of levels.
+         */
+        public List<Integer> calculateDependencies(SLO slo) {
+            processed.clear();
+            Map<Integer, Integer> depthDependencies = new HashMap<Integer, Integer>();
+            calculateFileDependenciesAmount(slo, depthDependencies, 1);
+            List<Integer> result = new ArrayList<Integer>();
+            for (int i = 1; i < depthDependencies.size() + 1; i++) {
+                result.add(depthDependencies.get(i));
+            }
+            return result;
+        }
+
+        protected void calculateFileDependenciesAmount(SLO slo, Map<Integer, Integer> depthDependencies, int depth) {
+
+            if (!processed.contains(slo)) {
+                processed.add(slo);
+                Integer dependencies = depthDependencies.get(depth);
+                if (dependencies == null) {
+                    dependencies = new Integer(0);
+                }
+
+                List<SLO> dependantOf = slo.getDependantOf();
+                int deps = calculateDeps(dependantOf);
+                dependencies += deps;
+                depthDependencies.put(depth, dependencies);
+
+                for (SLO dependency : dependantOf) {
+                    if (dependency.getSloStatus() == SLOStatus.CURRENT) {
+                        calculateFileDependenciesAmount(dependency, depthDependencies, depth + 1);
+                    }
+                }
+            }
+        }
+
+        public Long calculateScore(SLO slo) {
+            processed.clear();
+            return calculateFileDependenciesScore(slo, 1);
+        }
+
+        protected Long calculateFileDependenciesScore(SLO slo, int depth) {
+            Long score = 0L;
+
+            List<SLO> dependantOf = slo.getDependantOf();
+
+            if (LOG.isTraceEnabled()) {
+                logDependencyPaths(slo, dependantOf);
+            }
+
+            if (!processed.contains(slo)) {
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("Adding SLO '" + slo.getPath() + "' to set of processed dependencies");
+                }
+                processed.add(slo);
+
+                int deps = calculateDeps(dependantOf);
+                score += (deps / depth); // direct dependencies multiplier = 1, for each level divide by depth
+
+                LOG.trace("Calculated score of '" + score + "' for dependency '" + slo.getPath() + "' at depth " + depth);
+                for (SLO dependency : dependantOf) {
+                    if (dependency.getSloStatus() == SLOStatus.CURRENT) {
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("Calculating dependencies score for dependency " + dependency.getPath());
+                        }
+                        score += calculateFileDependenciesScore(dependency, depth + 1);
+                    }
+                }
+            }
+
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Returning score '" + score + "' for SLO '" + slo.getPath() + "' at depth " + depth);
+            }
+            return score;
+        }
+
+        private int calculateDeps(List<SLO> dependantOf) {
+            int deps = 0;
+            for (SLO dependency : dependantOf) {
+                if (dependency.getSloStatus() == SLOStatus.CURRENT) {
+                    deps++;
+                }
+            }
+            return deps;
+        }
+
+        private void logDependencyPaths(SLO slo, List<SLO> dependantOf) {
+            List<String> paths = new ArrayList<String>();
+            for (SLO dependency : dependantOf) {
+                paths.add(dependency.getPath());
+            }
+
+            LOG.trace("The SLO '" + slo.getPath() + "' is dependant of following classes: " + StringUtils.join(paths, ", "));
+        }
     }
 }
