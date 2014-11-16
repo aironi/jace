@@ -17,7 +17,8 @@ import java.util.List;
  * The SLOs with SLOType.SOURCE hold a special meaning as they may contain dependencies.
  */
 @Entity
-@Table(name = "SLO")
+@Table(name = "SLO", indexes = {
+        @Index(columnList="Path")})
 @NamedQueries({
         @NamedQuery(name = "findByPath",
                 query = "SELECT s FROM SLO s JOIN s.analysis.project p " +
@@ -41,6 +42,7 @@ import java.util.List;
         @NamedQuery(name = "delete",
                 query = "DELETE FROM SLO WHERE id in :ids")
 })
+
 public class SLO extends AbstractDomainObject {
     @ManyToOne
     @JoinColumn(name = "AnalysisRID")
@@ -72,6 +74,7 @@ public class SLO extends AbstractDomainObject {
 
     @Column(name = "PackageName")
     private String packageName;
+
 
     @Column(name = "Path")
     private String path;

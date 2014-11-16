@@ -39,17 +39,18 @@ public class Project extends AbstractDomainObject {
         // TODO: Remove these before 1.0
         Project p = new Project();
 
-        p.setName("J-Ace");
+        p.setName("Alfresco");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
-        p.getPluginConfiguration().setCloneUrl("https://github.com/aironi/jace.git");
-        p.getPluginConfiguration().setCommitIdPattern("Jace #(\\d+)");
+        p.getPluginConfiguration().setCloneUrl("https://github.com/Alfresco/community-edition.git");
+        p.getPluginConfiguration().setCommitIdPattern("ACE-(\\d+)");
         p.getPluginConfiguration().setLocalDirectory("");
         p.getPluginConfiguration().setUserName("");
         p.getPluginConfiguration().setPassword("");
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
-        p.getReleaseInfo().setPathToVersionFile("/build/pom.xml");
-        p.getReleaseInfo().setPattern("/project/properties/jace.version");
+        p.getReleaseInfo().setPathToVersionFile("/pom.xml");
+        p.getReleaseInfo().setPattern("/project/version");
 
+        /*
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services\\.analysis.*)","Business Logic - Analysis");
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services.vcs.*)","Business Logic - VCS");
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services.project.*)","Business Logic - Project");
@@ -68,7 +69,7 @@ public class Project extends AbstractDomainObject {
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace.rest.*)","RESTful Web Services");
         addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/build\\/.*)","J-Ace Project Definition");
         addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/web\\/.*)","User Interface");
-
+*/
         /*
          * p.setName(""); p.getPluginConfiguration().setPluginType(PluginType.GIT);
          * p.getPluginConfiguration().setCloneUrl(""); p.getPluginConfiguration().setLocalDirectory("");

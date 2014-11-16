@@ -36,7 +36,7 @@ public class ManageProjectsView extends BaseView {
     private JPAContainer<Project> projectsContainer = JPAContainerFactory.makeJndi(Project.class);
 
     Table projectsTable;
-    private GridLayout contentLayout;
+    private VerticalLayout contentLayout;
 
     public ManageProjectsView() {
         super();
@@ -268,7 +268,7 @@ public class ManageProjectsView extends BaseView {
     @Override
     protected Layout getContentLayout() {
         if (contentLayout == null) {
-            contentLayout = new GridLayout();
+            contentLayout = new VerticalLayout();
         }
         return contentLayout;
     }

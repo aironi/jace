@@ -170,12 +170,17 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateGraph(ChangedFeature changedFeature) {
         graphComponent.clear();
-        populateGraph(changedFeature.getSlo(), null, 1);
+        Map<Integer, Set<String>> nodesOnLevel = new HashMap<>();
+        populateGraph(changedFeature.getSlo(), null, 1, nodesOnLevel);
         graphComponent.refresh();
     }
 
-    protected void populateGraph(SLO slo, String parentId, Integer level) {
+    protected void populateGraph(SLO slo, String parentId, Integer level, Map<Integer, Set<String>> nodesOnLevel) {
         LOG.debug("Populating graph for {} ({}, {}) that is a dependency for {} classes", slo.getClassName(), slo.getId(), slo.getSloStatus(), slo.getDependantOf().size());
+
+        if (nodesOnLevel.get(level) == null) {
+            nodesOnLevel.put(level, new HashSet<String>());
+        }
 
         String nodeId = slo.getId().toString();
         if (parentId != null) {
@@ -183,7 +188,6 @@ public class AnalysisView extends BaseView implements View {
         }
 
         try {
-            LOG.debug("Adding node with id {} and name {} at level {} with parent {}", slo.getId(), slo.getClassName(), level, parentId);
             String title = slo.getClassName();
             if (title == null) {
                 int i = slo.getPath().lastIndexOf("/");
@@ -193,18 +197,31 @@ public class AnalysisView extends BaseView implements View {
                     title = "Unknown - " + nodeId;
                 }
             }
-            graphComponent.addNode(nodeId, title, level.toString(), null, parentId);
-            graphComponent.getNodeProperties(nodeId).put("title", title);
-            setGraphNodeColor(level, nodeId);
+            if (!hasNodeOnUpperOrEqualLevel(nodesOnLevel, title, level)) {
+                LOG.debug("Adding node with id {} and name {} at level {} with parent {}", slo.getId(), slo.getClassName(), level, parentId);
+                nodesOnLevel.get(level).add(title);
+                graphComponent.addNode(nodeId, title, level.toString(), null, parentId);
+                graphComponent.getNodeProperties(nodeId).put("title", title);
+                setGraphNodeColor(level, nodeId);
+            } else {
+                return;
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create graph", e);
         }
 
         for (SLO dependency : slo.getDependantOf()) {
-            if (dependency.getSloStatus() == SLOStatus.CURRENT) {
-                populateGraph(dependency, nodeId, level + 1);
+            populateGraph(dependency, nodeId, level + 1, nodesOnLevel);
+        }
+    }
+
+    private boolean hasNodeOnUpperOrEqualLevel(Map<Integer, Set<String>> nodes, String node, int level) {
+        for (int i = level; i >= 1; i--) {
+            if (nodes.get(i).contains(node)) {
+                return true;
             }
         }
+        return false;
     }
 
     private void setGraphNodeColor(Integer level, String nodeId) throws Exception {
@@ -483,7 +500,7 @@ public class AnalysisView extends BaseView implements View {
 
     private void populateDetailsPanel(ScoredCommit scoredCommit) {
         commitIdComponent.setValue(scoredCommit.getCommitId());
-        scoreComponent.setValue(scoredCommit.getScore().toString());
+        scoreComponent.setValue(scoredCommit.getRoundedScore().toString());
         dependencyLevelsLayout.removeAllComponents();
         LabelDisplayComponent baseLevelLabel = new LabelDisplayComponent("label.analysisView.changesPanel.dependencies.baseLevel");
         baseLevelLabel.setValue(scoredCommit.getDirectChanges().toString());
@@ -575,7 +592,7 @@ public class AnalysisView extends BaseView implements View {
                     for (ScoredCommit scoredCommit : releaseCommits.get(release)) {
                         Object commitItem = hca.addItem();
                         hca.setParent(commitItem, releaseItem);
-                        String caption = scoredCommit.getCommitId() + " (Score: " + scoredCommit.getScore() + ")";
+                        String caption = scoredCommit.getCommitId() + " (Score: " + scoredCommit.getRoundedScore() + ")";
                         hca.getContainerProperty(commitItem, "caption").setValue(caption);
                         hca.getContainerProperty(commitItem, "id").setValue(scoredCommit.getCommitId());
                         hca.getContainerProperty(commitItem, "type").setValue(COMMIT_TYPE);

@@ -7,16 +7,12 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectReader;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
-import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -37,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -120,7 +115,7 @@ public class GitServiceImpl implements GitService {
     public void cloneRepo(String cloneUrl, String localDirectory, String userName, String passWord) {
         try {
             CloneCommand cloneCommand = Git.cloneRepository().setURI(cloneUrl).setDirectory(new File(localDirectory));
-
+            cloneCommand.setProgressMonitor(new JGitProgressMonitor());
             if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(passWord)) {
                 UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(userName,
                     passWord);
@@ -259,6 +254,7 @@ public class GitServiceImpl implements GitService {
         Repository repository = resolveRepository(localDirectory);
         Git git = new Git(repository);
 
+
         String fullBranchName = resolveFullBranch(repository);
         Ref oldHead = null;
         try {
@@ -288,9 +284,8 @@ public class GitServiceImpl implements GitService {
 
         PullResult pullResult = null;
         try {
-
             PullCommand pullCommand = git.pull();
-
+            pullCommand.setProgressMonitor(new JGitProgressMonitor());
             if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(passWord)) {
                 UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(userName,
                         passWord);
@@ -377,16 +372,16 @@ public class GitServiceImpl implements GitService {
     }
 
     private List<Diff> parseDiffEntries(Git git, Commit jaceCommit, List<DiffEntry> diffEntries) throws IOException {
-        LOG.info("GitServiceImpl.parseDiffEntries() called");
         List<Diff> diffs = new ArrayList<Diff>();
         for (DiffEntry diffEntry : diffEntries) {
-            LOG.info("GitServiceImpl.parseDiffEntries: Parsing diffEntry: " + diffEntry.toString());
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("GitServiceImpl.parseDiffEntries: Parsing diffEntry: " + diffEntry.toString());
+            }
             ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
             DiffFormatter diffFormatter = new DiffFormatter(diffOut);
             diffFormatter.setRepository(git.getRepository());
             diffFormatter.format(diffEntry);
 
-            LOG.info("GitServiceImpl.parseDIffEntries: Creating new J-ACE Diff");
             // Collect changed data and store it in db temporarily until analysis
             Diff diff = new Diff();
             diff.setOldPath(diffEntry.getOldPath());
@@ -469,6 +464,50 @@ public class GitServiceImpl implements GitService {
             return treeParser;
         } finally {
             objectReader.release();
+        }
+    }
+
+    private class JGitProgressMonitor implements ProgressMonitor {
+
+        private int totalTasks = 0;
+        private int completed = 0;
+        private int taskWork = 0;
+        String currentTask;
+        @Override
+        public void start(int totalTasks) {
+            this.totalTasks = totalTasks;
+            LOG.debug("start. Total tasks ({})", totalTasks);
+        }
+
+        @Override
+        public void beginTask(String title, int totalWork) {
+            taskWork = totalWork;
+            int percentageDone = -1;
+            if (taskWork != 0) {
+                percentageDone = (completed / taskWork)*100;
+            }
+            currentTask = title;
+            LOG.debug("Beginning task '{}' with {} work items. Progress {}/{} ({})", currentTask, totalWork, completed, totalTasks, percentageDone);
+
+        }
+
+        @Override
+        public void update(int completed) {
+            completed += completed;
+        }
+
+        @Override
+        public void endTask() {
+            int percentageDone = -1;
+            if (totalTasks != 0) {
+                percentageDone = (completed / totalTasks) * 100;
+            }
+            LOG.debug("Ending task '{}'. Progress {}/{} ({})", currentTask, completed, totalTasks, percentageDone);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
         }
     }
 }

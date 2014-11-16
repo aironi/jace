@@ -7,6 +7,14 @@
         </encoder>
     </appender>
 
+    <logger name="org.silverduck.jace.services.analysis.impl.AnalysisServiceImpl" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="org.silverduck.jace.services.vcs.impl.GitServiceImpl" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

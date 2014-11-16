@@ -293,20 +293,21 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
     }
 
     private void processFeature(String featureName, SLO slo) {
-        if (!features.contains((featureName))) {
-            features.add(featureName);
-            Feature feature = new Feature();
+        Feature feature = null;
+        if (!analysis.getProject().getFeatures().contains(featureName)) {
+            feature = new Feature();
             feature.setName(featureName);
             analysis.getProject().addFeature(feature);
-            slo.setFeature(feature);
         } else {
-            for (Feature feature : analysis.getProject().getFeatures()) {
-                if (feature.getName().equals(featureName)) {
-                    slo.setFeature(feature);
+            for (Feature f : analysis.getProject().getFeatures()) {
+                if (f.getName().equals(featureName)) {
+                    feature = f;
                     break;
                 }
             }
         }
+        LOG.debug("Setting feature for SLO {} to {}", slo.getPath(), feature);
+        slo.setFeature(feature);
     }
 
     private void processReleaseFile(Path file) {

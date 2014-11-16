@@ -2,14 +2,8 @@ package org.silverduck.jace.services.analysis;
 
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
-import org.silverduck.jace.domain.feature.ChangedFeature;
-import org.silverduck.jace.domain.project.Project;
-import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.services.analysis.impl.ScoredCommit;
-import org.silverduck.jace.services.project.impl.PullingCompleteEvent;
 
-import javax.ejb.Asynchronous;
-import javax.enterprise.event.Observes;
 import java.util.List;
 
 /**

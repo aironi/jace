@@ -27,7 +27,7 @@ public class JaceUI extends UI {
 
 
     // Have to set asyncSupported here, otherwise async won't work with Vaadin
-    @WebServlet(asyncSupported = true, urlPatterns = { "/", "/*", "/VAADIN/*" }, initParams = {
+    @WebServlet(loadOnStartup = 1, asyncSupported = true, urlPatterns = { "/", "/*", "/VAADIN/*" }, initParams = {
             @WebInitParam(name = VaadinSession.UI_PARAMETER, value = "org.silverduck.jace.web.JaceUI"),
             @WebInitParam(name = Constants.SERVLET_PARAMETER_UI_PROVIDER, value = "com.vaadin.cdi.CDIUIProvider"),
             @WebInitParam(name = Constants.SERVLET_PARAMETER_PRODUCTION_MODE, value = "false"),
@@ -70,6 +70,8 @@ public class JaceUI extends UI {
     protected void init(VaadinRequest request) {
         initializeLayout(request);
     }
+
+
 
     private void initializeLayout(VaadinRequest request) {
         VerticalLayout navigatorLayout = new VerticalLayout();

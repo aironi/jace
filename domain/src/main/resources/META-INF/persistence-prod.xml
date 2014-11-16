@@ -5,11 +5,9 @@
     <persistence-unit name="jace-unit" transaction-type="JTA">
 
         <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-        <jta-data-source>jdbc/jaceDs</jta-data-source>
-
+        <jta-data-source>/jdbc/jaceDs</jta-data-source>
 
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
-
 
         <!-- Properties -->
         <properties>
@@ -18,7 +16,7 @@
 
             <!--<property name="javax.persistence.jdbc.url" value="jdbc:derby://localhost:1527/jaceDb;create=true;user=APP;password=APP;"/>-->
             <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5342/jaceDb"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/jaceDb"/>
 
             <property name="javax.persistence.jdbc.user" value="jace"/>
             <property name="javax.persistence.jdbc.password" value="jace"/>
