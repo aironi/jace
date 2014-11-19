@@ -2,10 +2,10 @@ package org.silverduck.jace.services.analysis.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
-import org.apache.commons.lang3.tuple.Pair;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.dao.analysis.AnalysisSettingDao;
+import org.silverduck.jace.dao.vcs.DiffDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.analysis.AnalysisStatus;
@@ -22,7 +22,9 @@ import org.silverduck.jace.services.project.ProjectService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Resource;
 import javax.ejb.*;
+import javax.transaction.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -35,9 +37,11 @@ import java.util.regex.Pattern;
  * @author Iiro Hietala 13.5.2014.
  */
 @Stateless(name = "AnalysisServiceEJB")
+@TransactionManagement(TransactionManagementType.BEAN)
 public class AnalysisServiceImpl implements AnalysisService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnalysisServiceImpl.class);
+    public static final int BATCH_SIZE = 10;
 
     @EJB
     private AnalysisDao analysisDao;
@@ -51,158 +55,245 @@ public class AnalysisServiceImpl implements AnalysisService {
     @EJB
     private ProjectService projectService;
 
+    @EJB
+    private DiffDao diffDao;
+
+    @Resource
+    private EJBContext context;
+
     @Override
     @Asynchronous
     public Future<Boolean> addAnalysisSetting(AnalysisSetting setting) {
+        UserTransaction ut = context.getUserTransaction();
+        beginTransaction(ut);
         analysisSettingDao.add(setting);
+        commitTransaction(ut);
         analysisService.initialAnalysis(setting.getId());
         return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 
-    private void analyseDependencies(Analysis analysis) {
-
+    private void analyseDependencies(UserTransaction ut, Analysis analysis) {
+        beginTransaction(ut);
         LOG.info("Clearing old dependencies in project {} in analysis {}", analysis.getProject().getName(), analysis.getId());
         analysisDao.clearDependencies(analysis.getProject().getId());
+        commitTransaction(ut);
         List<SLO> slos = analysisDao.listSLOs(analysis.getProject().getId());
         LOG.debug("Building qualified class name to SLO map...");
         Map<String, SLO> qualifiedSlos = new HashMap<String, SLO>(slos.size());
         for (SLO slo : slos) {
             qualifiedSlos.put(slo.getQualifiedClassName(), slo);
         }
-        LOG.debug("Starting to iterate SLOs of the analysis.");
-        for (SLO slo : analysis.getSlos()) {
-            LOG.debug("Analysing dependencies of SLO ({}, {}). Starting to iterate imports..", slo.getPath(), slo.getSloStatus());
-            if (slo.getSloStatus() == SLOStatus.CURRENT) {
-                for (SLOImport sloImport : slo.getSloImports()) {
-                    LOG.debug("Analysing dependencies of SLO ({}, {}), import={}", slo.getPath(), slo.getSloStatus(), sloImport.getQualifiedClassName());
-                    SLO dependency = qualifiedSlos.get(sloImport.getQualifiedClassName());
-                    if (dependency != null) {
-                        slo.addDependency(dependency);
-                        dependency.setAnalysis(analysis);
-                        LOG.debug("Found a dependency. Adding dependency for SLO {} ({}, {}) to -> {} ({}, {})",  slo.getQualifiedClassName(), slo.getSloStatus(), slo.getAnalysis().getId(),
-                                dependency.getQualifiedClassName(), dependency.getSloStatus(), dependency.getAnalysis().getId());
-                    } else {
-                        LOG.debug("Couldn't find a dependency for SLO {} ({}, {})",  slo.getQualifiedClassName(), slo.getSloStatus(), slo.getAnalysis().getId());
+
+        final int pageSize = 20;
+        int offset = pageSize;
+
+        List<SLO> slosToAnalyse = analysisDao.listSLOsForDependencyAnalysis(analysis.getId(), 0, pageSize);
+        int batch = 1;
+        int i = 0;
+        do {
+            if (LOG.isDebugEnabled()) {
+                List<Long> idList = new ArrayList<>();
+                for (SLO slo : slosToAnalyse) {
+                    idList.add(slo.getId());
+                }
+                LOG.debug("List to analyse in batch{}: {}", batch, idList);
+
+            }
+
+            beginTransaction(ut);
+            for (SLO slo : slosToAnalyse) {
+                i++;
+
+                LOG.debug("Analysing dependencies of SLO nr. {} ({}, {}). Starting to iterate imports..", i, slo.getPath(), slo.getSloStatus());
+                if (slo.getSloStatus() == SLOStatus.CURRENT) {
+                    for (SLOImport sloImport : slo.getSloImports()) {
+                        LOG.debug("Analysing import={}", sloImport.getQualifiedClassName());
+                        SLO dependency = qualifiedSlos.get(sloImport.getQualifiedClassName());
+                        if (dependency != null) {
+                            slo.addDependency(dependency);
+
+                            LOG.debug("Found a dependency. Adding dependency for SLO {} ({}, {}) to -> {} ({}, {})", slo.getQualifiedClassName(), slo.getSloStatus(), slo.getAnalysis().getId(),
+                                    dependency.getQualifiedClassName(), dependency.getSloStatus(), dependency.getAnalysis().getId());
+                        } else {
+                            LOG.debug("Couldn't find a dependency for SLO {} ({}, {})", slo.getQualifiedClassName(), slo.getSloStatus(), slo.getAnalysis().getId());
+                        }
                     }
                 }
+                LOG.debug("Clearing SLO imports for SLO {} ({}, {})", slo.getQualifiedClassName(), slo.getSloStatus(), slo.getAnalysis().getId());
+                slo.removeSLOImports();
+                LOG.debug("Updating SLO to db {}", slo.getPath());
+                analysisDao.updateSlo(slo);
             }
-            LOG.debug("Clearing SLO imports for SLO {} ({}, {})",  slo.getQualifiedClassName(), slo.getSloStatus(), slo.getAnalysis().getId());
-            // Clear first-phase stuff
-            slo.removeSLOImports();
-        }
+            commitTransaction(ut);
+            offset += pageSize;
+            slosToAnalyse = analysisDao.listSLOsForDependencyAnalysis(analysis.getId(), offset, pageSize);
+            batch++;
+        } while (!slosToAnalyse.isEmpty());
 
-        LOG.info("Analysing of dependencies done for analysis {}", analysis.getId());
+        LOG.info("Analysing of dependencies is complete for analysis {}", analysis.getId());
     }
 
+    private void beginTransaction(UserTransaction ut) {
+        try {
+            ut.begin();
+        } catch (NotSupportedException | SystemException e) {
+            throw new IllegalStateException("Failed to begin transaction", e);
+        }
+    }
+
+    private void commitTransaction(UserTransaction ut) {
+        try {
+            ut.commit();
+        } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException | SystemException e) {
+            throw new IllegalStateException("Failed to commit transaction", e);
+        }
+    }
+
+    /**
+     * Analyses a project. Pulls the changes from repository and determinse the changed features from Diffs. Then analyses the SLOs and their dependencies.
+     * TODO: Re-write. The batching changes were necessary to get performance acceptable but now there's only the minor task of refactoring this fine piece of code...
+     * @param analysisSettingId The analysisSettingId that defines the analysis to be performed
+     * @return
+     */
     @Override
     @Asynchronous
     public Future<Boolean> analyseProject(Long analysisSettingId) {
+        LOG.debug("analyseProject(): Finding setting...");
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
         if (setting == null) {
             throw new JaceRuntimeException("The analysis setting was not found when attempting to perform analysis.");
         }
 
-        List<Diff> diffs = projectService.pullProject(setting.getProject());
+        LOG.debug("analyseProject(): Creating new analysis...");
+        UserTransaction ut = context.getUserTransaction();
+        Analysis analysis = createNewAnalysis(setting);
+
+        LOG.debug("analyseProject(): Pulling changes...");
+        projectService.pullProject(setting.getProject(), analysis);
+
+        final int pageSize = 20;
+        int offset = pageSize;
+        List<Diff> diffs = diffDao.listDiffs(analysis.getId(), 0, pageSize);
+
         LOG.info("Got {} diffs from projectService", diffs.size());
         if (diffs.size() > 0) {
-            Analysis analysis = createNewAnalysis(setting);
-
-            Map<String, Diff> addedFiles = new HashMap<String, Diff>();
-            List<String> modifiedFiles = new ArrayList<String>();
-            List<Long> deletedSloIDs = new ArrayList<Long>();
-            List<Long> oldSloIDs = new ArrayList<Long>();
+            Map<String, Diff> addedFiles = new HashMap<String, Diff>(diffs.size());
+            Set<String> modifiedFiles = new HashSet<>(diffs.size());
+            List<Long> deletedSloIDs = new ArrayList<Long>(diffs.size());
+            List<Long> oldSloIDs = new ArrayList<Long>(diffs.size());
 
             int i = 1;
             String commitIdPattern = setting.getProject().getPluginConfiguration().getCommitIdPattern();
             Pattern pattern = Pattern.compile(commitIdPattern);
-            for (Diff diff : diffs) {
-                LOG.debug("Checking diff {}/{}. Old oldPath='{}', newPath='{}' Mod. Type='{}', ", i, diffs.size()+1, diff.getOldPath(), diff.getNewPath(), diff.getModificationType());
-                i++;
-                diff.setProject(setting.getProject());
-                String commitMessage = diff.getCommit().getMessage();
-                String commitId;
-                Matcher matcher = pattern.matcher(commitMessage);
-                if (matcher.find()) {
-                    commitId = StringUtils.left(matcher.group(), 4090);
-                } else {
-                    // TODO: Consider making this configurable, not everyone likes to see such things
-                    commitId = StringUtils.left(commitMessage, 4090);
-                }
+            SLO oldSlo;
 
-                diff.getCommit().setCommitId(commitId);
+            do {
+                beginTransaction(ut);
+                for (Diff diff : diffs) {
+                    LOG.debug("Checking diff {}. Old oldPath='{}', newPath='{}' Mod. Type='{}', ", i, diff.getOldPath(), diff.getNewPath(), diff.getModificationType());
+                    i++;
+                    String commitMessage = diff.getCommit().getMessage();
+                    String commitId;
+                    Matcher matcher = pattern.matcher(commitMessage);
+                    if (matcher.find()) {
+                        commitId = StringUtils.left(matcher.group(), 4090);
+                    } else {
+                        // TODO: Consider making this configurable, not everyone likes to see such things
+                        commitId = StringUtils.left(commitMessage, 4090);
+                    }
 
-                String oldPath = diff.getOldPath();
-                if (!oldPath.startsWith("/")) {
-                    oldPath = "/" + oldPath;
-                }
-                String newPath = "/" + diff.getNewPath();
+                    diff.getCommit().setCommitId(commitId);
 
-                SLO oldSlo = findSloByPath(oldPath, analysis.getProject().getId());
+                    String oldPath = diff.getOldPath();
+                    if (!oldPath.startsWith("/")) {
+                        oldPath = "/" + oldPath;
+                    }
+                    String newPath = "/" + diff.getNewPath();
 
-
-                switch (diff.getModificationType()) {
-                case ADD:
-                    LOG.debug("Adding new file with oldPath {} to list of added and modified files", diff.getNewPath());
-                    addedFiles.put(newPath, diff);
-                    modifiedFiles.add(newPath);
-                    break;
-                case MODIFY:
-                    modifiedFiles.add(newPath);
-                    if (oldSlo != null) {
-                        if (setting.getGranularity() == Granularity.METHOD) {
-                            for (Hunk hunk : diff.getParsedDiff().getHunks()) {
-                                JavaMethod method = analysisDao.findMethodByLineNumber(oldSlo, hunk.getOldStartLine());
-                                if (method != null) {
-                                    // found a previous method
-                                    // TODO: Add Feature map to a method. It should look up all used Types and determine
-                                    // the features based on that (or, just map to SLOs)
+                    Diff updatedDiff = diffDao.update(diff);
+                    switch (updatedDiff.getModificationType()) {
+                        case ADD:
+                            LOG.debug("Adding new file with oldPath {} to list of added and modified files", updatedDiff.getNewPath());
+                            addedFiles.put(newPath, updatedDiff);
+                            modifiedFiles.add(newPath);
+                            break;
+                        case MODIFY:
+                            modifiedFiles.add(newPath);
+                            oldSlo = findSloByPath(oldPath, analysis.getProject().getId());
+                            if (oldSlo != null) {
+                                if (setting.getGranularity() == Granularity.METHOD) {
+                                    for (Hunk hunk : diff.getParsedDiff().getHunks()) {
+                                        JavaMethod method = analysisDao.findMethodByLineNumber(oldSlo, hunk.getOldStartLine());
+                                        if (method != null) {
+                                            // found a previous method
+                                            // TODO: Add Feature map to a method. It should look up all used Types and determine
+                                            // the features based on that (or, just map to SLOs)
+                                        }
+                                    }
+                                } else {
+                                    LOG.debug("The feature '{}' has changed by modification to SLO with oldPath '{}'", (oldSlo.getFeature() == null ? "Unknown" : oldSlo.getFeature().getName()), oldSlo.getPath());
+                                    oldSloIDs.add(oldSlo.getId()); // This will be updated as 'OLD'
+                                    analysisDao.addChangedFeature(new ChangedFeature(analysis, oldSlo.getFeature(), oldSlo, updatedDiff));
                                 }
                             }
-                        } else {
-                            LOG.debug("The feature '{}' has changed by modification to SLO with oldPath '{}'", (oldSlo.getFeature() == null ? "Unknown" : oldSlo.getFeature().getName()), oldSlo.getPath());
-                            oldSloIDs.add(oldSlo.getId()); // This will be updated as 'OLD'
-                            analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo, diff));
-                        }
+                            break;
+                        case DELETE:
+                            oldSlo = findSloByPath(oldPath, analysis.getProject().getId());
+                            if (oldSlo != null) {
+                                LOG.debug("The feature '{}' has changed by removal of SLO with oldPath '{}'", (oldSlo.getFeature() == null ? "Unknown" : oldSlo.getFeature().getName()), oldSlo.getPath());
+                                deletedSloIDs.add(oldSlo.getId());
+                                analysisDao.addChangedFeature(new ChangedFeature(analysis, oldSlo.getFeature(), oldSlo, updatedDiff));
+                            }
+                            break;
+                        case RENAME:
+                            oldSlo = findSloByPath(oldPath, analysis.getProject().getId());
+                            if (oldSlo != null) {
+                                LOG.debug("The feature '{}' has changed by renaming of SLO with oldPath '{}'", (oldSlo.getFeature() == null ? "Unknown" : oldSlo.getFeature().getName()), oldSlo.getPath());
+                                oldSloIDs.add(oldSlo.getId());
+                                analysisDao.addChangedFeature(new ChangedFeature(analysis, oldSlo.getFeature(), oldSlo, updatedDiff));
+                            }
+                            modifiedFiles.add(newPath);
+                            break;
+                        case COPY:
+                            modifiedFiles.add(newPath);
+                            break;
                     }
-
-                    break;
-                case DELETE:
-                    if (oldSlo != null) {
-                        LOG.debug("The feature '{}' has changed by removal of SLO with oldPath '{}'", (oldSlo.getFeature() == null ? "Unknown" : oldSlo.getFeature().getName()), oldSlo.getPath());
-                        deletedSloIDs.add(oldSlo.getId());
-                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo, diff));
-                    }
-                    break;
-                case RENAME:
-                    if (oldSlo != null) {
-                        LOG.debug("The feature '{}' has changed by renaming of SLO with oldPath '{}'", (oldSlo.getFeature() == null ? "Unknown" : oldSlo.getFeature().getName()), oldSlo.getPath());
-                        oldSloIDs.add(oldSlo.getId());
-                        analysis.addChangedFeature(new ChangedFeature(oldSlo.getFeature(), oldSlo, diff));
-                    }
-                    modifiedFiles.add(newPath);
-                    break;
-                case COPY:
-                    modifiedFiles.add(newPath);
-                    break;
                 }
-            }
+                commitTransaction(ut);
 
-            LOG.debug("Marking SLOs with IDs as old: {}", oldSloIDs);
+                diffs = diffDao.listDiffs(analysis.getId(), offset, pageSize);
+                offset += pageSize;
+            } while (!diffs.isEmpty());
+
+            if (getTransactionStatus(ut) != Status.STATUS_NO_TRANSACTION) {
+                commitTransaction(ut);
+            }
+            beginTransaction(ut);
+
+            LOG.debug("Marking SLOSs with IDs as old: {}", oldSloIDs);
             // Mark old SLOs appropriately
             markSLOsAsOld(oldSloIDs);
             LOG.debug("Marking SLOs with IDs as deleted: {}", deletedSloIDs);
             markSLOsAsDeleted(deletedSloIDs);
 
+            commitTransaction(ut);
+            analysis = (Analysis) analysisDao.find(Analysis.class, analysis.getId());
             LOG.debug("Starting to analyse the modified SLOs. Project='{}', Branch='{}', Files={}", setting.getProject().getName(), setting.getBranch(), modifiedFiles);
             // Analyse all modified/added files and generate new SLOs
-            analyseSLOs(setting, analysis, modifiedFiles);
-            LOG.info("Starting to analyse dependencies.");
-            analyseDependencies(analysis);
+            analyseSLOs(ut, setting, analysis, modifiedFiles);
 
+
+            LOG.info("Starting to analyse dependencies.");
+            analyseDependencies(ut, analysis);
+
+            analysis = (Analysis) analysisDao.find(Analysis.class, analysis.getId());
+            beginTransaction(ut);
             LOG.info("Starting to iterate the added file set");
             // Iterate the added files set
             Iterator<Map.Entry<String, Diff>> iterator = addedFiles.entrySet().iterator();
+            i = 0;
             while (iterator.hasNext()) {
+                i++;
                 Map.Entry<String, Diff> item = iterator.next();
                 String path = item.getKey();
                 Diff diff = item.getValue();
@@ -210,16 +301,36 @@ public class AnalysisServiceImpl implements AnalysisService {
                 SLO newSlo = findSloByPath(path, analysis.getProject().getId());
                 if (newSlo != null) {
                     LOG.debug("The feature '{}' has changed by adding a new SLO with path '{}'", (newSlo.getFeature() == null ? "Unknown" : newSlo.getFeature().getName()), newSlo.getPath());
-                    analysis.addChangedFeature(new ChangedFeature(newSlo.getFeature(), newSlo, diff));
+                    //analysis.addChangedFeature(new ChangedFeature(newSlo.getFeature(), newSlo, diff));
+                    analysisDao.addChangedFeature(new ChangedFeature(analysis, newSlo.getFeature(), newSlo, diff));
+                }
+                if (i % BATCH_SIZE == 0) {
+                    commitTransaction(ut);
+                    beginTransaction(ut);
                 }
             }
+            if (getTransactionStatus(ut) != Status.STATUS_NO_TRANSACTION) {
+                commitTransaction(ut);
+            }
+            analysis = (Analysis) analysisDao.find(Analysis.class, analysis.getId());
+
+            beginTransaction(ut);
             LOG.debug("Analysis complete! Persisting...");
             analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
             analysisDao.update(analysis);
             LOG.debug("Persisted.");
+            commitTransaction(ut);
         }
         LOG.debug("Returning AsyncResult.");
         return new AsyncResult<Boolean>(true);
+    }
+
+    private int getTransactionStatus(UserTransaction ut) {
+        try {
+            return ut.getStatus();
+        } catch (SystemException e) {
+            throw new IllegalStateException("Couldn't get UserTransaction status", e);
+        }
     }
 
     private String parseCommitId(String commitPattern, String message) {
@@ -239,16 +350,20 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     private Analysis createNewAnalysis(AnalysisSetting setting) {
+        UserTransaction ut = context.getUserTransaction();
+        beginTransaction(ut);
         Analysis analysis = new Analysis();
         analysis.setProject(setting.getProject());
         analysis.setAnalysisStatus(AnalysisStatus.ANALYSING);
         analysis.setAnalysisSetting(setting);
         analysisDao.add(analysis);
+        commitTransaction(ut);
         return analysis;
     }
 
-    private void analyseSLOs(AnalysisSetting setting, Analysis analysis, List<String> modifiedFiles) {
+    private void analyseSLOs(UserTransaction ut, AnalysisSetting setting, Analysis analysis, Set<String> modifiedFiles) {
         // Walk all files in the tree and analyse them
+        beginTransaction(ut);
 
         modifiedFiles.add(setting.getProject().getReleaseInfo().getPathToVersionFile()); // always read rel file
         try {
@@ -257,6 +372,8 @@ public class AnalysisServiceImpl implements AnalysisService {
         } catch (IOException e) {
             throw new JaceRuntimeException("Couldn't perform analysis.", e);
         }
+        analysisDao.update(analysis);
+        commitTransaction(ut);
     }
 
 
@@ -287,9 +404,12 @@ public class AnalysisServiceImpl implements AnalysisService {
      */
     @Override
     public void initialAnalysis(Long analysisSettingId) {
+        UserTransaction ut = context.getUserTransaction();
+
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
         String localDirectory = setting.getProject().getPluginConfiguration().getLocalDirectory();
 
+        beginTransaction(ut);
         Analysis analysis = new Analysis();
         analysis.setProject(setting.getProject());
         analysis.setAnalysisSetting(setting);
@@ -297,6 +417,8 @@ public class AnalysisServiceImpl implements AnalysisService {
         analysis.setInitialAnalysis(true);
         analysis.setAnalysisStatus(AnalysisStatus.INITIAL_ANALYSIS);
         analysisDao.add(analysis);
+        commitTransaction(ut);
+        beginTransaction(ut);
         try {
             // Change branch to the one defined in the setting
             projectService.changeBranch(setting.getProject().getPluginConfiguration().getLocalDirectory(),
@@ -304,13 +426,20 @@ public class AnalysisServiceImpl implements AnalysisService {
 
             // Walk all files in the tree and analyse them
             Files.walkFileTree(Paths.get(localDirectory), new InitialAnalysisFileVisitor(setting, analysis));
+            analysisDao.update(analysis);
+            commitTransaction(ut);
 
-            analyseDependencies(analysis);
+            analyseDependencies(ut, analysis);
 
+            analysis = (Analysis) analysisDao.find(Analysis.class, analysis.getId());
+            beginTransaction(ut);
             analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
+            commitTransaction(ut);
         } catch (IOException e) {
             analysis.setAnalysisStatus(AnalysisStatus.ERROR);
+            beginTransaction(ut);
             analysisDao.update(analysis);
+            commitTransaction(ut);
             throw new JaceRuntimeException("Couldn't perform initial analysis.", e);
         }
 
@@ -401,12 +530,15 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     @Override
     public void removeAnalysisSettingById(Long id) {
+        UserTransaction ut = context.getUserTransaction();
+        beginTransaction(ut);
         AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(id);
         List<Analysis> analyses = analysisDao.listAnalysesBySetting(id);
         for (Analysis analysis : analyses) {
             analysisDao.remove(analysis);
         }
         analysisSettingDao.remove(setting);
+        commitTransaction(ut);
     }
 
     @Override
@@ -417,7 +549,10 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     @Asynchronous
     public Future<Boolean> updateAnalysisSetting(AnalysisSetting setting) {
+        UserTransaction ut = context.getUserTransaction();
+        beginTransaction(ut);
         analysisSettingDao.update(setting);
+        commitTransaction(ut);
         return new AsyncResult<Boolean>(Boolean.TRUE);
     }
 

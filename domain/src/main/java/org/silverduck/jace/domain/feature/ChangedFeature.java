@@ -21,10 +21,6 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "ChangedFeature")
 @NamedQueries({
-        @NamedQuery(name = "findChangedFeaturesByProject",
-                query = "SELECT cf FROM ChangedFeature cf " +
-                        "JOIN cf.analysis.project p " +
-                        "WHERE p.id = :projectRID"),
         @NamedQuery(name = "findChangedFeaturesByRelease",
                 query = "SELECT cf FROM ChangedFeature cf " +
                         "JOIN cf.analysis a " +
@@ -55,7 +51,7 @@ public class ChangedFeature extends AbstractDomainObject {
     @JoinColumn(name = "AnalysisRID")
     private Analysis analysis;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(name = "DiffRID")
     private Diff diff;
 
@@ -81,8 +77,9 @@ public class ChangedFeature extends AbstractDomainObject {
         super();
     }
 
-    public ChangedFeature(Feature feature, SLO oldSlo, Diff diff) {
+    public ChangedFeature(Analysis analysis, Feature feature, SLO oldSlo, Diff diff) {
         this();
+        this.analysis = analysis;
         this.feature = feature;
         this.slo = oldSlo;
         this.diff = diff;

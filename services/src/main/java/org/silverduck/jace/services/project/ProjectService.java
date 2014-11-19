@@ -1,5 +1,6 @@
 package org.silverduck.jace.services.project;
 
+import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.feature.FeatureMapping;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.vcs.Diff;
@@ -45,16 +46,12 @@ public interface ProjectService {
 
     /**
      * Pull a project from repository
-     * 
+     *
      * @param project
      *            Project to pull
+     * @param analysis
      */
-    List<Diff> pullProject(Project project);
-
-    /**
-     * Pull all proejcts from repositories
-     */
-    void pullProjects();
+    void pullProject(Project project, Analysis analysis);
 
     /**
      * Refresh Project

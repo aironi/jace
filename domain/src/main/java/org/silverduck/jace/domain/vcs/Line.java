@@ -1,6 +1,8 @@
 package org.silverduck.jace.domain.vcs;
 
 import org.silverduck.jace.domain.AbstractDomainObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -17,6 +19,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "Line")
 public class Line extends AbstractDomainObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Line.class);
 
     @ManyToOne
     @JoinColumn(name = "HunkRID")
@@ -35,6 +39,12 @@ public class Line extends AbstractDomainObject {
     public Line(int lineNumber, String line) {
         this();
         this.lineNumber = lineNumber;
+        // Turns out some diffs contain null characters in lines (don't ask me)
+        if (line.contains("\0")) {
+            line = line.replace("\0", "");
+            LOG.warn("Removing null characters from line. Result: {}", line);
+        }
+
         this.line = line;
     }
 

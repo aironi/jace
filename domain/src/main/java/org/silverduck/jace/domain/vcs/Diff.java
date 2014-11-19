@@ -1,22 +1,22 @@
 package org.silverduck.jace.domain.vcs;
 
 import org.silverduck.jace.domain.AbstractDomainObject;
+import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.project.Project;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Enumerated;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * The Diff object represents a single diff of a file.
  */
 @Entity
 @Table(name = "Diff")
+@NamedQueries({
+        @NamedQuery(name = "listDiffs",
+                query = "SELECT d FROM Diff d JOIN d.analysis a " +
+                        "WHERE a.id = :analysisId " +
+                        "ORDER BY d.created")
+})
 public class Diff extends AbstractDomainObject {
 
     @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
@@ -38,8 +38,8 @@ public class Diff extends AbstractDomainObject {
     private ParsedDiff parsedDiff;
 
     @ManyToOne
-    @JoinColumn(name = "ProjectRID")
-    private Project project;
+    @JoinColumn(name = "AnalysisRID")
+    private Analysis analysis;
 
     public Commit getCommit() {
         return commit;
@@ -59,10 +59,6 @@ public class Diff extends AbstractDomainObject {
 
     public ParsedDiff getParsedDiff() {
         return parsedDiff;
-    }
-
-    public Project getProject() {
-        return project;
     }
 
     public void setCommit(Commit commit) {
@@ -85,7 +81,11 @@ public class Diff extends AbstractDomainObject {
         this.parsedDiff = diff;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public Analysis getAnalysis() {
+        return analysis;
+    }
+
+    public void setAnalysis(Analysis analysis) {
+        this.analysis = analysis;
     }
 }

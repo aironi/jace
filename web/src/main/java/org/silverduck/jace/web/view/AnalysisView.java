@@ -558,6 +558,10 @@ public class AnalysisView extends BaseView implements View {
             List<String> list = projectReleases.get(analysis.getProject());
             if (list == null) {
                 list = analysisService.listAllReleases(analysis.getProject().getId());
+                if (list.isEmpty()) {
+                    list = Collections.singletonList("Unknown");
+                }
+                LOG.debug("All releases: " + list);
                 projectReleases.put(analysis.getProject(), list);
                 for (String release : list) {
                     if (release != null) {

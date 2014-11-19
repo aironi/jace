@@ -6,11 +6,9 @@ import org.apache.openejb.api.LocalClient;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
-import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.dao.EjbTestCase;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
@@ -102,7 +100,6 @@ public class AnalysisServiceImplTest extends EjbTestCase {
                 Commit commit = new Commit();
                 commit.setCommitId("Test-1 - Test");
                 diff.setCommit(commit);
-                diff.setProject(project);
                 diff.setModificationType(ModificationType.MODIFY);
                 diff.setOldPath(slo1.getPath());
                 diff.setNewPath(slo1.getPath());
@@ -114,8 +111,7 @@ public class AnalysisServiceImplTest extends EjbTestCase {
                 parsedDiff.addHunk(hunk);
                 diff.setParsedDiff(parsedDiff);
 
-                ChangedFeature cf = new ChangedFeature(slo1.getFeature(), slo1, diff);
-                cf.setAnalysis(slo1.getAnalysis());
+                ChangedFeature cf = new ChangedFeature(slo1.getAnalysis(), slo1.getFeature(), slo1, diff);
 
                 getEntityManager().persist(cf);
                 List<ScoredCommit> scoredCommits = analysisService.listScoredCommitsByRelease(project.getId(), "0.2");

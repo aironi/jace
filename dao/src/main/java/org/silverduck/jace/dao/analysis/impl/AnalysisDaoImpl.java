@@ -11,6 +11,7 @@ import org.silverduck.jace.domain.slo.SLOStatus;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import java.util.List;
@@ -93,13 +94,6 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     }
 
     @Override
-    public List<ChangedFeature> listChangedFeaturesByProject(Long projectId) {
-        Query query = getEntityManager().createNamedQuery("findChangedFeaturesByProject", ChangedFeature.class);
-        query.setParameter("projectRID", projectId);
-        return query.getResultList();
-    }
-
-    @Override
     public List<ChangedFeature> listChangedFeaturesByProjectAndRelease(Long projectId, String release) {
         Query query = getEntityManager().createNamedQuery("findChangedFeaturesByRelease", ChangedFeature.class);
         query.setParameter("releaseVersion", release);
@@ -155,6 +149,41 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
             slo.clearDependantOfList();
             getEntityManager().merge(slo);
         }
+        getEntityManager().flush();
+        getEntityManager().clear();
     }
+
+    @Override
+    public void addChangedFeature(ChangedFeature changedFeature) {
+        EntityManager em = super.getEntityManager();
+        if (em == null) {
+            throw new RuntimeException("The EntityManager was null!");
+        }
+        if (changedFeature.getId() == null) {
+            em.persist(changedFeature);
+        } else {
+            em.merge(changedFeature);
+        }
+        em.flush();
+        em.clear();
+    }
+
+    @Override
+    public SLO updateSlo(SLO slo) {
+        SLO s = getEntityManager().merge(slo);
+        getEntityManager().flush();
+        getEntityManager().clear();
+        return s;
+    }
+
+    @Override
+    public List<SLO> listSLOsForDependencyAnalysis(Long analysisId, int offset, int pageSize) {
+        Query query = getEntityManager().createNamedQuery("listSLOsForDependencyAnalysis", SLO.class);
+        query.setParameter("analysisID", analysisId);
+        query.setFirstResult(offset);
+        query.setMaxResults(pageSize);
+        return query.getResultList();
+    }
+
 
 }

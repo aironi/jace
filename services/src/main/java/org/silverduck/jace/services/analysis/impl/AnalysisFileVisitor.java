@@ -26,9 +26,9 @@ public class AnalysisFileVisitor extends InitialAnalysisFileVisitor {
         /**
          * Files to analyse
          */
-    private final List<String> files;
+    private final Set<String> files;
 
-    public AnalysisFileVisitor(AnalysisSetting setting, Analysis analysis, List<String> files) {
+    public AnalysisFileVisitor(AnalysisSetting setting, Analysis analysis, Set<String> files) {
         super(setting, analysis);
         Set<String> features = new HashSet<String>();
         for (Feature f : analysis.getProject().getFeatures()) {
@@ -42,7 +42,6 @@ public class AnalysisFileVisitor extends InitialAnalysisFileVisitor {
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
         LOG.debug("visitFile: " + file.getFileName());
         Project project = getSetting().getProject();
-        String fileName = file.getFileName().toString();
 
         Path localDir = Paths.get(project.getPluginConfiguration().getLocalDirectory());
         String relativePath = file.toString().replace(localDir.toString(), "").replace("\\", "/");

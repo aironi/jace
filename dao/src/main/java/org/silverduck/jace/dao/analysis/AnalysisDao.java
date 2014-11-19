@@ -76,13 +76,6 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
     List<Analysis> listAnalysesBySetting(Long analysisSettingId);
 
     /**
-     * Lists the Changed Features by Project
-     * 
-     * @return
-     */
-    List<ChangedFeature> listChangedFeaturesByProject(Long projectId);
-
-    /**
      * Lists all changed versions by given release identifier
      * 
      * @param release
@@ -131,4 +124,11 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
     void updateSlosAsOld(List<Long> oldSloIDs);
 
     void clearDependencies(Long id);
+
+    void addChangedFeature(ChangedFeature changedFeature);
+
+
+    SLO updateSlo(SLO slo);
+
+    List<SLO> listSLOsForDependencyAnalysis(Long analysisId, int offset, int pageSize);
 }

@@ -39,6 +39,7 @@ public class Project extends AbstractDomainObject {
         // TODO: Remove these before 1.0
         Project p = new Project();
 
+
         p.setName("Alfresco");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
         p.getPluginConfiguration().setCloneUrl("https://github.com/Alfresco/community-edition.git");
@@ -50,23 +51,35 @@ public class Project extends AbstractDomainObject {
         p.getReleaseInfo().setPathToVersionFile("/pom.xml");
         p.getReleaseInfo().setPattern("/project/version");
 
-        /*
+/*
+        p.setName("J-Ace");
+        p.getPluginConfiguration().setPluginType(PluginType.GIT);
+        p.getPluginConfiguration().setCloneUrl("https://github.com/aironi/jace.git");
+        p.getPluginConfiguration().setCommitIdPattern("Jace #(\\d+)");
+        p.getPluginConfiguration().setLocalDirectory("");
+        p.getPluginConfiguration().setUserName("");
+        p.getPluginConfiguration().setPassword("");
+        p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
+        p.getReleaseInfo().setPathToVersionFile("/build/pom.xml");
+        p.getReleaseInfo().setPattern("/project/properties/jace.version");
+
+
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services\\.analysis.*)","Business Logic - Analysis");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services.vcs.*)","Business Logic - VCS");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services.project.*)","Business Logic - Project");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services\\.vcs.*)","Business Logic - VCS");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services\\.project.*)","Business Logic - Project");
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.vcs.*)","Business Entities - VCS");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.analysis.*)","Business Entities - Analysis");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.analysis.*)","Business Entities - Analysis");
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.project.*)","Business Entities - Project");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.feature.*)","Business Entities - Feature");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.slo.*)","Business Entities - SLO");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain.vcs.*)","Business Entities - Other");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao.vcs.*)","Data Access - VCS");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao.analysis.*)","Data Access - Analysis");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao.project.*)","Data Accesss - Project");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.feature.*)","Business Entities - Feature");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.slo.*)","Business Entities - SLO");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*domain\\.vcs.*)","Business Entities - Other");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao\\.vcs.*)","Data Access - VCS");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao\\.analysis.*)","Data Access - Analysis");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*dao\\.project.*)","Data Accesss - Project");
         addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/dao\\/.*)","Data Access - Other");
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace\\.common.*)","Common Library");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace.web.*)","User Interface");
-        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace.rest.*)","RESTful Web Services");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace\\.web.*)","User Interface");
+        addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace\\.rest.*)","RESTful Web Services");
         addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/build\\/.*)","J-Ace Project Definition");
         addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/web\\/.*)","User Interface");
 */

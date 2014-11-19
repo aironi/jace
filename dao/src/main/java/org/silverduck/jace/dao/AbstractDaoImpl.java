@@ -18,6 +18,7 @@ public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
         }
         em.persist(entity);
         em.flush();
+        em.clear();
     }
 
     @Override
@@ -40,6 +41,7 @@ public abstract class AbstractDaoImpl<T> implements AbstractDao<T> {
     public T update(T entity) {
         T stored = em.merge(entity);
         em.flush();
+        em.clear();
         return stored;
     }
 }

@@ -4,9 +4,9 @@ import org.apache.commons.io.FileUtils;
 import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.properties.JaceProperties;
 import org.silverduck.jace.dao.project.ProjectDao;
+import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.project.ProjectBranch;
-import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.services.project.ProjectService;
 import org.silverduck.jace.services.vcs.GitService;
 import org.slf4j.Logger;
@@ -20,7 +20,6 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -96,15 +95,15 @@ public class ProjectServiceImpl implements ProjectService {
 
     /**
      * Pulls a single project from remote repository to locally configured directory
-     * 
+     *
      * @param project
+     * @param analysis
      */
-    public List<Diff> pullProject(Project project) {
-        List<Diff> diffs = new ArrayList<Diff>();
+    public void pullProject(Project project, Analysis analysis) {
+
         switch (project.getPluginConfiguration().getPluginType()) {
         case GIT:
-            diffs = gitService.pull(project.getPluginConfiguration().getLocalDirectory(), project
-                .getPluginConfiguration().getUserName(), project.getPluginConfiguration().getPassword());
+            gitService.pull(project, analysis);
 
             project.removeAllBranches();
             for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
@@ -115,19 +114,6 @@ public class ProjectServiceImpl implements ProjectService {
         default:
             throw new RuntimeException("Non-supported plugin was configured for a project '" + project.getName()
                 + "' with id '" + project.getId() + "'");
-        }
-        return diffs;
-    }
-
-    /**
-     * Pulls all configured projects from remote repository to locally configured directories
-     */
-    @Override
-    // @Schedule(minute = "5")
-    public void pullProjects() {
-        List<Project> projects = projectDao.listAllProjects();
-        for (Project project : projects) {
-            projectPollingService.pullProject(project);
         }
     }
 

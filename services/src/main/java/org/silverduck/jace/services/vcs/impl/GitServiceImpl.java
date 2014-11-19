@@ -17,6 +17,9 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
+import org.silverduck.jace.dao.vcs.DiffDao;
+import org.silverduck.jace.domain.analysis.Analysis;
+import org.silverduck.jace.domain.project.Project;
 import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.domain.vcs.Hunk;
@@ -27,6 +30,7 @@ import org.silverduck.jace.services.vcs.GitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -52,6 +56,9 @@ public class GitServiceImpl implements GitService {
 
     private static final String REF_HEAD = "HEAD";
     public static final String HUNK_IDENTIFIER = "@@";
+
+    @EJB
+    private DiffDao diffDao;
 
     /**
      * Checkout a branch to local directory
@@ -249,14 +256,16 @@ public class GitServiceImpl implements GitService {
 
 
     @Override
-    public List<Diff> pull(String localDirectory, String username, String password) {
+    public void pull(Project project, Analysis analysis) {
+        String localDirectory = project.getPluginConfiguration().getLocalDirectory();
+        String username = project.getPluginConfiguration().getUserName();
+        String password = project.getPluginConfiguration().getPassword();
         LOG.info("GitServiceImpl.pull() called with localDirectory = " + localDirectory);
         Repository repository = resolveRepository(localDirectory);
         Git git = new Git(repository);
 
-
         String fullBranchName = resolveFullBranch(repository);
-        Ref oldHead = null;
+        Ref oldHead;
         try {
             oldHead = git.getRepository().getRef(fullBranchName);
         } catch (IOException e) {
@@ -269,7 +278,7 @@ public class GitServiceImpl implements GitService {
             throw new IllegalStateException("The merging was not successful when pulling.");
         }
 
-        return resolveChanges(git, pullResult, oldHead);
+        resolveChanges(analysis, git, pullResult, oldHead);
     }
 
     /**
@@ -306,14 +315,15 @@ public class GitServiceImpl implements GitService {
     /**
      * Resolves changes based on pullResult and oldHead ref of the repo.
      *
+     *
+     * @param project
      * @param git
      * @param pullResult
      * @param oldHead
      * @return
      */
-    private List<Diff> resolveChanges(Git git, PullResult pullResult, Ref oldHead)  {
+    private void resolveChanges(Analysis analysis, Git git, PullResult pullResult, Ref oldHead)  {
         LOG.info("GitServiceImpl.resolveChanges() called");
-        List<Diff> diffs = new ArrayList<Diff>();
 
         String fullBranch = resolveFullBranch(git.getRepository());
 
@@ -321,22 +331,21 @@ public class GitServiceImpl implements GitService {
             Ref newHead = pullResult.getFetchResult().getAdvertisedRef(fullBranch);
             LOG.info("Old head Ref: " + oldHead.getName() + " objectId=" + oldHead.getObjectId() + " - New head Ref: Name=" + newHead.getName() + " objectId=" + newHead.getObjectId());
             List<RevCommit> revCommits = resolveRevCommits(git, oldHead.getObjectId(), newHead.getObjectId());
-            diffs.addAll(resolveDiffs(git, oldHead.getObjectId(), revCommits));
+            resolveDiffs(analysis, git, oldHead.getObjectId(), revCommits);
         }
-
-        return diffs;
     }
 
     /**
      * Resolves Diffs from a list of RevCommits starting from 'startCommitId'.
+     *
+     * @param analysis
      * @param git
      * @param startCommitId ObjectId to start diffing
      * @param revCommits RevCommits to iterate
      * @return
      */
-    private List<Diff> resolveDiffs(Git git, ObjectId startCommitId, List<RevCommit> revCommits) {
+    private void resolveDiffs(Analysis analysis, Git git, ObjectId startCommitId, List<RevCommit> revCommits) {
         LOG.info("GitServiceImpl.resolveDiffs() called. startCommitId={}", startCommitId);
-        List<Diff> diffs = new ArrayList<Diff>();
 
         for (RevCommit commit : revCommits) {
             Commit jaceCommit = createCommit(commit);
@@ -351,13 +360,13 @@ public class GitServiceImpl implements GitService {
                 List<DiffEntry> diffEntries = diffCommand.call();
                 LOG.info("GItServiceImpl.resolveDiffs: There are " + diffEntries.size() + " diffs. Parsing them...");
 
-                diffs.addAll(parseDiffEntries(git, jaceCommit, diffEntries));
+                parseDiffEntries(analysis, git, jaceCommit, diffEntries);
+                diffDao.addCommit(jaceCommit);
                 startCommitId = commit.toObjectId();
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
         }
-        return diffs;
     }
 
     private Commit createCommit(RevCommit commit) {
@@ -371,8 +380,8 @@ public class GitServiceImpl implements GitService {
         return jaceCommit;
     }
 
-    private List<Diff> parseDiffEntries(Git git, Commit jaceCommit, List<DiffEntry> diffEntries) throws IOException {
-        List<Diff> diffs = new ArrayList<Diff>();
+    private void parseDiffEntries(Analysis analysis, Git git, Commit jaceCommit, List<DiffEntry> diffEntries) throws IOException {
+
         for (DiffEntry diffEntry : diffEntries) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("GitServiceImpl.parseDiffEntries: Parsing diffEntry: " + diffEntry.toString());
@@ -384,14 +393,13 @@ public class GitServiceImpl implements GitService {
 
             // Collect changed data and store it in db temporarily until analysis
             Diff diff = new Diff();
+            diff.setAnalysis(analysis);
             diff.setOldPath(diffEntry.getOldPath());
             diff.setNewPath(diffEntry.getNewPath());
-            diff.setParsedDiff(parseDiff(diffOut.toString())); // FIXME: encoding
+            diff.setParsedDiff(parseDiff(diffOut.toString())); // FIXME: add encoding to project settings. use here
             diff.setModificationType(ModificationType.valueOf(diffEntry.getChangeType().name()));
-            diff.setCommit(jaceCommit);
-            diffs.add(diff);
+            jaceCommit.addDiff(diff);
         }
-        return diffs;
     }
 
     /**

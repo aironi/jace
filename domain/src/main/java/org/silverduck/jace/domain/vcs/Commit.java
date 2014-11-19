@@ -49,7 +49,7 @@ public class Commit extends AbstractDomainObject {
     @Transient
     private String formattedTimeZoneOffset;
 
-    private void addDiff(Diff diff) {
+    public void addDiff(Diff diff) {
         if (!diffs.contains(diff)) {
             diffs.add(diff);
             diff.setCommit(this);

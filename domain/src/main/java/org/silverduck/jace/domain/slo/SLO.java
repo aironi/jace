@@ -37,6 +37,13 @@ import java.util.List;
                         "JOIN s.analysis.project p " +
                         "WHERE p.id = :projectRID " +
                         "AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT"),
+        @NamedQuery(name = "listSLOsForDependencyAnalysis",
+                query = "SELECT DISTINCT s FROM SLO s " +
+                        "JOIN s.analysis a " +
+                        "WHERE a.id = :analysisID AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT " +
+                        "AND s.sloType = org.silverduck.jace.domain.slo.SLOType.SOURCE " +
+                        "ORDER BY s.created"
+                        ),
         @NamedQuery(name = "updateStatus",
                 query = "UPDATE SLO SET sloStatus = :status WHERE id IN :ids"),
         @NamedQuery(name = "delete",
@@ -74,7 +81,6 @@ public class SLO extends AbstractDomainObject {
 
     @Column(name = "PackageName")
     private String packageName;
-
 
     @Column(name = "Path")
     private String path;

@@ -100,43 +100,7 @@ public class AnalysisDaoTest extends EjbTestCase {
 
     }
 
-    @Test
-    public void testListChangedFeatures() {
-        Project project = new Project();
-        project.setName("Test");
-        getEntityManager().persist(project);
 
-        Feature feature1 = new Feature();
-        feature1.setName("Feature 1");
-        Feature feature2 = new Feature();
-        feature2.setName("Feature 2");
-        Feature feature3 = new Feature();
-        feature3.setName("Feature 3");
-        project.addFeature(feature1);
-        project.addFeature(feature2);
-        project.addFeature(feature3);
-        SLO slo1 = new SLO("/my/path/java.java", SLOType.SOURCE);
-        SLO slo2 = new SLO("/my/path/java2.java", SLOType.SOURCE);
-        SLO slo3 = new SLO("/my/path/java3.java", SLOType.SOURCE);
-        slo1.setFeature(feature1);
-        slo2.setFeature(feature1);
-        slo3.setFeature(feature2);
-        Analysis a = new Analysis();
-        a.addSlo(slo1);
-        a.addSlo(slo2);
-        a.addSlo(slo3);
-        ChangedFeature cf1 = new ChangedFeature(feature1, slo1, null);
-        ChangedFeature cf2 = new ChangedFeature(feature1, slo2, null);
-        ChangedFeature cf3 = new ChangedFeature(feature2, slo3, null);
-        a.addChangedFeature(cf1);
-        a.addChangedFeature(cf2);
-        a.addChangedFeature(cf3);
-        a.setProject(project);
-        getEntityManager().persist(a);
-
-        List<ChangedFeature> list = analysisDao.listChangedFeaturesByProject(project.getId());
-        Assert.assertEquals("Wrong amount of features returned", 3, list.size());
-    }
 
     @Test
     public void testListChangedFeaturesByRelease() {
@@ -165,9 +129,9 @@ public class AnalysisDaoTest extends EjbTestCase {
         previousAnalysis.addSlo(slo1);
         previousAnalysis.addSlo(slo2);
         previousAnalysis.addSlo(slo3);
-        ChangedFeature cf1 = new ChangedFeature(feature1, slo1, null);
-        ChangedFeature cf2 = new ChangedFeature(feature1, slo2, null);
-        ChangedFeature cf3 = new ChangedFeature(feature2, slo3, null);
+        ChangedFeature cf1 = new ChangedFeature(previousAnalysis, feature1, slo1, null);
+        ChangedFeature cf2 = new ChangedFeature(previousAnalysis, feature1, slo2, null);
+        ChangedFeature cf3 = new ChangedFeature(previousAnalysis, feature2, slo3, null);
         previousAnalysis.addChangedFeature(cf1);
         previousAnalysis.addChangedFeature(cf2);
         previousAnalysis.addChangedFeature(cf3);
@@ -176,9 +140,9 @@ public class AnalysisDaoTest extends EjbTestCase {
         SLO newSlo1 = new SLO("/my/path/java.java", SLOType.SOURCE);
         SLO newSlo2 = new SLO("/my/path/java2.java", SLOType.SOURCE);
         // third not changed
-        ChangedFeature newCf1 = new ChangedFeature(feature1, newSlo1, null);
-        ChangedFeature newCf2 = new ChangedFeature(feature1, newSlo2, null);
         Analysis newAnalysis = new Analysis();
+        ChangedFeature newCf1 = new ChangedFeature(newAnalysis, feature1, newSlo1, null);
+        ChangedFeature newCf2 = new ChangedFeature(newAnalysis, feature1, newSlo2, null);
         newAnalysis.setProject(project);
         newAnalysis.setReleaseVersion("1.1");
         newAnalysis.addSlo(newSlo1);
@@ -219,9 +183,9 @@ public class AnalysisDaoTest extends EjbTestCase {
         previousAnalysis.addSlo(slo1);
         previousAnalysis.addSlo(slo2);
         previousAnalysis.addSlo(slo3);
-        ChangedFeature cf1 = new ChangedFeature(feature1, slo1, null);
-        ChangedFeature cf2 = new ChangedFeature(feature1, slo2, null);
-        ChangedFeature cf3 = new ChangedFeature(feature2, slo3, null);
+        ChangedFeature cf1 = new ChangedFeature(previousAnalysis, feature1, slo1, null);
+        ChangedFeature cf2 = new ChangedFeature(previousAnalysis, feature1, slo2, null);
+        ChangedFeature cf3 = new ChangedFeature(previousAnalysis, feature2, slo3, null);
         previousAnalysis.addChangedFeature(cf1);
         previousAnalysis.addChangedFeature(cf2);
         previousAnalysis.addChangedFeature(cf3);
@@ -230,9 +194,9 @@ public class AnalysisDaoTest extends EjbTestCase {
         SLO newSlo1 = new SLO("/my/path/java.java", SLOType.SOURCE);
         SLO newSlo2 = new SLO("/my/path/java2.java", SLOType.SOURCE);
         // third not changed
-        ChangedFeature newCf1 = new ChangedFeature(feature1, newSlo1, null);
-        ChangedFeature newCf2 = new ChangedFeature(feature1, newSlo2, null);
         Analysis newAnalysis = new Analysis();
+        ChangedFeature newCf1 = new ChangedFeature(newAnalysis, feature1, newSlo1, null);
+        ChangedFeature newCf2 = new ChangedFeature(newAnalysis, feature1, newSlo2, null);
         newAnalysis.setProject(project);
         newAnalysis.setReleaseVersion("1.1");
         newAnalysis.addSlo(newSlo1);

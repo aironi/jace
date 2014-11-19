@@ -2,9 +2,11 @@ package org.silverduck.jace.services.analysis;
 
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.services.analysis.impl.ScoredCommit;
 
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * @author Iiro Hietala 14.5.2014.
@@ -87,4 +89,5 @@ public interface AnalysisService {
      * @return
      */
     List<String> listAllReleases(Long projectId);
+
 }

@@ -31,16 +31,28 @@ public abstract class AbstractDomainObject implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updated;
 
-    public Date getCreated() {
-        return created;
-    }
-
     public Long getId() {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
     public Date getUpdated() {
         return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
     }
 
     @PrePersist
@@ -51,17 +63,5 @@ public abstract class AbstractDomainObject implements Serializable {
     @PreUpdate
     public void onPreUpdate() {
         setUpdated(new Date());
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setUpdated(Date updated) {
-        this.updated = updated;
     }
 }
