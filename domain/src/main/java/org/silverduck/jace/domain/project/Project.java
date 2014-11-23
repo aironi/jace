@@ -39,7 +39,7 @@ public class Project extends AbstractDomainObject {
         // TODO: Remove these before 1.0
         Project p = new Project();
 
-
+/*
         p.setName("Alfresco");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
         p.getPluginConfiguration().setCloneUrl("https://github.com/Alfresco/community-edition.git");
@@ -51,7 +51,8 @@ public class Project extends AbstractDomainObject {
         p.getReleaseInfo().setPathToVersionFile("/pom.xml");
         p.getReleaseInfo().setPattern("/project/version");
 
-/*
+*/
+
         p.setName("J-Ace");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
         p.getPluginConfiguration().setCloneUrl("https://github.com/aironi/jace.git");
@@ -82,7 +83,7 @@ public class Project extends AbstractDomainObject {
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*jace\\.rest.*)","RESTful Web Services");
         addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/build\\/.*)","J-Ace Project Definition");
         addFeatureMapping(p, MappingType.CONTAINING_DIRECTORY_NAME, "(\\/web\\/.*)","User Interface");
-*/
+
         /*
          * p.setName(""); p.getPluginConfiguration().setPluginType(PluginType.GIT);
          * p.getPluginConfiguration().setCloneUrl(""); p.getPluginConfiguration().setLocalDirectory("");
@@ -114,7 +115,6 @@ public class Project extends AbstractDomainObject {
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<FeatureMapping> featureMappings = new ArrayList<FeatureMapping>();
-
 
     // unique = true, since the project name is used as the clone dir under working dir.
     @Column(name = "Name", unique = true)
@@ -258,4 +258,5 @@ public class Project extends AbstractDomainObject {
     public void setFeatureMappings(List<FeatureMapping> featureMappings) {
         this.featureMappings = featureMappings;
     }
+
 }

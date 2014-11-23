@@ -46,6 +46,11 @@ public class Commit extends AbstractDomainObject {
     @Column(name = "Message", length = 4096)
     private String message;
 
+    @Column(name = "CommitTime")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date commitTime;
+
+
     @Transient
     private String formattedTimeZoneOffset;
 
@@ -158,5 +163,13 @@ public class Commit extends AbstractDomainObject {
                 .append(" E-mail=").append(this.authorEmail)
                 .append(" Diffs=").append(this.diffs.size()).append("\r\n");
         return sb.toString();
+    }
+
+    public void setCommitTime(Date commitTime) {
+        this.commitTime = commitTime;
+    }
+
+    public Date getCommitTime() {
+        return commitTime;
     }
 }

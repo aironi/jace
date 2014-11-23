@@ -60,7 +60,7 @@ public class AnalysisView extends BaseView implements View {
     private GridLayout contentLayout;
     private Tree analysisTree;
     private Tree releaseTree;
-    private VerticalLayout detailsLayout;
+
     private VerticalLayout dependencyLevelsLayout;
     private LabelDisplayComponent scoreComponent;
     private LabelDisplayComponent commitIdComponent;
@@ -68,6 +68,7 @@ public class AnalysisView extends BaseView implements View {
     private Table changedFeaturesTable;
     private Window dependencyWindow;
     private GraphJSComponent graphComponent;
+    private Panel detailsPanel;
 
     public AnalysisView() {
         super();
@@ -82,14 +83,14 @@ public class AnalysisView extends BaseView implements View {
     }
 
     private Component createDetails() {
-        detailsLayout = new VerticalLayout();
-
+        VerticalLayout detailsLayout = new VerticalLayout();
         createChangesPanel(detailsLayout);
         createChangedFeaturesGrid(detailsLayout);
         createChangedFeaturesTable(detailsLayout);
-
         Locale locale = UI.getCurrent().getLocale();
-        Panel detailsPanel = new Panel(AppResources.getLocalizedString("label.analysisView.changedFeatures", locale));
+        detailsPanel = new Panel(AppResources.getLocalizedString("label.analysisView.changedFeatures", locale));
+        detailsPanel.setWidth(100, Unit.PERCENTAGE);
+        detailsPanel.setHeight(80, Unit.PERCENTAGE);
         detailsPanel.setContent(detailsLayout);
         return detailsPanel;
     }
@@ -138,6 +139,7 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesTable.setImmediate(true);
         changedFeaturesTable.setSelectable(true);
         changedFeaturesTable.setWidth(100, Unit.PERCENTAGE);
+
         layout.addComponent(changedFeaturesTable);
     }
 

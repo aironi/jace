@@ -14,6 +14,8 @@ import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
 import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.project.Project;
+import org.silverduck.jace.domain.slo.SLOStatus;
+import org.silverduck.jace.domain.slo.SLOType;
 import org.silverduck.jace.domain.vcs.Commit;
 import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.domain.vcs.Hunk;
@@ -26,6 +28,7 @@ import org.silverduck.jace.services.project.ProjectService;
 import javax.ejb.EJB;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -93,7 +96,7 @@ public class AnalysisServiceImplTest extends EjbTestCase {
             Boolean result = analysisService.addAnalysisSetting(setting).get();
             if (result) {
                 SLO slo1 = analysisDao.findSLOByQualifiedClassName(
-                    "org.silverduck.jace.services.analysis.impl.AnalysisServiceImplTest", project.getId());
+                    "org.silverduck.jace.services.analysis.impl.AnalysisServiceImplTest", project.getId(), new Date());
 
                 Assert.assertNotNull("SLO was not found", slo1);
                 Diff diff = new Diff();
@@ -118,5 +121,55 @@ public class AnalysisServiceImplTest extends EjbTestCase {
                 Assert.assertEquals("Wrong amount of scored commits returned", 1, scoredCommits.size());
             }
         }
+    }
+
+
+    @Test
+    public void testCalculateDependencies() {
+        /*
+              Base 1      Base 2
+                |           |
+                 \         /
+                  \       /
+                   \     /
+                    Dep 1
+                      |
+                    Dep 2
+         */
+        AnalysisServiceImpl.DependencyCalculator calculator = new AnalysisServiceImpl.DependencyCalculator();
+        SLO base1 = newSLO("Base 1");
+        SLO dep1 = newSLO("Dep level 1");
+        SLO dep2 = newSLO("Dep level 2");
+        SLO base2 = newSLO("Base 2");
+        base1.addDependency(dep1);
+        base2.addDependency(dep1);
+        dep1.addDependency(dep2);
+        List<Integer> depList = calculator.calculateDependencies(dep2);
+        Assert.assertEquals("Invalid depth of dependencies returned", 2, depList.size());
+        Assert.assertEquals("Invalid amount of deps at level 1", 1, depList.get(0).intValue());
+        Assert.assertEquals("Invalid amount of deps at level 2", 2, depList.get(1).intValue());
+
+    }
+
+    @Test
+    public void testCalculateDependenciesScore() {
+        AnalysisServiceImpl.DependencyCalculator calculator = new AnalysisServiceImpl.DependencyCalculator();
+        SLO base1 = newSLO("Base 1");
+        SLO dep1 = newSLO("Dep level 1");
+        SLO dep2 = newSLO("Dep level 2");
+        SLO base2 = newSLO("Base 2");
+        base2.addDependency(dep1);
+        dep1.addDependency(dep2);
+        base1.addDependency(dep1);
+        Double score = calculator.calculateScore(dep2);
+        Assert.assertEquals("Invalid score returned", 2d, score, 0.001d);
+    }
+
+    private SLO newSLO(String className) {
+        SLO slo = new SLO();
+        slo.setClassName(className);
+        slo.setSloStatus(SLOStatus.CURRENT);
+        slo.setSloType(SLOType.SOURCE);
+        return slo;
     }
 }

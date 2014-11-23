@@ -12,11 +12,11 @@ import java.util.List;
  */
 public interface Plugin {
 
-    void checkout(String localDirectory, String branch);
+    void checkout(String localDirectory, String branch, String startPoint);
 
     /**
      * Clone a repository
-     * 
+     *
      * @param cloneUrl
      *            Remote URL
      * @param localDirectory

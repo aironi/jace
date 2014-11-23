@@ -60,9 +60,10 @@ public class ProjectServiceImpl implements ProjectService {
         switch (project.getPluginConfiguration().getPluginType()) {
         case GIT:
             LOG.info("addProject(): Cloning git repository...");
-            gitService.cloneRepo(project.getPluginConfiguration().getCloneUrl(), project.getPluginConfiguration()
-                .getLocalDirectory(), project.getPluginConfiguration().getUserName(), project.getPluginConfiguration()
-                .getPassword());
+            gitService.cloneRepo(project.getPluginConfiguration().getCloneUrl(),
+                    project.getPluginConfiguration().getLocalDirectory(),
+                    project.getPluginConfiguration().getUserName(),
+                    project.getPluginConfiguration().getPassword());
             for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
                 project.addBranch(new ProjectBranch(project, branch));
             }
@@ -79,8 +80,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void changeBranch(String localDirectory, String branch) {
-        gitService.checkout(localDirectory, branch);
+    public void changeBranch(String localDirectory, String branch, String startPoint) {
+        gitService.checkout(localDirectory, branch, startPoint);
     }
 
     @Override

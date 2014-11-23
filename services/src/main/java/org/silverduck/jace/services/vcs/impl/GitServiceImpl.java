@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,14 +63,13 @@ public class GitServiceImpl implements GitService {
 
     /**
      * Checkout a branch to local directory
-     * 
-     * @param localDirectory
+     *  @param localDirectory
      *            Local directory with existing git repository
      * @param branch
-     *            Branch to checkout
+     * @param startPoint
      */
     @Override
-    public void checkout(String localDirectory, String branch) {
+    public void checkout(String localDirectory, String branch, String startPoint) {
         Repository repository = resolveRepository(localDirectory);
         try {
             if (!branch.equals(repository.getFullBranch())) {
@@ -95,8 +95,11 @@ public class GitServiceImpl implements GitService {
                 }
 
                 try {
-                    git.checkout().setName(shortName).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
-                        .call();
+                    git.checkout()
+                            .setName(shortName)
+                            .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
+                            .call();
+
                 } catch (GitAPIException e) {
                     throw new JaceRuntimeException("Failed to checkout branch '" + branch + "' to local directory ' "
                         + localDirectory + "'", e);
@@ -112,20 +115,20 @@ public class GitServiceImpl implements GitService {
 
     /**
      * Clone a git repository from given clone URL to the local directory
-     * 
+     *
      * @param cloneUrl
      *            URL to be cloned
      * @param localDirectory
      *            Local directory to clone into
      */
     @Override
-    public void cloneRepo(String cloneUrl, String localDirectory, String userName, String passWord) {
+    public void cloneRepo(String cloneUrl, String localDirectory, String userName, String password) {
         try {
             CloneCommand cloneCommand = Git.cloneRepository().setURI(cloneUrl).setDirectory(new File(localDirectory));
             cloneCommand.setProgressMonitor(new JGitProgressMonitor());
-            if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(passWord)) {
+            if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(password)) {
                 UsernamePasswordCredentialsProvider credProv = new UsernamePasswordCredentialsProvider(userName,
-                    passWord);
+                    password);
                 cloneCommand.setCredentialsProvider(credProv);
             }
             LOG.info("cloneRepo({}, {}, {}, ***) called. Cloning...", cloneUrl, localDirectory, userName);
@@ -349,8 +352,6 @@ public class GitServiceImpl implements GitService {
 
         for (RevCommit commit : revCommits) {
             Commit jaceCommit = createCommit(commit);
-            LOG.debug("GitServiceImpl.resolveDiffs: Created new Commit: " + jaceCommit.toHumanReadable());
-
             LOG.debug("GitServiceImpl.resolveDiffs: Diffing old and new versions...");
 
             // Diff the old and new revisions and iterate the diffs.
@@ -362,6 +363,7 @@ public class GitServiceImpl implements GitService {
 
                 parseDiffEntries(analysis, git, jaceCommit, diffEntries);
                 diffDao.addCommit(jaceCommit);
+                LOG.debug("GitServiceImpl.resolveDiffs: Created new Commit: " + jaceCommit.toHumanReadable());
                 startCommitId = commit.toObjectId();
             } catch (Exception e) {
                 throw new IllegalStateException(e);
@@ -372,6 +374,7 @@ public class GitServiceImpl implements GitService {
     private Commit createCommit(RevCommit commit) {
         Commit jaceCommit = new Commit();
         jaceCommit.setMessage(StringUtils.left(commit.getFullMessage().toString(), 4090));
+        jaceCommit.setCommitTime(new Date(commit.getCommitTime() * 1000)); // FIXME: this gives invalid results
         jaceCommit.setAuthorName(commit.getAuthorIdent().getName());
         jaceCommit.setAuthorEmail(commit.getAuthorIdent().getEmailAddress());
         jaceCommit.setAuthorTimeZone(commit.getAuthorIdent().getTimeZone());
@@ -398,6 +401,7 @@ public class GitServiceImpl implements GitService {
             diff.setNewPath(diffEntry.getNewPath());
             diff.setParsedDiff(parseDiff(diffOut.toString())); // FIXME: add encoding to project settings. use here
             diff.setModificationType(ModificationType.valueOf(diffEntry.getChangeType().name()));
+
             jaceCommit.addDiff(diff);
         }
     }

@@ -31,10 +31,12 @@ public class ProjectComponent extends BaseComponent<Project> {
 
     private TextField commitIdPattern;
 
+    private TextField startPoint;
+
     @PropertyId("name")
     private TextField name;
 
-    private PasswordField passWord;
+    private PasswordField password;
 
     private TextField pathToVersionFile;
 
@@ -81,12 +83,13 @@ public class ProjectComponent extends BaseComponent<Project> {
         super.getFieldGroup().bind(cloneUrl, "pluginConfiguration.cloneUrl");
         super.getFieldGroup().bind(repositoryType, "pluginConfiguration.pluginType");
         super.getFieldGroup().bind(commitIdPattern, "pluginConfiguration.commitIdPattern");
+        //super.getFieldGroup().bind(startPoint, "pluginConfiguration.startPoint");
         super.getFieldGroup().bind(userName, "pluginConfiguration.userName");
-        super.getFieldGroup().bind(passWord, "pluginConfiguration.password");
+        super.getFieldGroup().bind(password, "pluginConfiguration.password");
         super.getFieldGroup().bind(versionFileType, "releaseInfo.versionFileType");
         super.getFieldGroup().bind(pathToVersionFile, "releaseInfo.pathToVersionFile");
         super.getFieldGroup().bind(versionPattern, "releaseInfo.pattern");
-        // fieldGroup.bind(localDirectory, "pluginConfiguration.localDirectory");
+
     }
 
     private Component createBasicDataLayout() {
@@ -94,6 +97,7 @@ public class ProjectComponent extends BaseComponent<Project> {
 
         name = new TextField(AppResources.getLocalizedString("label.projectForm.name", locale));
         name.setImmediate(true);
+        name.setWidth(100, Unit.PERCENTAGE);
 
         repositoryType = new ComboBox(AppResources.getLocalizedString("label.projectForm.repositoryType", locale));
         for (PluginType pluginType : PluginType.values()) {
@@ -102,18 +106,18 @@ public class ProjectComponent extends BaseComponent<Project> {
                 AppResources.getLocalizedString(pluginType.getResourceKey(), UI.getCurrent().getLocale()));
         }
         repositoryType.setImmediate(true);
+        repositoryType.setWidth(100, Unit.PERCENTAGE);
 
         cloneUrl = new TextField(AppResources.getLocalizedString("label.projectForm.cloneUrl", locale));
         cloneUrl.setImmediate(true);
-
-        commitIdPattern = new TextField(AppResources.getLocalizedString("label.projectForm.commitIdPattern", locale));
-        commitIdPattern.setImmediate(true);
+        cloneUrl.setWidth(100, Unit.PERCENTAGE);
 
         userName = new TextField(AppResources.getLocalizedString("label.projectForm.userName", locale));
         userName.setImmediate(true);
 
-        passWord = new PasswordField(AppResources.getLocalizedString("label.projectForm.passWord", locale));
-        passWord.setImmediate(true);
+        password = new PasswordField(AppResources.getLocalizedString("label.projectForm.passWord", locale));
+        password.setImmediate(true);
+        password.setWidth(100, Unit.PERCENTAGE);
 
         testCloneUrlButton = new Button(AppResources.getLocalizedString("label.projectForm.testCloneUrlButton", locale));
         testCloneUrlButton.addClickListener(new Button.ClickListener() {
@@ -123,7 +127,16 @@ public class ProjectComponent extends BaseComponent<Project> {
             }
         });
 
+        commitIdPattern = new TextField(AppResources.getLocalizedString("label.projectForm.commitIdPattern", locale));
+        commitIdPattern.setImmediate(true);
+        commitIdPattern.setWidth(100, Unit.PERCENTAGE);
+
+        startPoint = new TextField((AppResources.getLocalizedString("label.projectForm.startPoint", locale)));
+        startPoint.setImmediate(true);
+        startPoint.setWidth(100, Unit.PERCENTAGE);
+
         FormLayout basicDataForm = new FormLayout();
+
         basicDataForm.setDefaultComponentAlignment(Alignment.TOP_LEFT);
         basicDataForm.setSizeFull();
 
@@ -131,11 +144,11 @@ public class ProjectComponent extends BaseComponent<Project> {
         basicDataForm.addComponent(repositoryType);
         basicDataForm.addComponent(cloneUrl);
         basicDataForm.addComponent(new Label("Note: The password is stored in plain text to DB for now."));
-        ;
         basicDataForm.addComponent(userName);
-        basicDataForm.addComponent(passWord);
+        basicDataForm.addComponent(password);
         basicDataForm.addComponent(testCloneUrlButton);
         basicDataForm.addComponent(commitIdPattern);
+        //basicDataForm.addComponent(startPoint);
 
         return new VerticalLayout(basicDataForm);
     }
@@ -274,13 +287,16 @@ public class ProjectComponent extends BaseComponent<Project> {
                 AppResources.getLocalizedString(type.getResourceKey(), UI.getCurrent().getLocale()));
         }
         versionFileType.setImmediate(true);
+        versionFileType.setWidth(100, Unit.PERCENTAGE);
 
         pathToVersionFile = new TextField(
             AppResources.getLocalizedString("label.projectForm.pathToVersionFile", locale));
         pathToVersionFile.setImmediate(true);
+        pathToVersionFile.setWidth(100, Unit.PERCENTAGE);
 
         versionPattern = new TextField(AppResources.getLocalizedString("label.projectForm.versionPattern", locale));
         versionPattern.setImmediate(true);
+        versionPattern.setWidth(100, Unit.PERCENTAGE);
 
         releaseInfoForm.setDefaultComponentAlignment(Alignment.TOP_LEFT);
         releaseInfoForm.addComponent(versionFileType);
@@ -304,6 +320,7 @@ public class ProjectComponent extends BaseComponent<Project> {
             name.setReadOnly(true);
             repositoryType.setReadOnly(true);
             cloneUrl.setReadOnly(true);
+            startPoint.setReadOnly(true);
         }
     }
 
@@ -313,7 +330,6 @@ public class ProjectComponent extends BaseComponent<Project> {
         name.setReadOnly(readOnly);
         cloneUrl.setReadOnly(readOnly);
         commitIdPattern.setReadOnly(readOnly);
-        // localDirectory.setReadOnly(readOnly);
     }
 
     private void testCloneUrl() {

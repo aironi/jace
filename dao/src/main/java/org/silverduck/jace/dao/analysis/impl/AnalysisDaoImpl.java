@@ -14,6 +14,7 @@ import javax.ejb.TransactionManagementType;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -53,11 +54,12 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
     }
 
     @Override
-    public SLO findSLOByQualifiedClassName(String qualifiedClassName, Long projectId) {
+    public SLO findSLOByQualifiedClassName(String qualifiedClassName, Long projectId, Date committedBefore) {
         try {
             Query query = getEntityManager().createNamedQuery("findByQualifiedClassName", SLO.class);
             query.setParameter("qualifiedClassName", qualifiedClassName);
             query.setParameter("projectRID", projectId);
+            query.setParameter("committedBefore", committedBefore);
             query.setFirstResult(0);
             query.setMaxResults(1);
             return (SLO) query.getSingleResult();
@@ -170,7 +172,13 @@ public class AnalysisDaoImpl extends AbstractDaoImpl<Analysis> implements Analys
 
     @Override
     public SLO updateSlo(SLO slo) {
-        SLO s = getEntityManager().merge(slo);
+        SLO s;
+        if (slo.getId() == null) {
+            getEntityManager().persist(slo);
+            s = slo;
+        } else {
+            s = getEntityManager().merge(slo);
+        }
         getEntityManager().flush();
         getEntityManager().clear();
         return s;

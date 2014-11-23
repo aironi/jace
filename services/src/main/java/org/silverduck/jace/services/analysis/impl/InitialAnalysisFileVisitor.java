@@ -17,6 +17,7 @@ import org.silverduck.jace.domain.slo.JavaType;
 import org.silverduck.jace.domain.slo.SLO;
 import org.silverduck.jace.domain.slo.SLOStatus;
 import org.silverduck.jace.domain.slo.SLOType;
+import org.silverduck.jace.domain.vcs.Commit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
@@ -35,14 +36,7 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The InitialAnalysisFileVisitor performs the initial analysis on the source tree and scans all of the found files.
@@ -62,8 +56,8 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
     private final AnalysisSetting setting;
 
-    public InitialAnalysisFileVisitor(AnalysisSetting setting, Analysis analysis) {
-        this.setting = setting;
+    public InitialAnalysisFileVisitor(Analysis analysis) {
+        this.setting = analysis.getAnalysisSetting();
         this.analysis = analysis;
     }
 
@@ -97,10 +91,11 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         }
     }
 
-    private void processJavaFile(Path file, String relativePath) throws IOException {
+    protected void processJavaFile(Path file, String relativePath) throws IOException {
         LOG.debug("Processing file: " + file.getFileName().toString());
-        final SLO slo = new SLO(relativePath, SLOType.SOURCE);
+        final SLO slo = resolveSLO(relativePath, SLOType.SOURCE);
         slo.setSloStatus(SLOStatus.CURRENT);
+        LOG.debug("The SLO for the file is: " + slo.toHumanReadable());
 
         ASTParser astParser = ASTParser.newParser(AST.JLS3);
         astParser.setKind(ASTParser.K_COMPILATION_UNIT);
@@ -289,7 +284,6 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             }
 
         });
-        getAnalysis().addSlo(slo);
     }
 
     private void processFeature(String featureName, SLO slo) {
@@ -373,34 +367,52 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
         if (fileName.endsWith(".java")) {
             processJavaFile(file, relativePath);
         } else {
-            SLO slo = new SLO(relativePath, SLOType.OTHER_FILE);
-            String featureName = null;
-            for (FeatureMapping featureMapping : analysis.getProject().getFeatureMappings()) {
-                if (featureMapping.appliesTo(slo)) {
-                    featureName = featureMapping.getFeatureName();
-                    LOG.debug("Found a FeatureMapping that matches the SLO {}. Setting feature name to {}", slo.getPath(), featureName);
-                }
-            }
-            if (featureName == null && setting.getAutomaticFeatureMapping()) {
-                featureName = file.getParent().getFileName().toString();
-            }
-            List<String> nonFeatures = Arrays.asList(new String[] { "META-INF", "WEB-INF" }); // TODO: stupid functionality,
-                                                                                              // replace it with
-                                                                                              // configurable one
-            // Skip non-features completely
-            if (!nonFeatures.contains(featureName)) {
-                if (featureName != null) {
-                    processFeature(featureName, slo);
-                }
-                analysis.addSlo(slo);
-            }
+            processOtherFile(file, relativePath);
         }
         return FileVisitResult.CONTINUE;
+    }
+
+    protected void processOtherFile(Path file, String relativePath) {
+        SLO slo = resolveSLO(relativePath, SLOType.OTHER_FILE);
+
+        String featureName = null;
+        for (FeatureMapping featureMapping : analysis.getProject().getFeatureMappings()) {
+            if (featureMapping.appliesTo(slo)) {
+                featureName = featureMapping.getFeatureName();
+                LOG.debug("Found a FeatureMapping that matches the SLO {}. Setting feature name to {}", slo.getPath(), featureName);
+            }
+        }
+        if (featureName == null && setting.getAutomaticFeatureMapping()) {
+            featureName = file.getParent().getFileName().toString();
+        }
+        List<String> nonFeatures = Arrays.asList(new String[]{"META-INF", "WEB-INF"}); // TODO: stupid functionality,
+                                                                                       // replace it with
+                                                                                       // configurable one
+        // Skip non-features completely
+        if (!nonFeatures.contains(featureName)) {
+            if (featureName != null) {
+                processFeature(featureName, slo);
+            }
+        }
     }
 
     @Override
     public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
         LOG.error("visitFileFailed: " + file.getFileName());
         return FileVisitResult.CONTINUE;
+    }
+
+    /**
+     * Resolve a SLO for given path. Override for custom handling.
+     * @param relativePath The path for the SLO
+     * @param sloType The type of the SLO
+     */
+    public SLO resolveSLO(String relativePath, SLOType sloType) {
+        SLO slo = new SLO(relativePath, sloType);
+        Commit commit = new Commit();
+        commit.setCommitTime(new Date());
+        commit.setMessage("Initial Analysis Generated Commit");
+        slo.setCommit(commit);
+        return slo;
     }
 };

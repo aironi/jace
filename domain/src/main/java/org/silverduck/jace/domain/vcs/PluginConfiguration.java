@@ -40,6 +40,10 @@ public class PluginConfiguration {
     @Column(name = "UserName")
     private String userName;
 
+    @Column(name = "StartPoint")
+    private String startPoint;
+
+
     public String getCloneUrl() {
         return cloneUrl;
     }
@@ -86,5 +90,13 @@ public class PluginConfiguration {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getStartPoint() {
+        return startPoint;
+    }
+
+    public void setStartPoint(String startPoint) {
+        this.startPoint = startPoint;
     }
 }

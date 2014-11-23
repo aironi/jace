@@ -26,7 +26,7 @@ public interface ProjectService {
     /**
      * Change a branch in repository for a project.
      */
-    void changeBranch(String localDirectory, String branch);
+    void changeBranch(String localDirectory, String branch, String startPoint);
 
     /**
      * Find All Projects

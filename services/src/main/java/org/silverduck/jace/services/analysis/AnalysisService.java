@@ -2,10 +2,15 @@ package org.silverduck.jace.services.analysis;
 
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.AnalysisSetting;
+import org.silverduck.jace.domain.slo.SLO;
 import org.silverduck.jace.domain.vcs.Diff;
 import org.silverduck.jace.services.analysis.impl.ScoredCommit;
 
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
@@ -90,4 +95,53 @@ public interface AnalysisService {
      */
     List<String> listAllReleases(Long projectId);
 
+    /**
+     * Analyse the dependencies of SLOs for an analysis
+     * @param analysis
+     */
+    void analyseDependencies(Analysis analysis);
+
+    /**
+     * Analyse a batch of dependencies
+     * @param analysis Analysis
+     * @param slosToAnalyse The SLOs to analyse dependencies for
+     */
+    void analyseDependenciesBatch(Analysis analysis, List<SLO> slosToAnalyse);
+
+    /**
+     * Add a new Feature (ChangedFeature)
+     * @param analysis Analysis
+     * @param newSLO The new SLO
+     * @param diff The diff where the new feature was found
+     */
+    void addNewFeature(Analysis analysis, SLO newSLO, Diff diff);
+
+    /**
+     * Analyses a batch of diffs.
+     * @param analysis Analysis
+     * @param diffs Diffs to analyse
+     * @param newSLOs A set of SLOs where the new initial SLOs for each change are to be added for later analysis
+     * @param deletedSloIDs List of deleted SLO ids
+     * @param oldSloIDs List of modified (old) SLO ids
+     */
+    void analyseDiffsBatch(Analysis analysis, List<Diff> diffs, Set<SLO> newSLOs, List<Long> deletedSloIDs, List<Long> oldSloIDs);
+
+    /**
+     * Analyse the file contents of given SLOs
+     * @param analysis Analysis
+     * @param slos The SLOs to analyse
+     */
+    void analyseSLOs(Analysis analysis, Set<SLO> slos);
+
+    /**
+     * Mark SLO.SLOType.DELETED for the given IDs
+     * @param deletedSloIDs IDs to mark
+     */
+    void markSLOsAsDeleted(List<Long> deletedSloIDs);
+
+    /**
+     * Mark SLO.SLOType.OLD for the given IDs
+     * @param oldSloIDs IDs to mark
+     */
+    void markSLOsAsOld(List<Long> oldSloIDs);
 }

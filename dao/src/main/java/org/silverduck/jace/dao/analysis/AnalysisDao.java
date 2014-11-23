@@ -7,6 +7,7 @@ import org.silverduck.jace.domain.feature.ChangedFeature;
 import org.silverduck.jace.domain.slo.JavaMethod;
 import org.silverduck.jace.domain.slo.SLO;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -42,9 +43,12 @@ public interface AnalysisDao extends AbstractDao<Analysis> {
      *            Qualified Class name
      * @param projectId
      *            Project Identifier
+     * @param committedBefore
+     *            The date that the SLO commit must be equal to, or before
+     *
      * @return If found the SLO, otherwise null
      */
-    SLO findSLOByQualifiedClassName(String qualifiedClassName, Long projectId);
+    SLO findSLOByQualifiedClassName(String qualifiedClassName, Long projectId, Date committedBefore);
 
     /**
      * Lists all analyses.

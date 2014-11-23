@@ -4,6 +4,7 @@ import org.silverduck.jace.domain.AbstractDomainObject;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.analysis.slo.SLOImport;
 import org.silverduck.jace.domain.feature.Feature;
+import org.silverduck.jace.domain.vcs.Commit;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -28,19 +29,20 @@ import java.util.List;
         @NamedQuery(name = "findByQualifiedClassName",
                 query = "SELECT s FROM SLO s " +
                         "JOIN s.analysis.project p " +
+                        "JOIN s.commit c " +
                         "WHERE s.qualifiedClassName = :qualifiedClassName " +
-                        "AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT " +
+                        "AND c.commitTime <= :committedBefore " +
                         "AND p.id = :projectRID " +
                         "ORDER BY s.created DESC"),
         @NamedQuery(name = "listSLOs",
                 query = "SELECT s FROM SLO s " +
                         "JOIN s.analysis.project p " +
                         "WHERE p.id = :projectRID " +
-                        "AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT"),
+                        "AND s.sloStatus <> org.silverduck.jace.domain.slo.SLOStatus.DELETED"),
         @NamedQuery(name = "listSLOsForDependencyAnalysis",
                 query = "SELECT DISTINCT s FROM SLO s " +
                         "JOIN s.analysis a " +
-                        "WHERE a.id = :analysisID AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT " +
+                        "WHERE a.id = :analysisID AND s.sloStatus <> org.silverduck.jace.domain.slo.SLOStatus.DELETED " +
                         "AND s.sloType = org.silverduck.jace.domain.slo.SLOType.SOURCE " +
                         "ORDER BY s.created"
                         ),
@@ -98,6 +100,10 @@ public class SLO extends AbstractDomainObject {
     @Column(name = "SLOType")
     @Enumerated(EnumType.STRING)
     private SLOType sloType;
+
+    @ManyToOne()
+    @JoinColumn(name = "CommitRID")
+    private Commit commit;
 
     public SLO() {
         super();
@@ -249,6 +255,14 @@ public class SLO extends AbstractDomainObject {
         this.sloType = sloType;
     }
 
+    public Commit getCommit() {
+        return commit;
+    }
+
+    public void setCommit(Commit commit) {
+        this.commit = commit;
+    }
+
     @Transient
     public void clearDependsOnList() {
         List<SLO> dependsOn = new ArrayList<SLO>(getDependsOn());
@@ -263,5 +277,16 @@ public class SLO extends AbstractDomainObject {
         for (SLO slo : dependantOf) {
             slo.removeDependency(slo);
         }
+    }
+
+    public String toHumanReadable() {
+        StringBuilder sb = new StringBuilder(1024);
+        sb
+                .append("ID=").append(getId()).append("\n")
+                .append("Path=").append(this.getPath()).append("\n")
+                .append("ClassName=").append(this.getQualifiedClassName()).append("\n")
+                .append("SLOStatus=").append(this.getSloStatus()).append("\n")
+                .append("Commit=").append(this.getCommit() == null ? "None" : this.getCommit().toHumanReadable());
+        return sb.toString();
     }
 }
