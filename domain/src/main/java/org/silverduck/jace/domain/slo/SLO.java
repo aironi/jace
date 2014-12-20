@@ -23,7 +23,7 @@ import java.util.List;
 @NamedQueries({
         @NamedQuery(name = "findByPath",
                 query = "SELECT s FROM SLO s JOIN s.analysis.project p " +
-                        "WHERE s.path = :path AND s.sloStatus = org.silverduck.jace.domain.slo.SLOStatus.CURRENT " +
+                        "WHERE s.path = :path AND s.sloStatus <> org.silverduck.jace.domain.slo.SLOStatus.DELETED " +
                         "AND p.id = :projectRID " +
                         "ORDER BY s.created DESC"),
         @NamedQuery(name = "findByQualifiedClassName",

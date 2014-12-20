@@ -2,6 +2,9 @@ package org.silverduck.jace.services.analysis.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
 import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.dao.analysis.AnalysisSettingDao;
@@ -20,6 +23,7 @@ import org.silverduck.jace.domain.vcs.Hunk;
 import org.silverduck.jace.domain.vcs.ModificationType;
 import org.silverduck.jace.services.analysis.AnalysisService;
 import org.silverduck.jace.services.project.ProjectService;
+import org.silverduck.jace.services.vcs.GitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +65,9 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Resource
     private EJBContext context;
 
+    @EJB
+    private GitService gitService; // TODO: REMOVE this! Refactor
+
     @Override
     @Asynchronous
     public Future<Boolean> addAnalysisSetting(AnalysisSetting setting) {
@@ -73,9 +80,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     @Override
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void analyseDependencies(Analysis analysis) {
-        LOG.info("Clearing old dependencies in project {} in analysis {}", analysis.getProject().getName(), analysis.getId());
-        analysisDao.clearDependencies(analysis.getProject().getId());
-
+        LOG.info("Analysing dependencies for analysis '{}'", analysis.getId());
         final int pageSize = 20;
         int offset = pageSize;
 
@@ -128,32 +133,19 @@ public class AnalysisServiceImpl implements AnalysisService {
         }
     }
 
-    /**
-     * Analyses a project. Pulls the changes from repository and determinse the changed features from Diffs. Then analyses the SLOs and their dependencies.
-     * TODO: Re-write. The batching changes were necessary to get performance acceptable but now there's only the minor task of refactoring this fine piece of code...
-     * @param analysisSettingId The analysisSettingId that defines the analysis to be performed
-     * @return
-     */
     @Override
-    @Asynchronous
-    public Future<Boolean> analyseProject(Long analysisSettingId) {
-        LOG.debug("analyseProject(): Finding setting...");
-        AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
-        if (setting == null) {
-            throw new JaceRuntimeException("The analysis setting was not found when attempting to perform analysis.");
+    @TransactionAttribute(TransactionAttributeType.MANDATORY)
+    public void performAnalysis(Long analysisId) {
+        if (analysisId == null) {
+            throw new JaceRuntimeException("The analysisID was null.");
         }
-
-        LOG.debug("analyseProject(): Creating new analysis...");
-        Analysis analysis = createNewAnalysis(setting);
-
-        LOG.debug("analyseProject(): Pulling changes...");
-        projectService.pullProject(setting.getProject(), analysis);
-
+        Analysis analysis = (Analysis) analysisDao.find(Analysis.class, analysisId);
+        LOG.info("Starting analysis. Analysis ID={} ", analysis.getId());
         final int pageSize = 20;
         int offset = pageSize;
         List<Diff> diffs = diffDao.listDiffs(analysis.getId(), 0, pageSize);
 
-        LOG.info("Got {} diffs from projectService", diffs.size());
+        LOG.info("There was {} diffs for the analysis {}", diffs.size(), analysis.getId());
         if (diffs.size() > 0) {
             Set<SLO> newSLOs = new HashSet<>(diffs.size());
             List<Long> deletedSloIDs = new ArrayList<>(diffs.size());
@@ -172,22 +164,21 @@ public class AnalysisServiceImpl implements AnalysisService {
             markSLOsAsDeleted(deletedSloIDs);
 
             analysis = (Analysis) analysisDao.find(Analysis.class, analysis.getId());
-            LOG.debug("Starting to analyse the modified SLOs. Project='{}', Branch='{}', Files={}", setting.getProject().getName(), setting.getBranch(), newSLOs);
+            LOG.debug("Starting to analyse the modified SLOs. Project='{}', Branch='{}', Files={}", analysis.getAnalysisSetting().getProject().getName(), analysis.getAnalysisSetting().getBranch(), newSLOs);
 
-            analyseSLOs(analysis, newSLOs);
+            analyseFileContents(analysis, newSLOs);
 
             LOG.info("Starting to analyse dependencies.");
             analyseDependencies(analysis);
 
             analysis = (Analysis) analysisDao.find(Analysis.class, analysis.getId());
 
-            LOG.debug("Analysis complete! Persisting...");
-            analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
-            analysisDao.update(analysis);
-            LOG.debug("Persisted.");
         }
-        LOG.debug("Returning AsyncResult.");
-        return new AsyncResult<Boolean>(true);
+        LOG.debug("Analysis complete! Persisting...");
+        analysis.setAnalysisStatus(AnalysisStatus.COMPLETE);
+        analysisDao.update(analysis);
+        LOG.debug("Persisted.");
+
     }
 
 
@@ -196,7 +187,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     public void addNewFeature(Analysis analysis, SLO newSlo, Diff diff) {
         if (newSlo != null) {
             LOG.debug("The feature '{}' has changed by adding a new SLO with path '{}'", (newSlo.getFeature() == null ? "Unknown" : newSlo.getFeature().getName()), newSlo.getPath());
-            analysisDao.addChangedFeature(new ChangedFeature(analysis, newSlo.getFeature(), newSlo, diff));
+            analysisDao.addChangedFeature(new ChangedFeature(analysis, newSlo, diff));
         }
     }
 
@@ -293,7 +284,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     private void addChangedFeature(Analysis analysis, SLO slo, Diff diff) {
-        analysisDao.addChangedFeature(new ChangedFeature(analysis, slo.getFeature(), slo, diff));
+        analysisDao.addChangedFeature(new ChangedFeature(analysis, slo, diff));
     }
 
 
@@ -313,7 +304,9 @@ public class AnalysisServiceImpl implements AnalysisService {
         return "";
     }
 
-    private Analysis createNewAnalysis(AnalysisSetting setting) {
+    @Override
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public Analysis createNewAnalysis(AnalysisSetting setting) {
         Analysis analysis = new Analysis();
         analysis.setProject(setting.getProject());
         analysis.setAnalysisStatus(AnalysisStatus.ANALYSING);
@@ -325,7 +318,7 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     @Override
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-    public void analyseSLOs(Analysis analysis, Set<SLO> slos) {
+    public void analyseFileContents(Analysis analysis, Set<SLO> slos) {
         // Walk all files in the tree and analyse them
         SLO releaseSlo = createNewSlo(analysis, null, analysis.getAnalysisSetting().getProject().getReleaseInfo().getPathToVersionFile());
         slos.add(releaseSlo); // always read rel file
@@ -498,8 +491,30 @@ public class AnalysisServiceImpl implements AnalysisService {
     }
 
     @Override
+    @Asynchronous
     public void triggerAnalysis(Long analysisSettingId) {
-        analysisService.analyseProject(analysisSettingId);
+        LOG.debug("performAnalysis(): Finding setting...");
+        AnalysisSetting setting = analysisSettingDao.findAnalysisSettingById(analysisSettingId);
+        if (setting == null) {
+            throw new JaceRuntimeException("The analysis setting was not found when attempting to perform analysis.");
+        }
+
+        Ref oldRef = gitService.resolveCurrentRef(setting.getProject().getPluginConfiguration().getLocalDirectory());
+        LOG.debug("performAnalysis(): Pulling changes...");
+        List<RevCommit> revCommits = projectService.pullProject(setting.getProject());
+        if (revCommits.size() > 0) {
+            LOG.debug("Starting to iterate rev commits for analysis");
+            ObjectId previousRevCommit = oldRef.getObjectId();
+            for (RevCommit revCommit : revCommits) {
+                Analysis analysis = createNewAnalysis(setting);
+                LOG.info("Created new analysis with id={}", analysis.getId());
+                gitService.reset(analysis.getId(), setting.getProject().getPluginConfiguration().getLocalDirectory(), revCommit, previousRevCommit);
+                previousRevCommit = revCommit;
+
+                LOG.debug("Starting the Analysis for the RevCommit {}", revCommit.getShortMessage());
+                analysisService.performAnalysis(analysis.getId());
+            }
+        }
     }
 
     @Override

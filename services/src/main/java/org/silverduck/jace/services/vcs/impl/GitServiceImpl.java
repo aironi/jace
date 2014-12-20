@@ -17,6 +17,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.silverduck.jace.common.exception.JaceRuntimeException;
+import org.silverduck.jace.dao.analysis.AnalysisDao;
 import org.silverduck.jace.dao.vcs.DiffDao;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.project.Project;
@@ -32,6 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +64,9 @@ public class GitServiceImpl implements GitService {
     @EJB
     private DiffDao diffDao;
 
+    @EJB
+    private AnalysisDao analysisDao;
+
     /**
      * Checkout a branch to local directory
      *  @param localDirectory
@@ -89,7 +95,7 @@ public class GitServiceImpl implements GitService {
                     if (e instanceof RefAlreadyExistsException) {
                         // No worries, the branch already exists locally
                     } else {
-                        throw new JaceRuntimeException("Failed to checkout branch '" + branch
+                        throw new JaceRuntimeException("Failed to reset branch '" + branch
                             + "' to local directory '" + localDirectory + "'", e);
                     }
                 }
@@ -101,7 +107,7 @@ public class GitServiceImpl implements GitService {
                             .call();
 
                 } catch (GitAPIException e) {
-                    throw new JaceRuntimeException("Failed to checkout branch '" + branch + "' to local directory ' "
+                    throw new JaceRuntimeException("Failed to reset branch '" + branch + "' to local directory ' "
                         + localDirectory + "'", e);
                 }
 
@@ -259,7 +265,7 @@ public class GitServiceImpl implements GitService {
 
 
     @Override
-    public void pull(Project project, Analysis analysis) {
+    public List<RevCommit> pull(Project project) {
         String localDirectory = project.getPluginConfiguration().getLocalDirectory();
         String username = project.getPluginConfiguration().getUserName();
         String password = project.getPluginConfiguration().getPassword();
@@ -281,7 +287,24 @@ public class GitServiceImpl implements GitService {
             throw new IllegalStateException("The merging was not successful when pulling.");
         }
 
-        resolveChanges(analysis, git, pullResult, oldHead);
+        return resolveCommits(git, pullResult, oldHead);
+    }
+
+    @Override
+    public Ref resolveCurrentRef(String localDirectory) {
+        Repository repository = resolveRepository(localDirectory);
+        Git git = new Git(repository);
+        String fullBranchName = resolveFullBranch(repository);
+        Ref oldHead;
+        try {
+            oldHead = git.getRepository().getRef(fullBranchName);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            repository.close();
+        }
+
+        return oldHead;
     }
 
     /**
@@ -319,14 +342,13 @@ public class GitServiceImpl implements GitService {
      * Resolves changes based on pullResult and oldHead ref of the repo.
      *
      *
-     * @param project
      * @param git
      * @param pullResult
      * @param oldHead
      * @return
      */
-    private void resolveChanges(Analysis analysis, Git git, PullResult pullResult, Ref oldHead)  {
-        LOG.info("GitServiceImpl.resolveChanges() called");
+    private List<RevCommit> resolveCommits(Git git, PullResult pullResult, Ref oldHead)  {
+        LOG.info("GitServiceImpl.resolveCommits() called");
 
         String fullBranch = resolveFullBranch(git.getRepository());
 
@@ -334,20 +356,21 @@ public class GitServiceImpl implements GitService {
             Ref newHead = pullResult.getFetchResult().getAdvertisedRef(fullBranch);
             LOG.info("Old head Ref: " + oldHead.getName() + " objectId=" + oldHead.getObjectId() + " - New head Ref: Name=" + newHead.getName() + " objectId=" + newHead.getObjectId());
             List<RevCommit> revCommits = resolveRevCommits(git, oldHead.getObjectId(), newHead.getObjectId());
-            resolveDiffs(analysis, git, oldHead.getObjectId(), revCommits);
+            return revCommits;
         }
+        return Collections.emptyList();
     }
 
     /**
      * Resolves Diffs from a list of RevCommits starting from 'startCommitId'.
      *
-     * @param analysis
+     * @param analysisId
      * @param git
      * @param startCommitId ObjectId to start diffing
      * @param revCommits RevCommits to iterate
      * @return
      */
-    private void resolveDiffs(Analysis analysis, Git git, ObjectId startCommitId, List<RevCommit> revCommits) {
+    private void resolveDiffs(Long analysisId, Git git, ObjectId startCommitId, List<RevCommit> revCommits) {
         LOG.info("GitServiceImpl.resolveDiffs() called. startCommitId={}", startCommitId);
 
         for (RevCommit commit : revCommits) {
@@ -359,11 +382,11 @@ public class GitServiceImpl implements GitService {
                     .setNewTree(resolveTreeIterator(git.getRepository(), commit.toObjectId()));
             try {
                 List<DiffEntry> diffEntries = diffCommand.call();
-                LOG.info("GItServiceImpl.resolveDiffs: There are " + diffEntries.size() + " diffs. Parsing them...");
+                LOG.info("GitServiceImpl.resolveDiffs: There are " + diffEntries.size() + " diffs. Parsing them...");
 
-                parseDiffEntries(analysis, git, jaceCommit, diffEntries);
+                parseDiffEntries(analysisId, git, jaceCommit, diffEntries);
                 diffDao.addCommit(jaceCommit);
-                LOG.debug("GitServiceImpl.resolveDiffs: Created new Commit: " + jaceCommit.toHumanReadable());
+                LOG.debug("GitServiceImpl.resolveDiffs: Created new Commit: '{}'", jaceCommit.toHumanReadable());
                 startCommitId = commit.toObjectId();
             } catch (Exception e) {
                 throw new IllegalStateException(e);
@@ -383,8 +406,9 @@ public class GitServiceImpl implements GitService {
         return jaceCommit;
     }
 
-    private void parseDiffEntries(Analysis analysis, Git git, Commit jaceCommit, List<DiffEntry> diffEntries) throws IOException {
+    private void parseDiffEntries(Long analysisId, Git git, Commit jaceCommit, List<DiffEntry> diffEntries) throws IOException {
 
+        Analysis analysis = (Analysis) analysisDao.find(Analysis.class, analysisId);
         for (DiffEntry diffEntry : diffEntries) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("GitServiceImpl.parseDiffEntries: Parsing diffEntry: " + diffEntry.toString());
@@ -476,6 +500,26 @@ public class GitServiceImpl implements GitService {
             return treeParser;
         } finally {
             objectReader.release();
+        }
+    }
+
+    @Override
+    @TransactionAttribute(TransactionAttributeType.MANDATORY)
+    public void reset(Long analysisId, String localDirectory, RevCommit revCommit, ObjectId previousCommit) {
+        Repository repository = resolveRepository(localDirectory);
+        try {
+            Git git = new Git(repository);
+            LOG.info("Hard resetting to revCommit '{}' - '{}'", revCommit.toObjectId().getName(), revCommit.getShortMessage());
+
+            git.reset().setRef(revCommit.toObjectId().getName()).setMode(ResetCommand.ResetType.HARD).call();
+            LOG.info("Reset complete.");
+
+            resolveDiffs(analysisId, git, previousCommit, Collections.singletonList(revCommit));
+        } catch (GitAPIException e) {
+            throw new JaceRuntimeException("Failed to reset commit '" + revCommit.getShortMessage() + "' to local directory ' "
+                    + localDirectory + "'", e);
+        } finally {
+            repository.close();
         }
     }
 

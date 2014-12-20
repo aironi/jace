@@ -28,7 +28,7 @@ import javax.persistence.Table;
         @NamedQuery(name = "findFeatureNamesByProjectAndRelease",
                 query = "SELECT f.name FROM ChangedFeature cf " +
                         "JOIN cf.analysis a " +
-                        "JOIN cf.feature f " +
+                        "JOIN cf.slo.feature f " +
                         "WHERE a.releaseVersion = :releaseVersion AND a.project.id = :projectRID " +
                         "GROUP BY f.name"),
         @NamedQuery(name = "findScoredCommitsByProjectAndRelease",
@@ -55,10 +55,6 @@ public class ChangedFeature extends AbstractDomainObject {
     @JoinColumn(name = "DiffRID")
     private Diff diff;
 
-    @OneToOne()
-    @JoinColumn(name = "FeatureRID")
-    private Feature feature;
-
     /**
      * Method level change
      */
@@ -77,11 +73,10 @@ public class ChangedFeature extends AbstractDomainObject {
         super();
     }
 
-    public ChangedFeature(Analysis analysis, Feature feature, SLO oldSlo, Diff diff) {
+    public ChangedFeature(Analysis analysis, SLO slo, Diff diff) {
         this();
         this.analysis = analysis;
-        this.feature = feature;
-        this.slo = oldSlo;
+        this.slo = slo;
         this.diff = diff;
     }
 
@@ -91,10 +86,6 @@ public class ChangedFeature extends AbstractDomainObject {
 
     public Diff getDiff() {
         return diff;
-    }
-
-    public Feature getFeature() {
-        return feature;
     }
 
     public JavaMethod getMethod() {
@@ -111,10 +102,6 @@ public class ChangedFeature extends AbstractDomainObject {
 
     public void setDiff(Diff diff) {
         this.diff = diff;
-    }
-
-    public void setFeature(Feature feature) {
-        this.feature = feature;
     }
 
     public void setMethod(JavaMethod method) {

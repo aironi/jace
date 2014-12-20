@@ -1,12 +1,10 @@
 package org.silverduck.jace.services.project;
 
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.silverduck.jace.domain.analysis.Analysis;
-import org.silverduck.jace.domain.feature.FeatureMapping;
 import org.silverduck.jace.domain.project.Project;
-import org.silverduck.jace.domain.vcs.Diff;
 
-import javax.ejb.Schedule;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -47,11 +45,10 @@ public interface ProjectService {
     /**
      * Pull a project from repository
      *
-     * @param project
-     *            Project to pull
      * @param analysis
-     */
-    void pullProject(Project project, Analysis analysis);
+     * @param project
+ *            Project to pull */
+    List<RevCommit> pullProject(Project project);
 
     /**
      * Refresh Project
@@ -84,5 +81,6 @@ public interface ProjectService {
      * @return
      */
     java.util.concurrent.Future<Boolean> updateProject(Project project);
+
 
 }

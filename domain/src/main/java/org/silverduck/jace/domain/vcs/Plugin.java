@@ -1,5 +1,6 @@
 package org.silverduck.jace.domain.vcs;
 
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.silverduck.jace.domain.analysis.Analysis;
 import org.silverduck.jace.domain.project.Project;
 
@@ -38,10 +39,10 @@ public interface Plugin {
     /**
      * Performs a 'pull' operation in to a repository. The end result is that most recent changes are
      * updated to the current branch.
-     * @param project Project to pull
      * @param analysis
+     * @param project Project to pull
      * @return
      */
-    void pull(Project project, Analysis analysis);
+    List<RevCommit> pull(Project project);
 
 }

@@ -48,7 +48,7 @@ public class AnalysisView extends BaseView implements View {
     public static final String PROJECT_TYPE = "project";
     public static final String RELEASE_TYPE = "release";
     public static final String COMMIT_TYPE = "commit";
-    public static final String FEATURE_NAME_FILTER = "feature.name";
+    public static final String FEATURE_NAME_FILTER = "slo.feature.name";
     public static final int FEATURE_COLUMNS = 6;
     private static final int MAX_DEP_LEVELS = 9;
 
@@ -106,7 +106,7 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesTable = new Table();
         changedFeaturesTable.setContainerDataSource(changedFeaturesContainer);
 
-        changedFeaturesTable.setVisibleColumns("feature.name", "slo.path", "slo.packageName", "slo.className",
+        changedFeaturesTable.setVisibleColumns("slo.feature.name", "slo.path", "slo.packageName", "slo.className",
                 "diff.modificationType", "diff.commit.commitId", "diff.commit.message", "diff.commit.authorName",
                 "diff.commit.authorEmail", "diff.commit.authorDateOfChange",
                 // "diff.commit.authorTimeZone",
@@ -334,13 +334,13 @@ public class AnalysisView extends BaseView implements View {
         changedFeaturesContainer.applyFilters();
         changedFeaturesContainer.setFireContainerItemSetChangeEvents(true);
 
-        changedFeaturesContainer.addNestedContainerProperty("feature.name");
-        changedFeaturesContainer.addNestedContainerProperty("slo.path");
-        changedFeaturesContainer.addNestedContainerProperty("slo.packageName");
+        changedFeaturesContainer.addNestedContainerProperty("slo.feature.name");
         changedFeaturesContainer.addNestedContainerProperty("slo.className");
         changedFeaturesContainer.addNestedContainerProperty("diff.modificationType");
-        changedFeaturesContainer.addNestedContainerProperty("diff.commit.commitId");
+        changedFeaturesContainer.addNestedContainerProperty("slo.packageName");
+        changedFeaturesContainer.addNestedContainerProperty("slo.path");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.message");
+        changedFeaturesContainer.addNestedContainerProperty("diff.commit.commitId");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorName");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorEmail");
         changedFeaturesContainer.addNestedContainerProperty("diff.commit.authorDateOfChange");
@@ -451,7 +451,10 @@ public class AnalysisView extends BaseView implements View {
             }
         });
         for (Object id : changedFeaturesContainer.getItemIds()) {
-            featureNames.add(changedFeaturesContainer.getItem(id).getEntity().getFeature().getName());
+            ChangedFeature changedFeature = changedFeaturesContainer.getItem(id).getEntity();
+            if (changedFeature.getSlo().getFeature() != null) {
+                featureNames.add(changedFeature.getSlo().getFeature().getName());
+            }
         }
 
         featureNames.add(ALL_FEATURES);

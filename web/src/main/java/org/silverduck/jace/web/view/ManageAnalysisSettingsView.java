@@ -37,7 +37,7 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     private Table analysisTable;
 
-    private GridLayout contentLayout;
+    private VerticalLayout contentLayout;
 
     public ManageAnalysisSettingsView() {
         super();
@@ -114,7 +114,7 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     }
 
-    private void addNewAnalysisSettingButton(HorizontalLayout hl) {
+    private void addNewAnalysisSettingButton(Layout layout) {
         Locale locale = UI.getCurrent().getLocale();
         Button newButton = new Button(AppResources.getLocalizedString("label.newAnalysis", locale));
 
@@ -124,7 +124,7 @@ public class ManageAnalysisSettingsView extends BaseView {
                 createAnalysisSettingPopup(null);
             }
         });
-        hl.addComponent(newButton);
+        layout.addComponent(newButton);
     }
 
     private void createAnalysisSettingPopup(Long analysisSettingsId) {
@@ -244,18 +244,15 @@ public class ManageAnalysisSettingsView extends BaseView {
 
     @PostConstruct
     private void init() {
-        HorizontalLayout hl = new HorizontalLayout();
-
+        addNewAnalysisSettingButton(contentLayout);
         addAnalysisSettingTable(contentLayout);
-        addNewAnalysisSettingButton(hl);
-
-        contentLayout.addComponent(hl);
+        contentLayout.setExpandRatio(analysisTable, 1f);
     }
 
     @Override
     protected Layout getContentLayout() {
         if (contentLayout == null) {
-            contentLayout = new GridLayout();
+            contentLayout = new VerticalLayout();
         }
         return contentLayout;
     }

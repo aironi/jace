@@ -131,6 +131,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
                     if (featureMapping.appliesTo(slo)) {
                         featureName = featureMapping.getFeatureName();
                         LOG.debug("Found a FeatureMapping that matches the SLO {}. Setting feature name to {}", slo.getPath(), featureName);
+                        break;
                     }
                 }
 
@@ -288,19 +289,19 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
 
     private void processFeature(String featureName, SLO slo) {
         Feature feature = null;
-        if (!analysis.getProject().getFeatures().contains(featureName)) {
+
+        for (Feature f : analysis.getProject().getFeatures()) {
+            if (featureName.equals(f.getName())) {
+                feature = f;
+                break;
+            }
+        }
+        if (feature == null) {
             feature = new Feature();
             feature.setName(featureName);
             analysis.getProject().addFeature(feature);
-        } else {
-            for (Feature f : analysis.getProject().getFeatures()) {
-                if (f.getName().equals(featureName)) {
-                    feature = f;
-                    break;
-                }
-            }
         }
-        LOG.debug("Setting feature for SLO {} to {}", slo.getPath(), feature);
+        LOG.debug("Setting feature for SLO {} to ({},'{}')", slo.getPath(), feature.getId(), feature.getName());
         slo.setFeature(feature);
     }
 
@@ -380,6 +381,7 @@ public class InitialAnalysisFileVisitor implements FileVisitor<Path> {
             if (featureMapping.appliesTo(slo)) {
                 featureName = featureMapping.getFeatureName();
                 LOG.debug("Found a FeatureMapping that matches the SLO {}. Setting feature name to {}", slo.getPath(), featureName);
+                break;
             }
         }
         if (featureName == null && setting.getAutomaticFeatureMapping()) {

@@ -39,7 +39,8 @@ public class Project extends AbstractDomainObject {
         // TODO: Remove these before 1.0
         Project p = new Project();
 
-/*
+        /*
+
         p.setName("Alfresco");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
         p.getPluginConfiguration().setCloneUrl("https://github.com/Alfresco/community-edition.git");
@@ -50,8 +51,7 @@ public class Project extends AbstractDomainObject {
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
         p.getReleaseInfo().setPathToVersionFile("/pom.xml");
         p.getReleaseInfo().setPattern("/project/version");
-
-*/
+        */
 
         p.setName("J-Ace");
         p.getPluginConfiguration().setPluginType(PluginType.GIT);
@@ -63,7 +63,6 @@ public class Project extends AbstractDomainObject {
         p.getReleaseInfo().setVersionFileType(VersionFileType.XML);
         p.getReleaseInfo().setPathToVersionFile("/build/pom.xml");
         p.getReleaseInfo().setPattern("/project/properties/jace.version");
-
 
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services\\.analysis.*)","Business Logic - Analysis");
         addFeatureMapping(p, MappingType.PACKAGE_NAME, "(.*services\\.vcs.*)","Business Logic - VCS");

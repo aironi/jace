@@ -26,11 +26,11 @@ public interface AnalysisService {
     java.util.concurrent.Future<Boolean> addAnalysisSetting(AnalysisSetting setting);
 
     /**
-     * Analyse a project for a given analysis setting id
-     * @param analysisSettingId The analysisSettingId that defines the analysis to be performed
-     * @return A Future Boolean that completes once the analysis has been performed
+     * Perform analysis with the given ID. The analysis must be first created with {@link #createNewAnalysis}
+     * @param analysisId The id of the analysis
+     *
      */
-    java.util.concurrent.Future<Boolean> analyseProject(Long analysisSettingId);
+    void performAnalysis(Long analysisId);
 
     /**
      * Returns all analysis settings
@@ -131,7 +131,7 @@ public interface AnalysisService {
      * @param analysis Analysis
      * @param slos The SLOs to analyse
      */
-    void analyseSLOs(Analysis analysis, Set<SLO> slos);
+    void analyseFileContents(Analysis analysis, Set<SLO> slos);
 
     /**
      * Mark SLO.SLOType.DELETED for the given IDs
@@ -144,4 +144,6 @@ public interface AnalysisService {
      * @param oldSloIDs IDs to mark
      */
     void markSLOsAsOld(List<Long> oldSloIDs);
+
+    Analysis createNewAnalysis(AnalysisSetting setting);
 }

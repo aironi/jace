@@ -1,6 +1,9 @@
 package org.silverduck.jace.services.project.impl;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.silverduck.jace.common.exception.ExceptionHelper;
 import org.silverduck.jace.common.properties.JaceProperties;
 import org.silverduck.jace.dao.project.ProjectDao;
@@ -20,6 +23,7 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -60,10 +64,12 @@ public class ProjectServiceImpl implements ProjectService {
         switch (project.getPluginConfiguration().getPluginType()) {
         case GIT:
             LOG.info("addProject(): Cloning git repository...");
+            /*
             gitService.cloneRepo(project.getPluginConfiguration().getCloneUrl(),
                     project.getPluginConfiguration().getLocalDirectory(),
                     project.getPluginConfiguration().getUserName(),
                     project.getPluginConfiguration().getPassword());
+                    */
             for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
                 project.addBranch(new ProjectBranch(project, branch));
             }
@@ -96,15 +102,14 @@ public class ProjectServiceImpl implements ProjectService {
 
     /**
      * Pulls a single project from remote repository to locally configured directory
-     *
-     * @param project
+     *  @param project
      * @param analysis
      */
-    public void pullProject(Project project, Analysis analysis) {
-
+    public List<RevCommit> pullProject(Project project) {
+        List<RevCommit> revCommits;
         switch (project.getPluginConfiguration().getPluginType()) {
         case GIT:
-            gitService.pull(project, analysis);
+            revCommits = gitService.pull(project);
 
             project.removeAllBranches();
             for (String branch : gitService.listBranches(project.getPluginConfiguration().getLocalDirectory())) {
@@ -116,6 +121,7 @@ public class ProjectServiceImpl implements ProjectService {
             throw new RuntimeException("Non-supported plugin was configured for a project '" + project.getName()
                 + "' with id '" + project.getId() + "'");
         }
+        return revCommits;
     }
 
     @Override
@@ -146,5 +152,7 @@ public class ProjectServiceImpl implements ProjectService {
         projectDao.update(project);
         return new AsyncResult<Boolean>(Boolean.TRUE);
     }
+
+
 
 }
